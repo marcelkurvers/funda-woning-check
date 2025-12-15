@@ -1,5 +1,5 @@
 {
-  "executed_at": "2025-12-15T15:29:24.357223Z",
+  "executed_at": "2025-12-15T15:32:48.284274Z",
   "root": "/Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local",
   "summary": {
     "total_runs": 6,
@@ -12,9 +12,9 @@
       "framework": "pytest",
       "command": "pytest",
       "exit_code": 0,
-      "raw_output": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.4, pytest-9.0.2, pluggy-1.6.0\nrootdir: /Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local\nplugins: anyio-4.10.0\ncollected 43 items\n\nbackend/tests/e2e/test_frontend.py ..                                    [  4%]\nbackend/tests/integration/test_comprehensive.py ...                      [ 11%]\nbackend/tests/integration/test_consistency.py .....                      [ 23%]\nbackend/tests/integration/test_docker_sync.py s                          [ 25%]\nbackend/tests/integration/test_integration.py .                          [ 27%]\nbackend/tests/integration/test_integration_fixtures.py .                 [ 30%]\nbackend/tests/quality/test_audit_codebase.py .                           [ 32%]\nbackend/tests/unit/test_ai_interpretation.py .....                       [ 44%]\nbackend/tests/unit/test_api_endpoints.py ....                            [ 53%]\nbackend/tests/unit/test_chapter_routines.py ...                          [ 60%]\nbackend/tests/unit/test_chapters.py ..                                   [ 65%]\nbackend/tests/unit/test_complex_parsing.py .                             [ 67%]\nbackend/tests/unit/test_domain_models.py ...                             [ 74%]\nbackend/tests/unit/test_dynamic_chapters.py ...                          [ 81%]\nbackend/tests/unit/test_explore_insights.py .                            [ 83%]\nbackend/tests/unit/test_modern_chapter.py ..                             [ 88%]\nbackend/tests/unit/test_modern_design_compliance.py ....                 [ 97%]\nbackend/tests/unit/test_parser.py .                                      [100%]\n\n=============================== warnings summary ===============================\nbackend/main.py:157\n  /Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local/backend/main.py:157: DeprecationWarning: \n          on_event is deprecated, use lifespan event handlers instead.\n  \n          Read more about it in the\n          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n          \n    @app.on_event(\"startup\")\n\n../../../../../Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/fastapi/applications.py:4495\n  /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/fastapi/applications.py:4495: DeprecationWarning: \n          on_event is deprecated, use lifespan event handlers instead.\n  \n          Read more about it in the\n          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n          \n    return self.router.on_event(event_type)\n\nbackend/tests/integration/test_comprehensive.py: 39 warnings\nbackend/tests/integration/test_consistency.py: 65 warnings\nbackend/tests/integration/test_integration.py: 22 warnings\nbackend/tests/integration/test_integration_fixtures.py: 39 warnings\nbackend/tests/unit/test_api_endpoints.py: 10 warnings\nbackend/tests/unit/test_explore_insights.py: 13 warnings\nbackend/tests/unit/test_modern_chapter.py: 26 warnings\nbackend/tests/unit/test_modern_design_compliance.py: 52 warnings\n  /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/pydantic/main.py:1087: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.8/migration/\n    warnings.warn('The `dict` method is deprecated; use `model_dump` instead.', category=PydanticDeprecatedSince20)\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================= 42 passed, 1 skipped, 268 warnings in 3.13s ==================",
-      "start_time": "2025-12-15T15:29:20.697443Z",
-      "end_time": "2025-12-15T15:29:24.248857Z",
+      "raw_output": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.4, pytest-9.0.2, pluggy-1.6.0\nrootdir: /Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local\nplugins: anyio-4.10.0\ncollected 44 items\n\nbackend/tests/e2e/test_frontend.py ..                                    [  4%]\nbackend/tests/integration/test_comprehensive.py ...                      [ 11%]\nbackend/tests/integration/test_consistency.py .....                      [ 22%]\nbackend/tests/integration/test_docker_sync.py s                          [ 25%]\nbackend/tests/integration/test_integration.py .                          [ 27%]\nbackend/tests/integration/test_integration_fixtures.py .                 [ 29%]\nbackend/tests/quality/test_audit_codebase.py .                           [ 31%]\nbackend/tests/unit/test_ai_interpretation.py .....                       [ 43%]\nbackend/tests/unit/test_api_endpoints.py .....                           [ 54%]\nbackend/tests/unit/test_chapter_routines.py ...                          [ 61%]\nbackend/tests/unit/test_chapters.py ..                                   [ 65%]\nbackend/tests/unit/test_complex_parsing.py .                             [ 68%]\nbackend/tests/unit/test_domain_models.py ...                             [ 75%]\nbackend/tests/unit/test_dynamic_chapters.py ...                          [ 81%]\nbackend/tests/unit/test_explore_insights.py .                            [ 84%]\nbackend/tests/unit/test_modern_chapter.py ..                             [ 88%]\nbackend/tests/unit/test_modern_design_compliance.py ....                 [ 97%]\nbackend/tests/unit/test_parser.py .                                      [100%]\n\n=============================== warnings summary ===============================\nbackend/main.py:157\n  /Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local/backend/main.py:157: DeprecationWarning: \n          on_event is deprecated, use lifespan event handlers instead.\n  \n          Read more about it in the\n          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n          \n    @app.on_event(\"startup\")\n\n../../../../../Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/fastapi/applications.py:4495\n  /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/fastapi/applications.py:4495: DeprecationWarning: \n          on_event is deprecated, use lifespan event handlers instead.\n  \n          Read more about it in the\n          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n          \n    return self.router.on_event(event_type)\n\nbackend/tests/quality/test_audit_codebase.py:108\n  /Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local/backend/tests/quality/test_audit_codebase.py:108: DeprecationWarning: invalid escape sequence '\\|'\n    safe_content = item['content'].replace(\"|\", \"\\|\").replace(\"`\", \"'\")\n\nbackend/tests/integration/test_comprehensive.py: 39 warnings\nbackend/tests/integration/test_consistency.py: 65 warnings\nbackend/tests/integration/test_integration.py: 22 warnings\nbackend/tests/integration/test_integration_fixtures.py: 39 warnings\nbackend/tests/unit/test_api_endpoints.py: 10 warnings\nbackend/tests/unit/test_explore_insights.py: 13 warnings\nbackend/tests/unit/test_modern_chapter.py: 26 warnings\nbackend/tests/unit/test_modern_design_compliance.py: 52 warnings\n  /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/pydantic/main.py:1087: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.8/migration/\n    warnings.warn('The `dict` method is deprecated; use `model_dump` instead.', category=PydanticDeprecatedSince20)\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================= 43 passed, 1 skipped, 269 warnings in 4.38s ==================",
+      "start_time": "2025-12-15T15:32:43.338550Z",
+      "end_time": "2025-12-15T15:32:48.177168Z",
       "status": "success",
       "reason": null,
       "parsed_results": null
@@ -24,8 +24,8 @@
       "command": "npx jest --runInBand",
       "exit_code": -1,
       "raw_output": "Skipped: no JS/TS test files found.",
-      "start_time": "2025-12-15T15:29:20.697258Z",
-      "end_time": "2025-12-15T15:29:20.697258Z",
+      "start_time": "2025-12-15T15:32:43.338385Z",
+      "end_time": "2025-12-15T15:32:43.338385Z",
       "status": "skipped",
       "reason": "Detected 1 JS/TS source files but no test files to execute.",
       "parsed_results": null
@@ -35,8 +35,8 @@
       "command": "go test ./... -v",
       "exit_code": -1,
       "raw_output": "Skipped: no Go source files detected.",
-      "start_time": "2025-12-15T15:29:20.697258Z",
-      "end_time": "2025-12-15T15:29:20.697258Z",
+      "start_time": "2025-12-15T15:32:43.338385Z",
+      "end_time": "2025-12-15T15:32:43.338385Z",
       "status": "skipped",
       "reason": "No Go source files detected in repository.",
       "parsed_results": null
@@ -46,8 +46,8 @@
       "command": "cargo test --verbose",
       "exit_code": -1,
       "raw_output": "Skipped: no Rust source files detected.",
-      "start_time": "2025-12-15T15:29:20.697258Z",
-      "end_time": "2025-12-15T15:29:20.697258Z",
+      "start_time": "2025-12-15T15:32:43.338385Z",
+      "end_time": "2025-12-15T15:32:43.338385Z",
       "status": "skipped",
       "reason": "No Rust source files detected in repository.",
       "parsed_results": null
@@ -57,8 +57,8 @@
       "command": "mvn test || gradle test",
       "exit_code": -1,
       "raw_output": "Skipped: no Java source files detected.",
-      "start_time": "2025-12-15T15:29:20.697258Z",
-      "end_time": "2025-12-15T15:29:20.697258Z",
+      "start_time": "2025-12-15T15:32:43.338385Z",
+      "end_time": "2025-12-15T15:32:43.338385Z",
       "status": "skipped",
       "reason": "No Java source files detected in repository.",
       "parsed_results": null
@@ -68,8 +68,8 @@
       "command": "rspec || rake test",
       "exit_code": -1,
       "raw_output": "Skipped: no Ruby source files detected.",
-      "start_time": "2025-12-15T15:29:20.697258Z",
-      "end_time": "2025-12-15T15:29:20.697258Z",
+      "start_time": "2025-12-15T15:32:43.338385Z",
+      "end_time": "2025-12-15T15:32:43.338385Z",
       "status": "skipped",
       "reason": "No Ruby source files detected in repository.",
       "parsed_results": null

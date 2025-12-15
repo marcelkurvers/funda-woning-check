@@ -647,10 +647,7 @@
           tab.classList.remove('hidden'); // Unhide
           tab.classList.add('active'); // Activate (trigger animation/styles)
 
-          // Header Logic: Hide top bar for Chapter 0? 
-          // The user said: "We do not need the top bar on every page."
-          // Let's hide the .header-bar if key == 0, show otherwise
-          // Header & Global Widgets Logic
+          // Header Logic: Hide top bar for Chapter 0 (Executive Summary)
           // We hide the standard dashboard header, advisor panel, and KPI grid for Chapter 0
           // because Chapter 0 has its own bespoke "Executive Summary" layout.
           const globalElements = [document.querySelector('.header-bar'),

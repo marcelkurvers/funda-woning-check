@@ -52,5 +52,13 @@ class TestApiEndpoints(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json(), payload)
 
+    def test_health_check(self):
+        """Test health check endpoint"""
+        resp = self.client.get("/health")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["backend"], "ok")
+        self.assertEqual(data["db"], "ok")
+
 if __name__ == "__main__":
     unittest.main()

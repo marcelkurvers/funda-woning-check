@@ -6,13 +6,15 @@ import re
 import pytest
 
 # Configuration
-SEARCH_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-OUTPUT_FILE = os.path.join(SEARCH_ROOT, "audit_mocks_hardcoded.md")
+# File is in backend/tests/quality/
+SEARCH_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
+OUTPUT_FILE = os.path.abspath(os.path.join(SEARCH_ROOT, "../docs/reports/audit_mocks.md"))
 EXCLUDE_DIRS = {".git", ".pytest_cache", "__pycache__", "venv", "env", "node_modules", ".gemini", "tests", "test-data"}
 # Exclude the audit test itself, and known safe files
 EXCLUDE_FILES = {
     "test_audit_codebase.py", "audit_mocks_hardcoded.md", "README.txt", "requirements.txt", ".DS_Store", 
-    "debug_run.py", "refactor_chapters.py", "verify_fix.py", "generate_templates.py", "debug_keys.py"
+    "debug_run.py", "refactor_chapters.py", "verify_fix.py", "generate_templates.py", "debug_keys.py",
+    "verify_chapter_0.py"
 }
 EXTENSIONS = {".py", ".js", ".ts", ".tsx", ".html", ".css"}
 

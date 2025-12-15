@@ -168,6 +168,21 @@ def preferences_page():
     with open(os.path.join(static_dir, "preferences.html"), "r", encoding="utf-8") as f:
         return f.read()
 
+@app.get("/health")
+def health_check():
+    """Basic health check to verify backend and database connection."""
+    status = {"backend": "ok", "db": "unknown"}
+    try:
+        con = db()
+        cur = con.cursor()
+        cur.execute("SELECT 1")
+        con.close()
+        status["db"] = "ok"
+    except Exception as e:
+        status["db"] = "error"
+        status["db_error"] = str(e)
+    return status
+
 # --- PREFERENCES ---
 def get_kv(key: str, default: Any = None) -> Any:
     con = db()
