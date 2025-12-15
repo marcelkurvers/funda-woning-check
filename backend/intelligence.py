@@ -132,34 +132,82 @@ class IntelligenceEngine:
 
     @staticmethod
     def _narrative_ch2(d):
-        # Heuristic: Simple address analysis for location vibe
-        vibe = "stedelijk" if "straat" in d['address'].lower() else "rustig"
+        prefs = d.get('_preferences', {})
+        marcel_prio = prefs.get('marcel', {}).get('priorities', [])
+        petra_prio = prefs.get('petra', {}).get('priorities', [])
         
-        intro = f"De locatie is vaak de meest waardebepalende factor. {d['address']} bevindt zich in een omgeving die wij karakteriseren als {vibe}."
+        # Simple keyword matching helper
+        def check_features(priorities, source_text):
+            matches = []
+            misses = []
+            source_lower = source_text.lower()
+            for p in priorities:
+                # Naive matching: property feature descriptions often contain these words
+                # In a real system, we'd map 'Solar' to 'Zonnepanelen', 'Warmtepomp' to 'Warmtepomp', etc.
+                keyword = p.lower()
+                if keyword == "solar": keyword = "zonnepanelen"
+                if keyword == "accu": keyword = "batterij"
+                if keyword == "jaren 30": keyword = "193" # rudimentary year check
+                
+                if keyword in source_lower:
+                    matches.append(p)
+                else:
+                    misses.append(p)
+            return matches, misses
+
+        # Combine source text for searching
+        description = d.get('description', '') or ""
+        features = str(d.get('features', []))
+        source_blob = f"{description} {features}"
         
-        analysis = f"""
-        <p>De directe omgeving toont een mix van {'jaren 30 bouw en modern' if d['year'] < 1940 else 'planmatige woningbouw'}. 
-        De voorzieningendichtheid lijkt {'hoog' if vibe == 'stedelijk' else 'gemiddeld'}, met essentiële faciliteiten op loop- of fietsafstand.</p>
-        <p>Geluid en dynamiek: Gezien de ligging verwachten we een {'levendige' if vibe == 'stedelijk' else 'kalme'} woonsfeer.</p>
-        """
+        m_matches, m_misses = check_features(marcel_prio, source_blob)
+        p_matches, p_misses = check_features(petra_prio, source_blob)
+        
+        total_prio = len(marcel_prio) + len(petra_prio)
+        total_match = len(m_matches) + len(p_matches)
+        score_pct = int((total_match / total_prio * 100)) if total_prio > 0 else 50 # Default 50 if no prefs
+
+        intro = f"Op basis van de aangescherpte profielen van Marcel (Tech & Infra) en Petra (Sfeer & Comfort) scoort deze woning een match van {score_pct}%."
+        
+        analysis = "<h4>Marcel's Tech-Check</h4><ul>"
+        if m_matches:
+            analysis += "".join([f"<li class='text-green-600'>✓ {m} gevonden</li>" for m in m_matches])
+        else:
+             analysis += "<li>Geen directe tech-hits in de omschrijving.</li>"
+        if m_misses:
+            analysis += "".join([f"<li class='text-gray-400'>? {m} controleren</li>" for m in m_misses[:3]]) # Show max 3 misses
+        analysis += "</ul>"
+        
+        analysis += "<h4>Petra's Woonwensen</h4><ul>"
+        if p_matches:
+             analysis += "".join([f"<li class='text-pink-600'>✓ {p} aanwezig</li>" for p in p_matches])
+        else:
+             analysis += "<li>Geen specifieke stijlkenmerken herkend in de tekst.</li>"
+        if p_misses:
+            analysis += "".join([f"<li class='text-gray-400'>? {m} niet vermeld</li>" for m in p_misses[:3]])
+        analysis += "</ul>"
 
         interpretation = f"""
-        <p>De ligging in deze wijk impliceert een {'hoge' if vibe == 'stedelijk' else 'gemiddelde'} grondwaarde ratio. 
-        Voor {'gezinnen' if vibe == 'rustig' else 'urban professionals'} is dit een ideale uitvalsbasis.
-        De connectie met het groen en faciliteiten is {'uitstekend' if d['plot'] > 200 else 'voldoende'}.</p>
+        <p>De woning sluit voor <strong>{'Marcel' if len(m_matches) > len(p_matches) else 'Petra'}</strong> op papier het beste aan. 
+        {'De technische infrastructuur lijkt veelbelovend.' if 'Glasvezel' in m_matches or 'Zonnepanelen' in m_matches else 'De technische basisvoorzieningen vragen nader onderzoek.'}
+        {'De sfeer en uitstraling matchen met de gezochte esthetiek.' if 'Jaren 30' in p_matches or 'Karakteristiek' in p_matches else 'De woning kan met de juiste styling naar wens worden gemaakt.'}</p>
         """
 
         strengths = []
-        if vibe == "rustig": strengths.append(f"Rustige ligging")
-        if vibe == "stedelijk": strengths.append("Dichtbij voorzieningen")
-        if d['plot'] > 200: strengths.append("Ruim perceel in wijk")
+        if len(m_matches) > 2: strengths.append("Sterke Tech Match")
+        if len(p_matches) > 2: strengths.append("Sterke Stijl Match")
+        strengths.extend(m_matches[:2])
+        strengths.extend(p_matches[:2])
 
-        advice = "<ul><li>Check bestemmingsplannen in de directe omgeving.</li><li>Ervaar de verkeersdrukte op verschillende momenten.</li></ul>"
+        advice = "<ul>"
+        if m_misses: advice += f"<li>Marcel: Controleer mogelijkheden voor {', '.join(m_misses[:2])}.</li>"
+        if p_misses: advice += f"<li>Petra: Beoordeel ter plaatse de {', '.join(p_misses[:2])}.</li>"
+        advice += "</ul>"
 
-        conclusion = f"<strong>Conclusie:</strong> Een toplocatie voor wie zoekt naar {'dynamiek' if vibe == 'stedelijk' else 'rust'}, met behoud van bereikbaarheid."
+        conclusion = f"<strong>Conclusie:</strong> Een {score_pct}% match. {'Een sterke kandidaat!' if score_pct > 60 else 'Voldoet aan de basis, maar concessies zijn nodig.'}"
         
         return {
-            "title": "Locatie & Omgeving",
+            "title": "Matchanalyse M&P",
             "intro": intro, 
             "main_analysis": analysis, 
             "interpretation": interpretation,

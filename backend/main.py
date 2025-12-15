@@ -231,6 +231,11 @@ def derive_property_core(funda_url: str) -> Dict[str, Any]:
 def build_chapters(property_core: Dict[str, Any]) -> Dict[str, Any]:
     chapters = {}
     logger.info(f"Building chapters for property: {property_core.get('address')}")
+    
+    # INJECT PREFERENCES
+    prefs = get_kv("preferences", {})
+    property_core["_preferences"] = prefs
+
     # Iterate through ALL chapters 0-12 defined in the registry
     for i in range(13):
         cls = get_chapter_class(i)
@@ -473,30 +478,55 @@ def paste_content(run_id: str, inp: PasteIn):
         "overview": overview
     }
 
-# --- PDF Generation (Simplified) ---
+# --- PDF Generation (Advanced) ---
 try:
-    from weasyprint import HTML, CSS
+    from weasyprint import HTML
     WEASYPRINT_AVAILABLE = True
-except:
+except (ImportError, OSError):
     WEASYPRINT_AVAILABLE = False
+
+from jinja2 import Environment, FileSystemLoader
 
 @app.get("/runs/{run_id}/pdf")
 def generate_pdf(run_id: str):
-    if not WEASYPRINT_AVAILABLE: raise HTTPException(501, "PDF tools missing")
+    if not WEASYPRINT_AVAILABLE:
+        raise HTTPException(501, "PDF generation tools (WeasyPrint) are not installed on the server.")
+
     row = get_run_row(run_id)
-    chapters = json.loads(row["chapters_json"] or "{}")
+    if not row:
+        raise HTTPException(404, "Run not found")
+
+    chapters_map = json.loads(row["chapters_json"] or "{}")
     core = json.loads(row["property_core_json"] or "{}")
     
-    md = f"# Rapport {core.get('address')}\n\n"
+    # Prepare list of chapters sorted by index
+    chapter_list = []
     for i in range(13):
-        if str(i) in chapters:
-            md += f"## {chapters[str(i)]['title']}\n\n"
-            # Extract text from blocks
-            for b in chapters[str(i)].get("blocks", []):
-                md += b["data"]["text"] + "\n\n"
-            md += "\\pagebreak\n"
-            
-    import markdown
-    html = markdown.markdown(md)
-    pdf = HTML(string=html).write_pdf()
-    return StreamingResponse(iter([pdf]), media_type="application/pdf")
+        key = str(i)
+        if key in chapters_map:
+            # Clean up the title (remove number prefix if present for cleaner headers)
+            ch = chapters_map[key]
+            # Ensure grid_layout exists or fallback to blocks
+            chapter_list.append(ch)
+
+    # Setup Jinja2
+    templates_dir = os.path.join(os.path.dirname(__file__), "templates")
+    env = Environment(loader=FileSystemLoader(templates_dir))
+    template = env.get_template("report_pdf.html")
+
+    # Render HTML
+    html_content = template.render(
+        property_core=core,
+        chapters=chapter_list,
+        date=now().split("T")[0]
+    )
+
+    # Generate PDF
+    pdf_bytes = HTML(string=html_content).write_pdf()
+    
+    return StreamingResponse(
+        iter([pdf_bytes]), 
+        media_type="application/pdf", 
+        headers={"Content-Disposition": f"attachment; filename=Rapport_{core.get('address', 'Woning')}.pdf"}
+    )
+

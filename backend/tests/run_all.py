@@ -257,9 +257,17 @@ class TestMasterSuite(unittest.TestCase):
         result = unittest.TextTestRunner(stream=sys.stdout, verbosity=0).run(suite)
         self.assertTrue(result.wasSuccessful())
 
+
     def test_21_api_edge_cases(self):
         """Executes API Edge Case tests"""
         suite = unittest.TestLoader().loadTestsFromTestCase(TestApiEndpoints)
+        result = unittest.TextTestRunner(stream=sys.stdout, verbosity=0).run(suite)
+        self.assertTrue(result.wasSuccessful())
+
+    def test_22_pdf_export_comprehensive(self):
+        """Executes Comprehensive PDF Export tests"""
+        from tests.e2e.test_pdf_export import TestPDFExport
+        suite = unittest.TestLoader().loadTestsFromTestCase(TestPDFExport)
         result = unittest.TextTestRunner(stream=sys.stdout, verbosity=0).run(suite)
         self.assertTrue(result.wasSuccessful())
 

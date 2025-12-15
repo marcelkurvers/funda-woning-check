@@ -1,15 +1,15 @@
 # Test Coverage Map
 
-**Generated**: 2025-12-15 15:32:48 UTC
+**Generated**: 2025-12-15 16:27:49 UTC
 **Project**: `/Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local`
 
 ## Executive Summary
 
-**Status**: ✅ All tests passing
-**Success Rate**: 100.0% (1/1 test suites)
+**Status**: ❌ All tests failing
+**Success Rate**: 0.0% (0/1 test suites)
 
-- ✅ **Passed**: 1
-- ❌ **Failed**: 0
+- ✅ **Passed**: 0
+- ❌ **Failed**: 1
 - ⏭️ **Skipped**: 5
 - 📊 **Total**: 6
 
@@ -19,8 +19,8 @@
 
 ### ✓ Python
 - **Source files**: 30
-- **Test files**: 24
-- **Test ratio**: 80% (24 test files per 30 source files)
+- **Test files**: 25
+- **Test ratio**: 83% (25 test files per 30 source files)
 
 ### ✓ Javascript/Typescript
 - **Source files**: 1
@@ -48,11 +48,11 @@
 
 ## Test Execution Results
 
-### ✅ Successful Test Suites
+### ❌ Failed Test Suites
 
-| Framework | Tests | Duration | Details |
-|-----------|-------|----------|---------|
-| pytest | N/A | N/A | ✓ All tests passed |
+| Framework | Tests | Duration | Failed Tests |
+|-----------|-------|----------|--------------|
+| pytest | N/A | N/A | Exit code: 1 |
 
 ### ⏭️ Skipped Test Suites
 
@@ -63,3 +63,7 @@
 | cargo test | No Rust source files detected in repository. |
 | maven/gradle | No Java source files detected in repository. |
 | rspec/minitest | No Ruby source files detected in repository. |
+
+## Recommendations
+
+- **Fix failing tests**: Review the failed test details above and fix the issues

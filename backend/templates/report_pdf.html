@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Woning Rapport</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* --- GLOBAL & PAGE SETUP --- */
+        @page {
+            size: A4;
+            margin: 20mm;
+
+            @top-right {
+                content: "AI Woning Rapport";
+                font-family: 'Inter', sans-serif;
+                font-size: 8pt;
+                color: #94a3b8;
+                margin-top: 10mm;
+            }
+
+            @bottom-left {
+                content: string(chapter-title);
+                font-family: 'Inter', sans-serif;
+                font-size: 8pt;
+                color: #94a3b8;
+                margin-bottom: 10mm;
+            }
+
+            @bottom-right {
+                content: "Pagina " counter(page);
+                font-family: 'Inter', sans-serif;
+                font-size: 8pt;
+                color: #64748b;
+                margin-bottom: 10mm;
+            }
+        }
+
+        @page :first {
+            margin: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+
+            @top-right {
+                content: none;
+            }
+
+            @bottom-left {
+                content: none;
+            }
+
+            @bottom-right {
+                content: none;
+            }
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #1e293b;
+            line-height: 1.6;
+            margin: 0;
+            font-size: 10pt;
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h1,
+        h2,
+        h3,
+        h4 {
+            color: #0f172a;
+            margin-top: 0;
+            line-height: 1.2;
+        }
+
+        /* --- COVER PAGE --- */
+        .cover {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 25mm;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cover-accent {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0) 70%);
+            border-radius: 50%;
+            transform: translate(30%, -30%);
+        }
+
+        .cover-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1.5rem;
+            width: fit-content;
+        }
+
+        .cover h1 {
+            color: white;
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .cover h2 {
+            color: #94a3b8;
+            font-size: 1.5rem;
+            font-weight: 400;
+            margin-bottom: 4rem;
+        }
+
+        .cover-meta {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-top: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 2rem;
+        }
+
+        .meta-item label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+        }
+
+        .meta-item div {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        /* --- CHAPTER LAYOUT --- */
+        .page-break {
+            page-break-before: always;
+        }
+
+        body {
+            counter-reset: chapter;
+        }
+
+        .chapter-title {
+            font-size: 24pt;
+            font-weight: 800;
+            /* string-set: chapter-title content(); */
+            counter-increment: chapter;
+        }
+
+        @page {
+            @bottom-left {
+                content: "Hoofdstuk " counter(chapter);
+                font-family: 'Inter', sans-serif;
+                font-size: 8pt;
+                color: #94a3b8;
+                margin-bottom: 10mm;
+            }
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .metric-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .metric-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #64748b;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .metric-value {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .content-cols {
+            display: flex;
+            gap: 30px;
+        }
+
+        .main-col {
+            flex: 2;
+        }
+
+        .side-col {
+            flex: 1;
+        }
+
+        /* --- CARDS & WIDGETS --- */
+        .content-card {
+            background: #fff;
+            margin-bottom: 20px;
+        }
+
+        .content-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .sidebar-card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+            border: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+        }
+
+        .sidebar-card.score {
+            background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+            border-color: #bfdbfe;
+        }
+
+        .sidebar-card h4 {
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .score-badge {
+            background: #3b82f6;
+            color: white;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        ul.check-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        ul.check-list li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #475569;
+        }
+
+        ul.check-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        /* Utilities */
+        .text-green {
+            color: #16a34a;
+        }
+
+        .text-orange {
+            color: #ea580c;
+        }
+
+        .text-blue {
+            color: #2563eb;
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- COVER PAGE -->
+    <div class="cover">
+        <div class="cover-accent"></div>
+
+        <div style="margin-top:auto; margin-bottom:auto;">
+            <div class="cover-badge">Premium AI Analyse</div>
+            <h1>Rapport<br>{{ property_core.address }}</h1>
+            <h2>Een diepgaande analyse van marktwaarde, potentie en strategie.</h2>
+        </div>
+
+        <div class="cover-meta">
+            <div class="meta-item">
+                <label>Datum</label>
+                <div>{{ date }}</div>
+            </div>
+            <div class="meta-item">
+                <label>Vraagprijs</label>
+                <div>{{ property_core.asking_price_eur }}</div>
+            </div>
+            <div class="meta-item">
+                <label>Type Woning</label>
+                <div>{{ property_core.house_type or 'Onbekend' }}</div>
+            </div>
+            <div class="meta-item">
+                <label>Oppervlakte</label>
+                <div>{{ property_core.living_area_m2 or '0' }} m²</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLE OF CONTENTS -->
+    <div class="page-break toc">
+        <h2 class="toc-title">Inhoudsopgave</h2>
+        <ul class="toc-list">
+            {% for chapter in chapters %}
+            <li class="toc-item">
+                <a href="#chapter-{{ loop.index0 }}">{{ loop.index0 }}. {{ chapter.title }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- CHAPTERS -->
+    {% for chapter in chapters %}
+    <div class="page-break" id="chapter-{{ loop.index0 }}">
+
+        <div class="chapter-header">
+            <span class="chapter-kicker">Hoofdstuk {{ loop.index0 }}</span>
+            <h1 class="chapter-title">{{ chapter.title }}</h1>
+        </div>
+
+        {% if chapter.grid_layout %}
+        <!-- Modern Dashboard Layout -->
+        {% set d = chapter.grid_layout %}
+
+        {% if d.metrics %}
+        <div class="metrics-grid">
+            {% for m in d.metrics %}
+            <div class="metric-card">
+                <div class="metric-label">{{ m.label }}</div>
+                <div
+                    class="metric-value {% if m.color == 'green' %}text-green{% elif m.color == 'orange' %}text-orange{% else %}text-blue{% endif %}">
+                    {{ m.value }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="content-cols">
+            <div class="main-col">
+                {% if d.main %}
+                <div class="content-card">
+                    <h3>{{ d.main.title }}</h3>
+                    <div class="prose">{{ d.main.content | safe }}</div>
+                    {% if d.main.chart_url %}
+                    <div class="chart-wrapper" style="margin-top:1rem; text-align:center;">
+                        <img src="{{ d.main.chart_url }}" alt="Chart" style="max-width:100%; height:auto;" />
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="sidebar">
+                {% if d.sidebar %}
+                {% for item in d.sidebar %}
+                <div class="sidebar-card {% if item.type == 'advisor_score' %}score{% endif %}">
+                    {% if item.type == 'advisor_score' %}
+                    <h4>{{ item.title }} <span class="score-badge">{{ item.score }}%</span></h4>
+                    <p>{{ item.content }}</p>
+                    {% elif item.type == 'advisor_card' %}
+                    <h4>💡 {{ item.title }}</h4>
+                    <p>{{ item.content }}</p>
+                    {% elif item.type == 'action_list' %}
+                    <h4>✅ {{ item.title }}</h4>
+                    <ul class="check-list">
+                        {% for i in item.items %}
+                        <li>{{ i }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+
+        {% else %}
+        <!-- Text Fallback (Old Format) -->
+        <div class="content-card">
+            {% for block in chapter.blocks %}
+            {% if block.type == 'paragraph' %}
+            <p>{{ block.data.text }}</p>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    </div>
+    {% endfor %}
+
+</body>
+
+</html>

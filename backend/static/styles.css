@@ -638,13 +638,9 @@ body {
     padding-bottom: 4rem;
 }
 
-.exec-header {
-    margin-bottom: 2.5rem;
-}
-
 /* --- NEW MODERN DASHBOARD (CHAPTER 0) --- */
 .dash-wrapper {
-    max-width: 1400px;
+    max-width: 95vw; /* Much wider for 4K */
     margin: 0 auto;
     padding-bottom: 4rem;
 }
@@ -697,7 +693,7 @@ body {
 /* METRICS ROW */
 .dash-metrics-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Denser metrics */
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
@@ -746,10 +742,33 @@ body {
 }
 
 /* CONTENT GRID */
+/* CONTENT GRID - now 3 columns for 4K */
 .dash-content-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 350px 1fr 400px; /* Left Sidebar, Main, Right Sidebar */
     gap: 2rem;
+    align-items: start;
+}
+
+@media (max-width: 1600px) {
+    .dash-content-grid {
+        grid-template-columns: 300px 1fr;
+    }
+    .dash-col-right {
+        display: none; /* Hide right col or move it, logic needs handling in HTML or Grid areas */
+    }
+}
+
+@media (max-width: 1200px) {
+    .dash-content-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dash-col-left, .dash-col-right {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
 /* Main Card */
@@ -1063,4 +1082,133 @@ body {
     color: #1e3a8a;
     line-height: 1.6;
     font-size: 1rem;
+}/* --- UTILITIES & AI CARDS --- */
+.ai-card {
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-top: 1.5rem;
+    border: 1px solid transparent;
+}
+
+.ai-card.success {
+    background-color: #f0fdf4;
+    /* green-50 */
+    border-color: #bbf7d0;
+    /* green-200 */
+}
+
+.ai-card.info {
+    background-color: #eff6ff;
+    /* blue-50 */
+    border-left: 4px solid #3b82f6;
+    /* blue-500 */
+}
+
+.ai-card.warning {
+    background-color: #fffbeb;
+    /* amber-50 */
+    border-color: #fde68a;
+    /* amber-200 */
+}
+
+.ai-card.dark {
+    background-color: #1e293b;
+    /* slate-800 */
+    color: white;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.ai-card-title {
+    font-weight: 700;
+    margin: 0 0 0.75rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.success .ai-card-title {
+    color: #166534;
+}
+
+/* green-800 */
+.info .ai-card-title {
+    color: #1e40af;
+}
+
+/* blue-800 */
+.warning .ai-card-title {
+    color: #92400e;
+}
+
+/* amber-800 */
+.dark .ai-card-title {
+    color: white;
+    border-bottom: 1px solid #475569;
+    padding-bottom: 0.5rem;
+}
+
+.ai-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.ai-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #334155;
+}
+
+/* Common Specs */
+.flex {
+    display: flex;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.gap-2 {
+    gap: 0.5rem;
+}
+
+.gap-4 {
+    gap: 1rem;
+}
+
+.mt-6 {
+    margin-top: 1.5rem;
+}
+
+.mb-6 {
+    margin-bottom: 1.5rem;
+}
+
+.text-lg {
+    font-size: 1.125rem;
+}
+
+.font-medium {
+    font-weight: 500;
+}
+
+.text-slate-600 {
+    color: #475569;
+}
+
+.grid {
+    display: grid;
+}
+
+.grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+    .md\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }

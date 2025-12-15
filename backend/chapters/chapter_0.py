@@ -100,6 +100,47 @@ class ExecutiveSummary(BaseChapter):
             {"id": "investment", "label": "Verw. Investering", "value": f"€ {reno_cost:,}" if reno_cost > 0 else "Geen direct", "icon": "hammer", "trend": "neutral" if reno_cost == 0 else "down"},
             {"id": "return", "label": "Verhuurpotentie", "value": f"€ {int(size_val * 22.5):,}", "icon": "trending-up", "trend": "up"}
         ]
+        # New metrics (additive)
+        if market_avg_m2:
+            price_dev_pct = round(((price_m2 - market_avg_m2) / market_avg_m2) * 100)
+            metrics.append({"id": "price_deviation", "label": "Prijsafwijking %", "value": f"{price_dev_pct:+,}%" if price_dev_pct != 0 else "0%", "icon": "trend-up" if price_dev_pct > 0 else "trend-down" if price_dev_pct < 0 else "neutral", "trend": "up" if price_dev_pct > 0 else "down" if price_dev_pct < 0 else "neutral", "trend_text": f"{price_dev_pct:+}% vs markt"})
+        future_score = 80 if label in ["A", "A+", "A++", "B"] else 60 if label in ["C", "D"] else 40
+        metrics.append({"id": "energy_future", "label": "Energie Toekomstscore", "value": f"{future_score}", "icon": "leaf", "color": "green" if future_score >= 70 else "orange" if future_score >= 50 else "red", "trend": "neutral"})
+        maintenance = "Hoog" if reno_cost > 30000 else "Middelmatig" if reno_cost > 0 else "Laag"
+        metrics.append({"id": "maintenance_intensity", "label": "Onderhoudsintensiteit", "value": maintenance, "icon": "hammer", "trend": "neutral"})
+        family = "Geschikt voor gezin" if size_val >= 120 and len(pros) > 0 else "Minder geschikt voor groot gezin"
+        metrics.append({"id": "family_suitability", "label": "Gezinsgeschiktheid", "value": family, "icon": "people", "trend": "neutral"})
+        lt_quality = "Hoog" if "jong" in construction_alert.lower() else "Middelmatig" if "aandacht" in construction_alert.lower() else "Laag"
+        metrics.append({"id": "long_term_quality", "label": "Lange-termijn kwaliteit", "value": lt_quality, "icon": "shield", "trend": "neutral"})
+        # New metrics (additive)
+        if market_avg_m2:
+            price_dev_pct = round(((price_m2 - market_avg_m2) / market_avg_m2) * 100)
+            metrics.append({"id": "price_deviation", "label": "Prijsafwijking %", "value": f"{price_dev_pct:+,}%" if price_dev_pct != 0 else "0%", "icon": "trend-up" if price_dev_pct > 0 else "trend-down" if price_dev_pct < 0 else "neutral", "trend": "up" if price_dev_pct > 0 else "down" if price_dev_pct < 0 else "neutral", "trend_text": f"{price_dev_pct:+}% vs markt"})
+        future_score = 80 if label in ["A","A+","A++","B"] else 60 if label in ["C","D"] else 40
+        metrics.append({"id": "energy_future", "label": "Energie Toekomstscore", "value": f"{future_score}", "icon": "leaf", "color": "green" if future_score >= 70 else "orange" if future_score >= 50 else "red", "trend": "neutral"})
+        maintenance = "Hoog" if reno_cost > 30000 else "Middelmatig" if reno_cost > 0 else "Laag"
+        metrics.append({"id": "maintenance_intensity", "label": "Onderhoudsintensiteit", "value": maintenance, "icon": "hammer", "trend": "neutral"})
+        family = "Geschikt voor gezin" if size_val >= 120 and len(pros) > 0 else "Minder geschikt voor groot gezin"
+        metrics.append({"id": "family_suitability", "label": "Gezinsgeschiktheid", "value": family, "icon": "people", "trend": "neutral"})
+        lt_quality = "Hoog" if "jong" in construction_alert.lower() else "Middelmatig" if "aandacht" in construction_alert.lower() else "Laag"
+        metrics.append({"id": "long_term_quality", "label": "Lange-termijn kwaliteit", "value": lt_quality, "icon": "shield", "trend": "neutral"})
+
+        # Logic: Pros & Cons
+        pros = []
+        cons = []
+        if "A" in label or "B" in label: pros.append("Uitstekend energielabel (Toekomstbestendig)")
+        else: cons.append(f"Matig energielabel ({label}), verduurzaming nodig")
+        
+        if price_m2 < market_avg_m2: pros.append("Scherpe m² prijs t.o.v. gemiddelde")
+        elif price_m2 > market_avg_m2 * 1.2: cons.append("Hoge m² prijs (Premium segment)")
+        
+        if year_val > 2000: pros.append("Recent bouwjaar, lage onderhoudsverwachting")
+        elif year_val < 1990: cons.append("Ouder object, mogelijk bouwkundige risico's")
+
+        if size_val > 150: pros.append("Royaal woonoppervlak")
+
+        pros_html = "".join([f"<li class='pro'><ion-icon name='checkmark-circle' style='color:#10b981'></ion-icon> {p}</li>" for p in pros])
+        cons_html = "".join([f"<li class='con'><ion-icon name='alert-circle' style='color:#ef4444'></ion-icon> {c}</li>" for c in cons])
 
         # Strategic Main Content
         summary_html = f"""
@@ -109,7 +150,7 @@ class ExecutiveSummary(BaseChapter):
             {abs(market_delta)}% { "boven" if market_delta > 0 else "onder" } het gemiddelde.
         </p>
 
-        <div class="analysis-grid">
+        <div class="analysis-grid" style="margin-bottom: 2rem;">
             <div class="analysis-item">
                 <div class="analysis-icon {'warning' if reno_cost > 0 else 'valid'}"><ion-icon name="construct"></ion-icon></div>
                 <div class="analysis-text">
@@ -122,6 +163,20 @@ class ExecutiveSummary(BaseChapter):
                 <div class="analysis-text">
                     <strong>Waardering & Loopopties</strong><br>
                     Gezien de marktdruk en de staat van onderhoud is de {valuation_status.lower()} een belangrijk onderhandelpunt. {sustain_advice}
+                </div>
+            </div>
+        </div>
+
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; margin-top: 2rem;">
+            <h4 style="margin-top:0; color:#334155; margin-bottom: 1rem;">Sterke & Zwakke Punten</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div>
+                    <h5 style="color:#10b981; margin:0 0 0.5rem 0;">Voordelen</h5>
+                    <ul style="list-style:none; padding:0; margin:0; font-size: 0.95rem; color:#475569;">{pros_html}</ul>
+                </div>
+                <div>
+                    <h5 style="color:#ef4444; margin:0 0 0.5rem 0;">Aandachtspunten</h5>
+                    <ul style="list-style:none; padding:0; margin:0; font-size: 0.95rem; color:#475569;">{cons_html}</ul>
                 </div>
             </div>
         </div>
@@ -156,7 +211,7 @@ class ExecutiveSummary(BaseChapter):
             "layout_type": "modern_dashboard",
             "hero": hero,
             "metrics": metrics,
-            "main": {"title": "World Class Investigation", "content": summary_html},
+            "main": {"title": "Executive Property Assessment", "content": summary_html},
             "sidebar": sidebar
         }
         

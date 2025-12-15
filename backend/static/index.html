@@ -6,146 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Woning Rapport - Premium</title>
   <link rel="stylesheet" href="/static/styles.css">
-  <style>
-    /* CRITICAL DASHBOARD STYLES (INJECTED) */
-    .dash-wrapper {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding-bottom: 4rem;
-    }
 
-    .dash-hero {
-      background: white;
-      padding: 3rem;
-      border-radius: 24px;
-      margin-bottom: 2rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-      border: 1px solid #e2e8f0;
-      text-align: center;
-      background-image: radial-gradient(circle at top right, #f8fafc, white);
-    }
-
-    .dash-hero-title {
-      font-size: 3.5rem;
-      font-weight: 800;
-      color: #0f172a;
-      line-height: 1.1;
-      margin: 0 0 1rem 0;
-      letter-spacing: -0.03em;
-    }
-
-    .dash-hero-badge {
-      display: inline-block;
-      background: #eff6ff;
-      color: #3b82f6;
-      padding: 0.5rem 1rem;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      margin-bottom: 1rem;
-    }
-
-    .dash-metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr) !important;
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    @media (max-width: 1024px) {
-      .dash-metrics-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-      }
-    }
-
-    .dash-metric-card {
-      background: white;
-      padding: 1.5rem;
-      border-radius: 20px;
-      border: 1px solid #f1f5f9;
-      display: flex;
-      align-items: center;
-      gap: 1.25rem;
-      box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.03);
-    }
-
-    .dash-metric-icon {
-      width: 56px;
-      height: 56px;
-      background: #f8fafc;
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.75rem;
-      color: #64748b;
-      flex-shrink: 0;
-    }
-
-    .dash-metric-value {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: #0f172a;
-    }
-
-    .dash-metric-label {
-      font-size: 0.85rem;
-      color: #94a3b8;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    .dash-content-grid {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 2rem;
-    }
-
-    .dash-main-card {
-      background: white;
-      padding: 3rem;
-      border-radius: 24px;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    }
-
-    .dash-sidebar-card {
-      background: white;
-      padding: 1.5rem;
-      border-radius: 20px;
-      border: 1px solid #e2e8f0;
-      margin-bottom: 1.5rem;
-    }
-
-    .dash-sidebar-card.gradient-card {
-      background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
-      color: white;
-      border: none;
-    }
-
-    .analysis-item {
-      background: #f8fafc;
-      padding: 1.5rem;
-      border-radius: 16px;
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .analysis-icon {
-      font-size: 1.5rem;
-      flex-shrink: 0;
-    }
-
-    .analysis-icon.valid {
-      color: #10b981;
-    }
-
-    .analysis-icon.warning {
-      color: #f59e0b;
-    }
-  </style>
   <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -469,143 +330,94 @@
 
             // Modern Grid Layout
             if (ch.grid_layout) {
-              // --- SPECIALE LAYOUT VOOR HOOFDSTUK 0 (EXECUTIVE SUMMARY) ---
-              if (parseInt(key) === 0 && ch.grid_layout.layout_type === 'modern_dashboard') {
-                const d = ch.grid_layout;
+              const d = ch.grid_layout;
 
-                // 1. Hero Section
-                const heroHtml = `<div class="dash-hero">
+              // 1. Hero Section
+              const heroHtml = `<div class="dash-hero">
                   <div class="dash-hero-content">
-                    <div class="dash-hero-badge">${d.hero.status}</div>
-                    <h1 class="dash-hero-title">${d.hero.address}</h1>
-                    <div class="dash-hero-subtitle">${d.hero.price} <span style="opacity:0.6; margin:0 0.5rem;">•</span> ${d.hero.labels.join('<span style="opacity:0.6; margin:0 0.5rem;">•</span>')}</div>
+                    <div class="dash-hero-badge">${d.hero.status || 'Analyse Gereed'}</div>
+                    <h1 class="dash-hero-title">${d.hero.address || 'Adres Onbekend'}</h1>
+                    <div class="dash-hero-subtitle">${d.hero.price || ''} <span style="opacity:0.6; margin:0 0.5rem;">•</span> ${(d.hero.labels || []).join('<span style="opacity:0.6; margin:0 0.5rem;">•</span>')}</div>
                   </div>
                 </div>`;
 
-                // 2. Metrics Row
-                let metricsHtml = '';
-                (d.metrics || []).forEach(m => {
-                  const colorClass = m.color === 'green' ? 'text-green-600' : (m.color === 'orange' ? 'text-orange-500' : 'text-blue-600');
-                  metricsHtml += `<div class="dash-metric-card">
+              // 2. Metrics Row
+              let metricsHtml = '';
+              (d.metrics || []).forEach(m => {
+                const colorClass = m.color === 'green' ? 'text-green-600' : (m.color === 'orange' ? 'text-orange-500' : 'text-blue-600');
+                metricsHtml += `<div class="dash-metric-card">
                     <div class="dash-metric-icon"><ion-icon name="${m.icon}"></ion-icon></div>
                     <div>
                       <div class="dash-metric-label">${m.label}</div>
                       <div class="dash-metric-value ${colorClass}">${m.value}</div>
                     </div>
                   </div>`;
-                });
+              });
 
-                // 3. Main Text
-                const mainHtml = `<div class="dash-main-card">
+              // 3. 3-Column Content Layout
+              const core = data.property_core || {};
+
+              // LEFT COLUMN: Static Property Facts
+              const leftHtml = `
+                  <div class="dash-sidebar-card">
+                     <h4 class="mb-3 font-bold text-slate-700">Woningdetails</h4>
+                     <ul class="space-y-3 text-sm text-slate-600" style="list-style:none; padding:0;">
+                        <li class="flex justify-between border-b pb-2"><span>Bouwjaar</span> <span class="font-bold text-slate-800">${core.build_year || '-'}</span></li>
+                        <li class="flex justify-between border-b pb-2"><span>Wonen</span> <span class="font-bold text-slate-800">${core.living_area_m2 || '-'} m²</span></li>
+                        <li class="flex justify-between border-b pb-2"><span>Perceel</span> <span class="font-bold text-slate-800">${core.plot_area_m2 || '-'} m²</span></li>
+                        <li class="flex justify-between border-b pb-2"><span>Label</span> <span class="font-bold text-slate-800">${core.energy_label || '-'}</span></li>
+                         <li class="flex justify-between pt-2"><span>Type</span> <span class="font-bold text-slate-800">${core.house_type || 'Woonhuis'}</span></li>
+                     </ul>
+                  </div>
+                  <div class="dash-sidebar-card gradient-card">
+                      <h4 class="flex items-center gap-2 mb-2 font-bold"><ion-icon name="trending-up"></ion-icon> Markt Potentie</h4>
+                      <div class="text-sm opacity-90">Op basis van ${core.living_area_m2 || '0'}m² en huidige markttrends lijkt hier ruimte voor optimalisatie.</div>
+                  </div>
+                `;
+
+              // CENTER COLUMN: Main Content
+              const mainHtml = `<div class="dash-main-card">
                   <h3 class="dash-section-title">${d.main.title}</h3>
-                  ${d.main.content}
+                  <div class="prose max-w-none text-slate-600">
+                    ${d.main.content}
+                  </div>
                 </div>`;
 
-                // 4. Sidebar Content
-                let sidebarHtml = '';
-                (d.sidebar || []).forEach(item => {
-                  if (item.type === 'advisor_score') {
-                    sidebarHtml += `<div class="dash-sidebar-card score-card">
+              // RIGHT COLUMN: Sidebar Content
+              let rightHtml = '';
+              (d.sidebar || []).forEach(item => {
+                if (item.type === 'advisor_score') {
+                  rightHtml += `<div class="dash-sidebar-card score-card">
                       <div class="flex justify-between items-center mb-2">
                         <div class="font-bold text-slate-700">${item.title}</div>
                         <div class="dash-score-badge">${item.score}%</div>
                       </div>
-                      <div class="text-sm text-slate-500">${item.content}</div>
+                      <div class="text-sm text-slate-500 mb-2">${item.content}</div>
                       <div class="dash-progress-bar"><div style="width: ${item.score}%"></div></div>
                     </div>`;
-                  } else if (item.type === 'advisor_card') {
-                    sidebarHtml += `<div class="dash-sidebar-card gradient-card">
-                      <h4><ion-icon name="sparkles"></ion-icon> ${item.title}</h4>
-                      <div class="content">${item.content}</div>
+                } else if (item.type === 'advisor_card') {
+                  rightHtml += `<div class="dash-sidebar-card" style="border-left: 4px solid #3b82f6;">
+                      <h4 class="font-bold text-slate-700 mb-2 flex items-center"><ion-icon name="bulb" class="text-blue-500 mr-2"></ion-icon> ${item.title}</h4>
+                      <div class="text-sm text-slate-600">${item.content}</div>
                     </div>`;
-                  } else if (item.type === 'action_list') {
-                    const listItems = item.items.map(i => `<li><ion-icon name="checkbox-outline"></ion-icon> ${i}</li>`).join('');
-                    sidebarHtml += `<div class="dash-sidebar-card">
+                } else if (item.type === 'action_list') {
+                  const listItems = item.items.map(i => `<li class="flex items-start gap-2"><ion-icon name="checkbox-outline" class="text-green-500 mt-1"></ion-icon> <span>${i}</span></li>`).join('');
+                  rightHtml += `<div class="dash-sidebar-card">
                       <h4 class="mb-3 font-bold text-slate-700">${item.title}</h4>
-                      <ul class="dash-action-list">${listItems}</ul>
+                      <ul class="dash-action-list space-y-2 text-sm text-slate-600" style="list-style:none; padding:0;">${listItems}</ul>
                     </div>`;
-                  }
-                });
+                }
+              });
 
-                tab.innerHTML = `<div class="dash-wrapper">
+              tab.innerHTML = `<div class="dash-wrapper">
                   ${heroHtml}
                   <div class="dash-metrics-grid">${metricsHtml}</div>
                   <div class="dash-content-grid">
+                    <div class="dash-col-left">${leftHtml}</div>
                     <div class="dash-col-main">${mainHtml}</div>
-                    <div class="dash-col-side">${sidebarHtml}</div>
+                    <div class="dash-col-right">${rightHtml}</div>
                   </div>
                 </div>`;
-
-              } else if (parseInt(key) === 0) {
-                // Fallback for old cache (optional, but good for safety)
-                tab.innerHTML = "<div style='padding:2rem'>Reload required for new design.</div>";
-              } else {
-                // Modern Grid Layout for chapters 1-12 (and any chapter with modern_dashboard)
-                const d = ch.grid_layout;
-
-                // 1. Hero Section
-                const heroHtml = `<div class="dash-hero">
-                  <div class="dash-hero-content">
-                    <div class="dash-hero-badge">${d.hero.status}</div>
-                    <h1 class="dash-hero-title">${d.hero.address}</h1>
-                    <div class="dash-hero-subtitle">${d.hero.price} <span style="opacity:0.6; margin:0 0.5rem;">•</span> ${d.hero.labels.join('<span style="opacity:0.6; margin:0 0.5rem;">•</span>')}</div>
-                  </div>
-                </div>`;
-
-                // 2. Metrics Row
-                let metricsHtml = '';
-                (d.metrics || []).forEach(m => {
-                  const colorClass = m.color === 'green' ? 'text-green-600' : (m.color === 'orange' ? 'text-orange-500' : 'text-blue-600');
-                  metricsHtml += `<div class="dash-metric-card">
-                    <div class="dash-metric-icon"><ion-icon name="${m.icon}"></ion-icon></div>
-                    <div>
-                      <div class="dash-metric-label">${m.label}</div>
-                      <div class="dash-metric-value ${colorClass}">${m.value}</div>
-                    </div>
-                  </div>`;
-                });
-
-                // 3. Main Text
-                const mainHtml = `<div class="dash-main-card">
-                  <h3 class="dash-section-title">${d.main.title}</h3>
-                  ${d.main.content}
-                </div>`;
-
-                // 4. Sidebar Content
-                let sidebarHtml = '';
-                (d.sidebar || []).forEach(item => {
-                  if (item.type === 'advisor_score') {
-                    sidebarHtml += `<div class="dash-sidebar-card score-card">
-                      <div class="flex justify-between items-center mb-2">
-                        <div class="font-bold text-slate-700">${item.title}</div>
-                        <div class="dash-score-badge">${item.score}%</div>
-                      </div>
-                      <div class="text-sm text-slate-500">${item.content}</div>
-                      <div class="dash-progress-bar"><div style="width: ${item.score}%"></div></div>
-                    </div>`;
-                  } else if (item.type === 'advisor_card') {
-                    sidebarHtml += `<div class="dash-sidebar-card gradient-card">
-                      <h4><ion-icon name="sparkles"></ion-icon> ${item.title}</h4>
-                      <div class="content">${item.content}</div>
-                    </div>`;
-                  } else if (item.type === 'action_list') {
-                    const listItems = item.items.map(i => `<li><ion-icon name="checkbox-outline"></ion-icon> ${i}</li>`).join('');
-                    sidebarHtml += `<div class="dash-sidebar-card">
-                      <h4 class="mb-3 font-bold text-slate-700">${item.title}</h4>
-                      <ul class="dash-action-list">${listItems}</ul>
-                    </div>`;
-                  }
-                });
-
-                tab.innerHTML = `<div class="dash-wrapper">
-                  ${heroHtml}
-                  <div class="dash-metrics-grid">${metricsHtml}</div>
-                  <div class="dash-content-grid">
-                    <div class="dash-col-main">${mainHtml}</div>
-                    <div class="dash-col-side">${sidebarHtml}</div>
-                  </div>
-                </div>`;
-              }
             } else {
               // Fallback Legacy Layout
               tab.innerHTML = `<div class="chapter-header"><span class="chapter-kicker">Hoofdstuk ${key}</span><h2 class="chapter-title-large">${ch.title.replace(/^\d+\.\s*/, '')}</h2></div><div class="chapter-body prose"></div>`;

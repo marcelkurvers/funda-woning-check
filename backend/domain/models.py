@@ -11,6 +11,11 @@ class PropertyCore(BaseModel):
     energy_label: str = "onbekend"
     scrape_error: Optional[str] = None
     # Extra fields can be stored in a dict if needed, but these are core
+    price_deviation_percent: Optional[float] = None
+    energy_future_score: Optional[float] = None
+    maintenance_intensity: Optional[str] = None
+    family_suitability: Optional[str] = None
+    long_term_quality: Optional[str] = None
     extra_data: Dict[str, Any] = {}
 
 class UIComponent(BaseModel):
