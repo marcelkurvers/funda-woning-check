@@ -1,6 +1,6 @@
 # Test Coverage Map
 
-**Generated**: 2025-12-15 15:26:48 UTC
+**Generated**: 2025-12-15 15:29:24 UTC
 **Project**: `/Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local`
 
 ## Executive Summary
@@ -19,8 +19,8 @@
 
 ### ✓ Python
 - **Source files**: 30
-- **Test files**: 22
-- **Test ratio**: 73% (22 test files per 30 source files)
+- **Test files**: 24
+- **Test ratio**: 80% (24 test files per 30 source files)
 
 ### ✓ Javascript/Typescript
 - **Source files**: 1

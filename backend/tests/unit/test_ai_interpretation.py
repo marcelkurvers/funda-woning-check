@@ -63,6 +63,39 @@ class TestAiInterpretation(unittest.TestCase):
         self.assertIn('noodzakelijk', narrative_ch4['interpretation'], "Energy plan should be necessary")
         self.assertIn('na-isolatie', narrative_ch4['advice'], "Should suggest isolation")
 
+    def test_all_chapters_generation(self):
+        """
+        Parametric test to ensure ALL chapters (1-12) generate a valid narrative structure
+        without crashing, given a standard dataset.
+        """
+        # Complete mock data
+        ctx = {
+            "adres": "Teststraat 1",
+            "prijs": "€ 500.000",
+            "oppervlakte": "120",
+            "perceel": "200",
+            "bouwjaar": "1990",
+            "label": "B"
+        }
+        
+        required_keys = ["title", "intro", "main_analysis", "conclusion"]
+        
+        for i in range(1, 13):
+            with self.subTest(chapter=i):
+                print(f"Testing capture logic for Chapter {i}")
+                output = IntelligenceEngine.generate_chapter_narrative(i, ctx)
+                
+                # Check basic keys
+                for key in required_keys:
+                    self.assertIn(key, output, f"Chapter {i} missing key: {key}")
+                    self.assertTrue(output[key], f"Chapter {i} has empty {key}")
+                
+                # Check specifics
+                if i == 1:
+                    self.assertIn("120 m²", output["intro"])
+                if i == 4:
+                    self.assertIn("B", output["intro"]) # Energy label check
+
     def test_scenario_luxury_villa(self):
         """Test a large luxury villa."""
         ctx = {

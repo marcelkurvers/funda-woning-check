@@ -7,10 +7,10 @@ Found **7** potential issues.
 ### 📄 `run_all.py`
 | Line | Type | Content |
 | :--- | :--- | :--- |
-| 113 | **Mock Data/Functionality** | `# 1. Mock Data (Completeness < 100%)` |
-| 202 | **Dummy Data** | `1. Auto-create run with dummy URL 'manual-paste'.` |
-| 257 | **Dummy Data** | `# 1. Create a dummy run` |
-| 275 | **Leftover Print Debugging** | `print("Skipping PDF test: WeasyPrint not installed/available")` |
+| 115 | **Mock Data/Functionality** | `# 1. Mock Data (Completeness < 100%)` |
+| 204 | **Dummy Data** | `1. Auto-create run with dummy URL 'manual-paste'.` |
+| 271 | **Dummy Data** | `# 1. Create a dummy run` |
+| 289 | **Leftover Print Debugging** | `print("Skipping PDF test: WeasyPrint not installed/available")` |
 
 ### 📄 `fixtures/user_funda.html`
 | Line | Type | Content |

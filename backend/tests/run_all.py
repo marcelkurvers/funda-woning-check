@@ -22,6 +22,8 @@ from tests.integration.test_integration import TestIntegration
 from tests.unit.test_modern_chapter import TestModernChapter
 from tests.unit.test_modern_design_compliance import TestModernDesignCompliance
 from tests.unit.test_parser import TestParser
+from tests.unit.test_domain_models import TestDomainModels
+from tests.unit.test_api_endpoints import TestApiEndpoints
 
 # Import main components
 from scraper import Scraper
@@ -248,6 +250,18 @@ class TestMasterSuite(unittest.TestCase):
         # Check AI Logic
         # IntelligenceEngine generates "royaal" or "courant" based on metrics
         self.assertTrue(len(text) > 50)
+
+    def test_20_domain_models(self):
+        """Executes Domain Model tests"""
+        suite = unittest.TestLoader().loadTestsFromTestCase(TestDomainModels)
+        result = unittest.TextTestRunner(stream=sys.stdout, verbosity=0).run(suite)
+        self.assertTrue(result.wasSuccessful())
+
+    def test_21_api_edge_cases(self):
+        """Executes API Edge Case tests"""
+        suite = unittest.TestLoader().loadTestsFromTestCase(TestApiEndpoints)
+        result = unittest.TextTestRunner(stream=sys.stdout, verbosity=0).run(suite)
+        self.assertTrue(result.wasSuccessful())
 
     def test_11_pdf_export(self):
         """
