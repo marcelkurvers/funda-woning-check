@@ -23,9 +23,17 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # --- CONFIGURATION ---
-DB_PATH = os.environ.get("APP_DB", "/data/app.db")
-if DB_PATH.startswith("/data") and not os.path.exists("/data"):
-    DB_PATH = "local_app.db"
+# --- CONFIGURATION ---
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEFAULT_DB_PATH = os.path.join(BASE_DIR, "data", "local_app.db")
+DB_PATH = os.environ.get("APP_DB", DEFAULT_DB_PATH)
+
+# Ensure directory exists if we are running locally and path is relative
+db_dir = os.path.dirname(DB_PATH)
+if db_dir and not os.path.exists(db_dir):
+    try:
+        os.makedirs(db_dir, exist_ok=True)
+    except: pass
 
 StepState = Literal["queued","running","done","failed"]
 

@@ -7,7 +7,7 @@ import time
 import os
 
 # Set test database path before importing main
-os.environ["APP_DB"] = "./test_integration.db"
+os.environ["APP_DB"] = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../data/test_integration.db"))
 
 from fastapi.testclient import TestClient
 from main import app, init_db

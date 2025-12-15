@@ -6,10 +6,10 @@ def load_and_enrich_template(chapter_id: int, title: str, context: Dict[str, Any
     # Logic extracted from main.py lines 358-417
     # Assuming rapport dir is relative to backend root or we find it
     # Ideally main.py passes the path, but let's assume standard location relative to this file
-    # /backend/chapters/content_loader.py -> /backend/rapport/
+    # /backend/chapters/content_loader.py -> /backend/templates/chapters/
     
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    rapport_dir = os.path.join(base_dir, "rapport")
+    rapport_dir = os.path.join(base_dir, "templates", "chapters")
     
     filename = f"hoofdstuk{chapter_id}.txt"
     path = os.path.join(rapport_dir, filename)

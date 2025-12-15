@@ -37,7 +37,9 @@ HTML_FIXTURE_URL = f"http://127.0.0.1:{PORT}/sample_funda.html"
 
 # Environment Setup for Local Testing
 os.environ["NO_PROXY"] = "*"
-os.environ["APP_DB"] = "./test_suite.db"
+# Run_all is in backend/tests/
+TEST_DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/test_suite.db"))
+os.environ["APP_DB"] = TEST_DB_PATH
 
 # Background Server for "Real" HTTP Requests
 class FixtureHandler(http.server.SimpleHTTPRequestHandler):
@@ -61,7 +63,7 @@ time.sleep(1) # Warmup
 class TestMasterSuite(unittest.TestCase):
     def setUp(self):
         # STRICT DB ISOLATION
-        main.DB_PATH = "./test_suite.db"
+        main.DB_PATH = TEST_DB_PATH
         if os.path.exists(main.DB_PATH):
             os.remove(main.DB_PATH)
         init_db()

@@ -83,7 +83,7 @@ class TestExploreInsights(unittest.TestCase):
             }
 
         # 3. Save to artifact (Use absolute path to ensure we can find it)
-        output_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "chapter_insights_snapshot.json"))
+        output_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../data/test_chapter_insights.json"))
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(insights_report, f, indent=2, ensure_ascii=False)
             
