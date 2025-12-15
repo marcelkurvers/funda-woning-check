@@ -30,14 +30,7 @@ class MaintenanceFinish(BaseChapter):
             {"id": "bath", "label": "Sanitair", "value": "Basis", "icon": "water"}
         ]
         
-        main_content = f"""
-        <div class="chapter-intro">
-            <h3>Kwaliteitsimpressie</h3>
-            <p>{narrative['intro']}</p>
-        </div>
-        <div class="analysis-section">
-            {narrative['main_analysis']}
-        </div>
+        main_content = self._render_rich_narrative(narrative, extra_html=f"""
         <table class="simple-table">
             <thead><tr><th>Onderdeel</th><th>Verwachte Staat</th><th>Actie</th></tr></thead>
             <tbody>
@@ -46,10 +39,7 @@ class MaintenanceFinish(BaseChapter):
                 <tr><td>Wandafwerking</td><td>Esthetisch</td><td>Schilderen</td></tr>
             </tbody>
         </table>
-        <div class="ai-conclusion-box">
-            {narrative['conclusion']}
-        </div>
-        """
+        """)
         
         layout = {
             "layout_type": "modern_dashboard",

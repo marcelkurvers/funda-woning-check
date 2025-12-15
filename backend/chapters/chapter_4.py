@@ -32,26 +32,13 @@ class EnergySustainability(BaseChapter):
             {"id": "heat", "label": "Verwarming", "value": "CV-Ketel", "icon": "flame"}
         ]
         
-        imp_html = f"""
-        <div class="chapter-intro">
-            <h3>Energie Prestatie</h3>
-            <p>{narrative['intro']}</p>
-        </div>
-        
-        <div class="analysis-section">
-            {narrative['main_analysis']}
-        </div>
-
+        imp_html = self._render_rich_narrative(narrative, extra_html=f"""
         <div class='eco-grid'>
             <div class="eco-card"><strong>Zonnepanelen:</strong> Tot €850 besparing/jaar.</div>
             <div class="eco-card"><strong>Hybride Warmtepomp:</strong> Tot 70% minder gasverbruik.</div>
             <div class="eco-card"><strong>Vloerisolatie:</strong> Comfortverhogend en energiebesparend.</div>
         </div>
-        
-        <div class="ai-conclusion-box">
-            {narrative['conclusion']}
-        </div>
-        """
+        """)
         
         layout = {
             "layout_type": "modern_dashboard",

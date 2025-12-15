@@ -28,26 +28,14 @@ class LocationAnalysis(BaseChapter):
             {"id": "center", "label": "Centrum", "value": "15 min", "icon": "business", "trend_text": "Fiets"},
         ]
         
-        amenity_html = f"""
-        <div class="chapter-intro"><h3>Omgevingsscan</h3>
-        <p>{narrative['intro']}</p>
-        </div>
-        
-        <div class="analysis-section">
-            {narrative['main_analysis']}
-        </div>
-        
+        amenity_html = self._render_rich_narrative(narrative, extra_html=f"""
         <div class='amenity-grid'>
             <div class="amenity-card"><div class="amenity-name">Supermarkt</div><div class="amenity-score">8.5</div></div>
             <div class="amenity-card"><div class="amenity-name">Openbaar Vervoer</div><div class="amenity-score">7.0</div></div>
             <div class="amenity-card"><div class="amenity-name">Scholen</div><div class="amenity-score">9.0</div></div>
             <div class="amenity-card"><div class="amenity-name">Horeca</div><div class="amenity-score">8.0</div></div>
         </div>
-        
-        <div class="ai-conclusion-box">
-            {narrative['conclusion']}
-        </div>
-        """
+        """)
         
         layout = {
             "layout_type": "modern_dashboard",

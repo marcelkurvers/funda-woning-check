@@ -16,6 +16,11 @@ from pydantic import BaseModel
 from scraper import Scraper
 from parser import Parser
 from chapters.registry import get_chapter_class
+import logging
+
+# Configure Logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # --- CONFIGURATION ---
 DB_PATH = os.environ.get("APP_DB", "/data/app.db")
@@ -193,38 +198,56 @@ def derive_property_core(funda_url: str) -> Dict[str, Any]:
         data["funda_url"] = funda_url
         return data
     except Exception as e:
-        print(f"Scraping failed: {e}")
+        logger.error(f"Scraping failed: {e}")
+        # Return minimal core data with default values
         return {
-            "address": "onbekend (handmatig te vullen)",
+            "address": "Onbekend (handmatig te vullen)",
             "funda_url": funda_url,
             "scrape_error": str(e)
         }
-
 def build_chapters(property_core: Dict[str, Any]) -> Dict[str, Any]:
     chapters = {}
-    print(f"Building chapters for property: {property_core.get('address')}")
-    
+    logger.info(f"Building chapters for property: {property_core.get('address')}")
     # Iterate through ALL chapters 0-12 defined in the registry
     for i in range(13):
         cls = get_chapter_class(i)
         if cls:
             try:
-                # Instantiate with data
                 instance = cls(property_core)
-                # Generate output
                 output = instance.generate()
-                
-                # IMPORTANT: Frontend uses str(i) as key
+                # Ensure modern layout compliance for each chapter
+                if isinstance(output.grid_layout, dict):
+                    layout = output.grid_layout
+                    layout.setdefault("layout_type", "modern_dashboard")
+                    layout.setdefault("metrics", [{"id": "default_metric", "label": "Info", "value": "N/A", "icon": "info"}])
+                    layout.setdefault("main", {"title": "Overview", "content": "No detailed content provided."})
+                    layout.setdefault("sidebar", [{"type": "advisor_card", "title": "Tip", "content": "No advice available."}])
+                    output.grid_layout = layout
                 chapters[str(i)] = output.dict()
-                print(f" - Generated Chapter {i}: {output.title}")
+                logger.debug(f" - Generated Chapter {i}: {output.title}")
             except Exception as e:
-                print(f"Error generating chapter {i}: {e}")
-                continue
+                logger.error(f"Error generating chapter {i}: {e}")
+                chapters[str(i)] = {
+                    "title": CHAPTER_TITLES.get(i, f"Hoofdstuk {i}"),
+                    "blocks": [{
+                        "type": "compliance",
+                        "level": "error",
+                        "message": f"Kon hoofdstuk {i} niet genereren: {e}",
+                        "details": "Controleer de ingevoerde gegevens of probeer het later opnieuw."
+                    }]
+                }
         else:
-            print(f"Warning: No class found for Chapter {i}")
-                
+            logger.warning(f"Warning: No class found for Chapter {i}")
+            chapters[str(i)] = {
+                "title": CHAPTER_TITLES.get(i, f"Hoofdstuk {i}"),
+                "blocks": [{
+                    "type": "compliance",
+                    "level": "warning",
+                    "message": f"Hoofdstuk {i} is nog niet beschikbaar.",
+                    "details": "Dit hoofdstuk wordt in een toekomstige update toegevoegd."
+                }]
+            }
     return chapters
-
 def build_kpis(property_core: Dict[str, Any]) -> Dict[str, Any]:
     fields = ["asking_price_eur", "living_area_m2", "plot_area_m2", "build_year", "energy_label"]
     present = sum(1 for f in fields if property_core.get(f))
@@ -334,15 +357,15 @@ def simulate_pipeline(run_id: str):
     # 4. Chapters
     steps["generate_chapters"] = "running"; update_run(run_id, steps_json=json.dumps(steps))
     
-    print(f"Pipeline: generating chapters for run {run_id}...")
+    logger.info(f"Pipeline: generating chapters for run {run_id}...")
     chapters = build_chapters(core)
     unknowns = build_unknowns(core)
     
     # Verifying Chapter 0
     if "0" not in chapters:
-        print("CRITICAL WARNING: Chapter 0 was not generated in pipeline!")
+        logger.critical("CRITICAL WARNING: Chapter 0 was not generated in pipeline!")
     else:
-        print("Pipeline: Chapter 0 generated successfully.")
+        logger.info("Pipeline: Chapter 0 generated successfully.")
         
     steps["generate_chapters"] = "done"
     update_run(run_id, steps_json=json.dumps(steps), chapters_json=json.dumps(chapters), unknowns_json=json.dumps(unknowns), status="done")
@@ -382,7 +405,7 @@ def get_report(run_id: str):
     
     # AUTO-FIX: If we have core data but no chapters (or missing 0), force regen
     if (not chapters or "0" not in chapters) and core:
-        print(f"Auto-Regen triggered for run {run_id}")
+        logger.info(f"Auto-Regen triggered for run {run_id}")
         chapters = build_chapters(core)
         kpis = build_kpis(core)
         update_run(run_id, chapters_json=json.dumps(chapters), kpis_json=json.dumps(kpis))

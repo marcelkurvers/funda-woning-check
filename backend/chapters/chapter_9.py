@@ -26,14 +26,7 @@ class LegalAspects(BaseChapter):
             {"id": "permit", "label": "Vergunningen", "value": "Checken", "icon": "document"}
         ]
         
-        main_content = f"""
-        <div class="chapter-intro">
-            <h3>Juridische Check</h3>
-            <p>{narrative['intro']}</p>
-        </div>
-        <div class="analysis-section">
-            {narrative['main_analysis']}
-        </div>
+        main_content = self._render_rich_narrative(narrative, extra_html=f"""
         <div class="legal-grid">
             <div class="legal-item important">
                 <strong>Eigendomssituatie:</strong> Volle eigendom of erfpacht? Bij erfpacht: wat is de canon en looptijd?
@@ -42,10 +35,7 @@ class LegalAspects(BaseChapter):
                 <strong>Erfdienstbaarheden:</strong> Zijn er rechten van overpad of andere verplichtingen richting buren?
             </div>
         </div>
-        <div class="ai-conclusion-box">
-            {narrative['conclusion']}
-        </div>
-        """
+        """)
         
         layout = {
             "layout_type": "modern_dashboard",

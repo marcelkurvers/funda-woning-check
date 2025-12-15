@@ -31,22 +31,12 @@ class GardenOutdoor(BaseChapter):
             {"id": "shed", "label": "Berging", "value": "Aanwezig?", "icon": "key"}
         ]
         
-        main_content = f"""
-        <div class="chapter-intro">
-            <h3>Buitenleven</h3>
-            <p>{narrative['intro']}</p>
-        </div>
-        <div class="analysis-section">
-            {narrative['main_analysis']}
-        </div>
+        main_content = self._render_rich_narrative(narrative, extra_html=f"""
         <div class="sun-path-widget">
             <div class="sun-icon">☀️</div>
             <div class="sun-text"><strong>Zoncheck:</strong> Open kompas-app tijdens bezichtiging. Zuid/Zuid-West is ideaal voor middag/avondzon.</div>
         </div>
-        <div class="ai-conclusion-box">
-            {narrative['conclusion']}
-        </div>
-        """
+        """)
         
         layout = {
             "layout_type": "modern_dashboard",

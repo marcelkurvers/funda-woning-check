@@ -35,20 +35,7 @@ class GeneralFeatures(BaseChapter):
             {"id": "rooms", "label": "Kamers (est.)", "value": f"{rooms_estimated}", "icon": "bed"}
         ]
         
-        main_content = f"""
-        <div class="chapter-intro">
-            <h3>Ruimtelijk Inzicht</h3>
-            <p>{narrative['intro']}</p>
-        </div>
-        
-        <div class="analysis-section">
-            {narrative['main_analysis']}
-        </div>
-        
-        <div class="ai-conclusion-box">
-            {narrative['conclusion']}
-        </div>
-        """
+        main_content = self._render_rich_narrative(narrative)
         
         specs_card = {
             "type": "advisor_card", 

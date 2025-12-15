@@ -31,7 +31,8 @@ class ExecutiveSummary(BaseChapter):
             
             price_m2 = round(price_val / size_val)
         except Exception as e:
-            print(f"Parsing Error: {e}")
+            import logging
+            logging.error(f"Parsing Error: {e}")
             price_val = 0
             size_val = 0
             price_m2 = 0

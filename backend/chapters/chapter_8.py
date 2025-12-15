@@ -29,23 +29,13 @@ class ParkingAccessibility(BaseChapter):
             {"id": "public", "label": "OV Halte", "value": "Nabij", "icon": "bus"}
         ]
         
-        main_content = f"""
-        <div class="chapter-intro">
-            <h3>Mobiliteitsscan</h3>
-            <p>{narrative['intro']}</p>
-        </div>
-        <div class="analysis-section">
-            {narrative['main_analysis']}
-        </div>
+        main_content = self._render_rich_narrative(narrative, extra_html=f"""
         <ul class="check-list">
             <li>Check parkeervergunning wachttijden bij gemeente.</li>
             <li>Is er ruimte voor een laadpaal op eigen terrein?</li>
             <li>Hoe druk is de straat tijdens spitsuur?</li>
         </ul>
-        <div class="ai-conclusion-box">
-            {narrative['conclusion']}
-        </div>
-        """
+        """)
         
         layout = {
             "layout_type": "modern_dashboard",

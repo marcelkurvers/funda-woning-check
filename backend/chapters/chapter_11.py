@@ -49,19 +49,9 @@ class MarketPosition(BaseChapter):
         </div>
         """
         
-        main_content = f"""
-        <div class="chapter-intro">
-            <h3>Courantheid</h3>
-            <p>{narrative['intro']}</p>
-        </div>
-         <div class="analysis-section">
-            {narrative['main_analysis']}
-        </div>
+        main_content = self._render_rich_narrative(narrative, extra_html=f"""
         {chart_html}
-        <div class="ai-conclusion-box">
-            {narrative['conclusion']}
-        </div>
-        """
+        """)
         
         layout = {
             "layout_type": "modern_dashboard",

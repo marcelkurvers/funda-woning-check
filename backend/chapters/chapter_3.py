@@ -34,26 +34,13 @@ class TechnicalState(BaseChapter):
             {"id": "foundation", "label": "Fundering", "value": "Onbekend", "icon": "stats-chart"}
         ]
         
-        risk_html = f"""
-        <div class="chapter-intro">
-            <h3>Bouwkundige Analyse</h3>
-            <p>{narrative['intro']}</p>
-        </div>
-        
-        <div class="analysis-section">
-            {narrative['main_analysis']}
-        </div>
-        
+        risk_html = self._render_rich_narrative(narrative, extra_html=f"""
         <div class='risk-grid'>
             <div class="risk-item"><strong>Fundering/Vocht:</strong> Aandachtspunt bij bouwjaar < 1980.</div>
             <div class="risk-item"><strong>Isolatie:</strong> Controleer na-isolatie maatregelen.</div>
             <div class="risk-item"><strong>Installaties:</strong> Leeftijd CV-ketel en elektra controleren.</div>
         </div>
-        
-        <div class="ai-conclusion-box">
-            {narrative['conclusion']}
-        </div>
-        """
+        """)
         
         layout = {
             "layout_type": "modern_dashboard",

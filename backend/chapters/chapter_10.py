@@ -36,23 +36,14 @@ class FinancialAnalysis(BaseChapter):
             {"id": "monthly", "label": "Maandlast (ind.)", "value": f"€ {int(total_acquisition * 0.04 / 12):,}", "icon": "calendar"}
         ]
         
-        breakdown_html = f"""
-        <div class="chapter-intro"><h3>Investeringsanalyse</h3>
-        <p>{narrative['intro']}</p>
-        </div>
-        <div class="analysis-section">
-            {narrative['main_analysis']}
-        </div>
+        breakdown_html = self._render_rich_narrative(narrative, extra_html=f"""
         <table style="width:100%; text-align: left;">
             <tr><td>Overdrachtsbelasting:</td><td>€ {kk_costs:,}</td></tr>
             <tr><td>Notaris:</td><td>€ {notary:,}</td></tr>
             <tr><td>Makelaar:</td><td>€ {makelaar:,}</td></tr>
             <tr><td><strong>Totaal K.K.:</strong></td><td><strong>€ {(kk_costs+notary+makelaar):,}</strong></td></tr>
         </table>
-        <div class="ai-conclusion-box">
-            {narrative['conclusion']}
-        </div>
-        """
+        """)
 
         layout = {
             "layout_type": "modern_dashboard",

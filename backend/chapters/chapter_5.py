@@ -30,14 +30,7 @@ class LayoutAnalysis(BaseChapter):
             {"id": "bath", "label": "Sanitair", "value": "1+", "icon": "water"}
         ]
         
-        main_content = f"""
-        <div class="chapter-intro">
-            <h3>Functionele Analyse</h3>
-            <p>{narrative['intro']}</p>
-        </div>
-        <div class="analysis-section">
-            {narrative['main_analysis']}
-        </div>
+        main_content = self._render_rich_narrative(narrative, extra_html=f"""
         <div class="feature-list">
             <div class="feature-item">
                 <span class="icon">📐</span>
@@ -48,10 +41,7 @@ class LayoutAnalysis(BaseChapter):
                 <span class="text"><strong>Keuken:</strong> Mogelijkheden voor open keuken of kookeiland? Bekijk de plattegrond.</span>
             </div>
         </div>
-        <div class="ai-conclusion-box">
-            {narrative['conclusion']}
-        </div>
-        """
+        """)
         
         layout = {
             "layout_type": "modern_dashboard",
