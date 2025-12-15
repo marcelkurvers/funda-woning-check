@@ -1,0 +1,40 @@
+Hoofdstuk 4 – Tijdsduur op de Markt & Prijsgedrag
+
+In dit hoofdstuk wordt beoordeeld hoe lang de woning te koop staat, hoe het prijsverloop zich heeft ontwikkeld, en of er signalen zijn van overvraging, veranderde verkoopstrategie of urgentie van de verkoper. Deze elementen bieden vaak aanknopingspunten voor onderhandelingen.
+
+4.1 Tijdlijn & prijsontwikkeling
+Moment                             Waarde / Status
+Eerste plaatsing op Funda          4 december 2024
+Initiële vraagprijs                €1.495.000
+Prijsaanpassing                    18 april 2025
+Huidige vraagprijs                 {vraagprijs}
+Totale tijd op de markt            ± 5,5 maanden
+Totale prijsverlaging              –€245.000 (−16,4%)
+
+4.2 Analyse op basis van beoordelingsmatrix
+Kenmerk                                                    Waarneming bij {adres}        Score
+>90 dagen op Funda                                         Ja                              Negatief
+Prijsaanpassing >10%                                       Ja (−16,4%)                    Positief
+Meerdere pogingen / opnieuw geplaatst                      Nee, maar lange looptijd       Neutraal
+Prijs initieel te hoog t.o.v. markt & WOZ                  Ja (begon 34% boven WOZ)       Negatief
+Geen eerdere prijsverhogingen                             Correct                         Positief
+Geen transactieverleden beschikbaar                        Onbekend                        Neutraal
+Geen wijzigingen in presentatie of positionering           Nee, strategie constant         Neutraal
+Huidige vraagprijs blijft boven marktwaarde                Ja, ~5%                         Neutraal
+Uniek woningaanbod in wijk (weinig vergelijkbaar aanbod)   Ja                              Positief
+Verkoopdruk zichtbaar in prijsgedrag                       Ja                              Positief
+
+4.3 Interpretatie van prijsgedrag
+De verkoper heeft duidelijk gereageerd op een gebrek aan belangstelling:
+• Het object is fors afgeprijsd binnen 4 maanden
+• De vraagprijs is nog altijd iets boven de marktinschatting
+• De prijsstrategie is inmiddels stabiel, wat wijst op een herpositionering naar een ‘acceptabele’ bandbreedte
+• Verkoopdruk is waarschijnlijk aanwezig, gezien het formaat van de prijsaanpassing
+
+Conclusie:
+De combinatie van langdurige verkooptijd, duidelijke prijsreductie, en het ontbreken van vergelijkbare woningen in de directe omgeving geeft een koper een sterke onderhandelingspositie. Er is bovendien geen indicatie van meerdere geïnteresseerde partijen.
+
+Aanbevolen onderhandelingstactiek:
+• Openen op of rond €1.150.000
+• Onderbouwen met verwijzing naar markt- en WOZ-data, alsmede moderniseringskosten
+• Benoem de reeds genomen prijsstap als teken dat onderhandeling acceptabel is

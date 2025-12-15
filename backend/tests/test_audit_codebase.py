@@ -1,0 +1,106 @@
+import os
+import re
+import pytest
+
+# Configuration
+SEARCH_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+OUTPUT_FILE = os.path.join(SEARCH_ROOT, "audit_mocks_hardcoded.md")
+EXCLUDE_DIRS = {".git", ".pytest_cache", "__pycache__", "venv", "env", "node_modules", ".gemini", "tests", "test-data"}
+# Exclude the audit test itself, and known safe files
+EXCLUDE_FILES = {"test_audit_codebase.py", "audit_mocks_hardcoded.md", "README.txt", "requirements.txt", ".DS_Store", "debug_run.py"}
+EXTENSIONS = {".py", ".js", ".ts", ".tsx", ".html", ".css"}
+
+PATTERNS = [
+    (r"mock", "Mock Data/Functionality"),
+    (r"dummy", "Dummy Data"),
+    (r"hardcoded", "Hardcoded Item"),
+    (r"TODO", "TODO Item"),
+    (r"FIXME", "FIXME Item"),
+    (r"placeholder", "Placeholder"),
+]
+
+def scan_file(filepath):
+    findings = []
+    filename = os.path.basename(filepath)
+    is_html = filename.lower().endswith('.html')
+
+    try:
+        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+            lines = f.readlines()
+            for i, line in enumerate(lines):
+                for pattern, label in PATTERNS:
+                    # Special Case: 'placeholder' in HTML is usually a valid attribute, not a Todo
+                    if is_html and label == "Placeholder" and "placeholder=" in line:
+                        continue
+                    
+                    if re.search(pattern, line, re.IGNORECASE):
+                        # Skip if it's just the word being mentioned in this test file (handled by explicit exclusion, but good to be safe)
+                        findings.append({
+                            "file": filepath,
+                            "line": i + 1,
+                            "content": line.strip(),
+                            "type": label
+                        })
+    except Exception as e:
+        print(f"Error reading {filepath}: {e}")
+    return findings
+
+def test_audit_codebase_for_mocks_and_hardcoded_items():
+    """
+    Scans the codebase for mock data, hardcoded items, TODOs, etc.
+    Writes findings to audit_mocks_hardcoded.md.
+    Fails if any unexpected mock/hardcoded items are found in production code.
+    """
+    
+    all_findings = []
+    
+    for root, dirs, files in os.walk(SEARCH_ROOT):
+        # Filter directories
+        dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]
+        
+        for file in files:
+            if file in EXCLUDE_FILES:
+                continue
+            # Exclude strict test files (starting with test_) even if they are in root
+            if file.startswith("test_"):
+                continue
+            
+            if not any(file.endswith(ext) for ext in EXTENSIONS):
+                continue
+            
+            filepath = os.path.join(root, file)
+            all_findings.extend(scan_file(filepath))
+
+    # Write Report
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        f.write("# Audit Report: Mocks, Hardcoded Items, and TODOs\n\n")
+        f.write(f"Generated during test execution.\n\n")
+        
+        if not all_findings:
+            f.write("No issues found! Great job.\n")
+        else:
+            f.write(f"Found {len(all_findings)} items:\n\n")
+            # Group by file
+            files_dict = {}
+            for item in all_findings:
+                if item['file'] not in files_dict:
+                    files_dict[item['file']] = []
+                files_dict[item['file']].append(item)
+            
+            for filepath, items in files_dict.items():
+                relpath = os.path.relpath(filepath, SEARCH_ROOT)
+                f.write(f"### {relpath}\n")
+                for item in items:
+                    f.write(f"- **{item['type']}** (Line {item['line']}): `{item['content']}`\n")
+                f.write("\n")
+
+    # Assert success - Un-comment the assert below to force failure when items are found.
+    # The user asked to "address these errors every time we run the tests". 
+    # Failing ensures they are addressed (or acknowledged).
+    issue_count = len(all_findings)
+    if issue_count > 0:
+        pytest.fail(f"Found {issue_count} mock/hardcoded/todo items in codebase. See {OUTPUT_FILE} for details.")
+
+if __name__ == "__main__":
+    # Allow running this script directly
+    test_audit_codebase_for_mocks_and_hardcoded_items()

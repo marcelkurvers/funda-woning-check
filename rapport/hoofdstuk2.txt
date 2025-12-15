@@ -1,0 +1,50 @@
+Hoofdstuk 2 – Persoonlijke Eisen en Functionele Matchanalyse
+
+In dit hoofdstuk wordt de woning aan {adres} geëvalueerd ten opzichte van vooraf gedefinieerde persoonlijke eisen. Deze eisen zijn afgeleid uit functionele behoeften, levensfase, toekomstige gebruiksopties, en comfortwensen.
+
+Beoordelingssysteem:
+Elke categorie wordt ingedeeld in:
+• Voldoet volledig
+• Voldoet deels
+• Voldoet niet
+• Onbekend / nader onderzoek vereist
+
+2.1 Functionele indeling
+Criterium	Beoordeling	Opmerkingen
+Woonkamer ≥ 5x5 m met aparte TV-hoek	Voldoet deels	Grootte onbekend, indeling lijkt ruim, plattegrond vereist
+Moderne keuken, elektrisch, externe afzuiging	Voldoet deels	Modern ogend, afzuigingstype niet vermeld
+Ruimte voor eettafel 2,1 x 1 m (6 stoelen)	Voldoet deels	Afhankelijk van keukenopstelling
+Minimaal 3 slaapkamers	Voldoet volledig	3 slaapkamers aanwezig
+Slaapkamer op begane grond	Voldoet volledig	Slaapkamer op begane grond vermeld
+Walk-in closet	Onbekend	Niet gespecificeerd
+Badkamers op meerdere verdiepingen	Voldoet volledig	2 badkamers aanwezig
+Aparte toiletruimte	Voldoet volledig	Vermeld
+
+2.2 Technische en structurele kenmerken
+Criterium	Beoordeling	Opmerkingen
+Ethernetbekabeling / netwerkinfrastructuur	Voldoet niet	Niet vermeld, aannemelijk afwezig
+Moderne elektrische installatie	Voldoet deels	CV-ketel op gas, geen volledig elektrisch systeem
+Inpandige garage (voor 2 auto's mogelijk)	Voldoet deels	Garage aanwezig, capaciteit onbekend
+Mogelijkheid voor mancave of studioruimte	Voldoet volledig	Garage of schuur geschikt voor verbouwing
+Geluidsisolatie voor studiofunctie	Voldoet niet	Niet aanwezig, vereist aparte investering
+Instapklaar (geen verbouwingen vereist)	Voldoet niet	Diverse verbeteringen noodzakelijk
+
+2.3 Buitenruimte en extra wensen
+Criterium	Beoordeling	Opmerkingen
+Grote tuin met privacy	Voldoet volledig	Groot perceel met veel groen
+Geen hoeksituatie of inkijk	Voldoet volledig	Doodlopende straat, geen hoekligging
+Tuinverlichting en beregening	Voldoet niet	Niet aanwezig, grote investering nodig
+Buitenkeuken of aanleg daarvan mogelijk	Voldoet volledig	Ruimte beschikbaar, geen obstakels
+Zwemvijver of zwembad	Voldoet volledig	Zwembad met warmtepomp aanwezig
+Mogelijkheid voor schuur- of garageombouw	Voldoet volledig	Garage en bijgebouwen aanwezig
+Kelder of wijnkelder	Voldoet niet	Niet aanwezig of vermeld
+Rustige ligging nabij bosrand	Voldoet volledig	Grenst direct aan natuurgebied
+
+Tussenscore – Functionele Matchanalyse
+• Voldoet volledig: 10
+• Voldoet deels: 5
+• Voldoet niet: 5
+• Onbekend: 1
+
+Interpretatie:
+De woning voldoet op hoofdlijnen aan de belangrijkste persoonlijke eisen. Toch zijn er op technisch vlak (netwerk, afzuiging, elektrische installatie) én qua voorzieningen (tuininrichting, geluidsisolatie) meerdere verbeteringen nodig. Daarmee is deze woning geschikt, maar met aanzienlijke aanpassingskosten om het aan te laten sluiten op alle wensen.

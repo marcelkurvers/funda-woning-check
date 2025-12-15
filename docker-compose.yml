@@ -1,0 +1,13 @@
+version: "3.9"
+services:
+  app:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_DB=/data/app.db
+    volumes:
+      - appdata:/data
+      - ./backend:/app
+volumes:
+  appdata:

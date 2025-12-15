@@ -1,0 +1,95 @@
+Hoofdstuk 9 – Bodstrategie, Financiële haalbaarheid en Aanbeveling
+
+9.1 Bodadviesstructuur
+
+Samenvatting woninganalyse:
+Heiveld 17, Waalre biedt een unieke ligging aan de bosrand met veel privacy, een groot perceel en zwembad, maar vereist ingrijpende modernisering van de technische installaties en tuininrichting. De woning is ruim opgezet en functioneel goed in te delen, maar mist netwerkvoorzieningen, domotica en geluidsisolatie.
+
+Prijspositie en marktanalyse:
+De vraagprijs (€975.000) ligt 11,7% boven de WOZ-waarde (€1.119.000) en ongeveer 5% boven de geschatte marktwaarde (€1.187.500). Er is sprake van een prijsdaling van 16,4% sinds initiële plaatsing en de woning staat >150 dagen te koop. Dit creëert duidelijke onderhandelingsruimte.
+
+Verkoopgedrag verkoper:
+De verkoper heeft het object fors afgeprijsd en de strategie niet gewijzigd sinds plaatsing. Dit wijst op een zekere verkoopdruk, maar ook op een vastgestelde ondergrens. Profiel: marktvolger met matige flexibiliteit.
+
+TCO-positie en investeringsdruk:
+Over 10 jaar wordt een totale investeringsdruk van ca. €482.000 verwacht bovenop de aankoopprijs. Deze kosten zijn grotendeels noodzakelijk om te voldoen aan moderne woonstandaarden en persoonlijke eisen.
+
+Eindwaarde / waardeontwikkeling:
+De waardeontwikkeling hangt sterk af van modernisering. Potentiële waardestijging bij juiste investeringen: ca. 10–12% over 10 jaar. Zonder aanpassingen blijft de waarde onder druk.
+
+9.2 Bodadviescomponenten
+
+| Component                         | Waarde (EUR) | Onderbouwing                                                                 |
+|----------------------------------|--------------|------------------------------------------------------------------------------|
+| Marktwaarde woning               | 1.187.500    | Op basis van woningstats, fundadata en referentieobjecten                   |
+| Effect uitzicht zorgflat         | −25.000      | Structurele beperking exclusiviteit en privacy                              |
+| Noodzakelijke investeringen      | −140.000     | Warmtepomp, schilderwerk, netwerk, tuin, keuken, isolatie                   |
+| Technisch risico (bouwjaar '71)  | −25.000      | Geen funderingsrapport of bouwkundige garanties                             |
+| Verkoopdruk                      | −20.000      | Lange verkooptijd, grote prijsreductie zonder verkoop                       |
+
+Advies:
+• Openingsbod: €1.150.000
+• Slotbod (maximaal): €1.175.000
+
+9.3 Bodstrategie
+
+Voorbehouden:
+• Financiering
+• Verkoop eigen woning (met overbrugging)
+• Bouwkundige keuring
+
+Onderhandelingstactiek:
+• Direct verwijzen naar lange looptijd, investeringsdruk en marktanalyse
+• Uitzicht op zorgflat subtiel benoemen als structureel nadeel
+• Bied transparantie en snelle transactie bij akkoord op voorwaarden
+
+Concessies:
+• Kleine verhoging slotbod bij meeverkopen tuinonderhoudapparatuur of technische upgrades
+• Flexibele opleverdatum indien wens verkoper
+
+Risicoanalyse:
+• Zonder transparantie over zwembadkosten en technische staat is verdere verlaging noodzakelijk
+• Bij veel animo alsnog vasthouden aan bovengrens slotbod, tenzij keuring positief uitvalt
+
+9.4 Haalbaarheidsanalyse koper
+
+| Component                    | Waarde (EUR) |
+|-----------------------------|--------------|
+| Verwachte verkoopopbrengst  | 1.200.000    |
+| Eigen vermogen              | 250.000      |
+| Totaal beschikbaar kapitaal | 1.420.000    |
+
+Totale benodigde investering:
+• Aankoop: €1.175.000
+• Kosten koper en verbouwingen: €172.000
+• Totaal: €1.347.000
+
+Buffer:
+• Ruimte: ca. €73.000
+• Hypotheek niet vereist mits verkoop huidige woning slaagt
+
+9.5 KPI’s Hoofdstuk 9
+
+| KPI  | Naam                          | Waarde         | Interpretatie                                                 |
+|------|-------------------------------|----------------|----------------------------------------------------------------|
+| BCI  | Bod-Consistentie Index        | 98,3%          | Bod sluit nauw aan op marktwaarde en investeringsrisico        |
+| FDS  | Financiële Draagkracht Score  | 105%           | Totale kosten vallen ruim binnen budget inclusief buffer       |
+| RNS  | Risico-Nadeel Score           | Matig          | Technisch en uitzichtgerelateerd risico aanwezig               |
+| KRI  | Keuringsrisico Index          | Hoog           | Bouwjaar zonder keuring brengt onzekerheden met zich mee       |
+| BRI  | Buffer Ratio Index            | 5,4%           | Ruime marge beschikbaar bovenop totale investering             |
+
+9.6 Rapportoutput
+
+| Onderdeel                 | Samenvatting                                                             |
+|--------------------------|---------------------------------------------------------------------------|
+| Woninganalyse            | Sterk qua ligging en ruimte; zwak qua techniek en voorzieningen           |
+| Investeringssamenvatting | €140.000 directe verbeteringen, €31.000/jaar structurele lasten           |
+| Financieel advies        | Openingsbod €1.150.000, max €1.175.000; transactie is haalbaar zonder lening |
+
+9.7 Bronnen
+
+• Hoofdstukken 1 t/m 8
+• Persoonlijke eisenlijst
+• Marktdata (woningstats.nl, Funda)
+• Gemeente Waalre plannen en vergunningen
+• Energieverbruik en zwembadkosteninschattingen

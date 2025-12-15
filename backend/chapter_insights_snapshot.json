@@ -1,0 +1,558 @@
+{
+  "0": {
+    "title": "0. Executive Summary",
+    "metrics_count": 4,
+    "metrics_data": [
+      {
+        "id": "price_m2",
+        "label": "Vraagprijs per m²",
+        "value": "€ 5,172",
+        "icon": "pricetag",
+        "trend": "neutral",
+        "trend_text": "+8% vs markt"
+      },
+      {
+        "id": "energy",
+        "label": "Duurzaamheid",
+        "value": "Label A++",
+        "icon": "leaf",
+        "color": "orange"
+      },
+      {
+        "id": "investment",
+        "label": "Verw. Investering",
+        "value": "Geen direct",
+        "icon": "hammer",
+        "trend": "neutral"
+      },
+      {
+        "id": "return",
+        "label": "Verhuurpotentie",
+        "value": "€ 3,262",
+        "icon": "trending-up",
+        "trend": "up"
+      }
+    ],
+    "sidebar_count": 3,
+    "sidebar_data": [
+      {
+        "type": "advisor_score",
+        "title": "AI Aankoop Score",
+        "score": 80,
+        "content": "Score bepaald o.b.v. Marktconform, Label A++ en marktcourantheid."
+      },
+      {
+        "type": "advisor_card",
+        "title": "Strategisch Advies",
+        "style": "gradient",
+        "content": "Op basis van de analyse: <strong>Koopwaardig</strong>. Focus op de prijs-kwaliteit."
+      },
+      {
+        "type": "action_list",
+        "title": "Noodzakelijke Acties",
+        "items": [
+          "Onderhoudshistorie opvragen",
+          "Energielabel checken in register",
+          "Juridische erfdienstbaarheden controleren"
+        ]
+      }
+    ],
+    "main_data_summary": "1294 content blocks"
+  },
+  "1": {
+    "title": "1. Algemene Woningkenmerken",
+    "metrics_count": 4,
+    "metrics_data": [
+      {
+        "id": "living",
+        "label": "Woonoppervlakte",
+        "value": "145 m²",
+        "icon": "expand",
+        "color": "blue"
+      },
+      {
+        "id": "plot",
+        "label": "Perceeloppervlakte",
+        "value": "400 m²",
+        "icon": "image",
+        "color": "green"
+      },
+      {
+        "id": "volume",
+        "label": "Inhoud (est.)",
+        "value": "~435 m³",
+        "icon": "cube",
+        "trend": "neutral"
+      },
+      {
+        "id": "rooms",
+        "label": "Kamers (est.)",
+        "value": "5",
+        "icon": "bed"
+      }
+    ],
+    "sidebar_count": 2,
+    "sidebar_data": [
+      {
+        "type": "advisor_card",
+        "title": "Object Paspoort",
+        "content": "\n            <ul class=\"specs-list\">\n            <li><strong>Soort:</strong> Woonhuis</li>\n            <li><strong>Bouwjaar:</strong> 2015</li>\n            <li><strong>Isolatie:</strong> Dubbel glas (aanname)</li>\n            </ul>\n            "
+      },
+      {
+        "type": "advisor",
+        "title": "Makelaars Blik",
+        "content": "Een ruime woning met veel mogelijkheden. Controleer altijd de NEN2580 meetrapporten."
+      }
+    ],
+    "main_data_summary": "981 content blocks"
+  },
+  "2": {
+    "title": "2. Locatie & Omgeving",
+    "metrics_count": 4,
+    "metrics_data": [
+      {
+        "id": "shop",
+        "label": "Supermarkt",
+        "value": "5 min",
+        "icon": "cart",
+        "trend_text": "Lopen"
+      },
+      {
+        "id": "train",
+        "label": "Treinstation",
+        "value": "10 min",
+        "icon": "train",
+        "trend_text": "Fiets"
+      },
+      {
+        "id": "school",
+        "label": "Basisschool",
+        "value": "2 min",
+        "icon": "school",
+        "trend_text": "Lopen"
+      },
+      {
+        "id": "center",
+        "label": "Centrum",
+        "value": "15 min",
+        "icon": "business",
+        "trend_text": "Fiets"
+      }
+    ],
+    "sidebar_count": 1,
+    "sidebar_data": [
+      {
+        "type": "advisor_score",
+        "title": "Leefbaarheid",
+        "score": 82,
+        "content": "Score gebaseerd op voorzieningen en bereikbaarheid."
+      }
+    ],
+    "main_data_summary": "1324 content blocks"
+  },
+  "3": {
+    "title": "3. Bouwkundige Staat",
+    "metrics_count": 4,
+    "metrics_data": [
+      {
+        "id": "year",
+        "label": "Bouwjaar",
+        "value": "2015",
+        "icon": "calendar"
+      },
+      {
+        "id": "risk",
+        "label": "Risico Profiel",
+        "value": "Laag",
+        "icon": "alert",
+        "color": "green"
+      },
+      {
+        "id": "roof",
+        "label": "Dak",
+        "value": "Inspecteren",
+        "icon": "home",
+        "trend": "neutral"
+      },
+      {
+        "id": "foundation",
+        "label": "Fundering",
+        "value": "Onbekend",
+        "icon": "stats-chart"
+      }
+    ],
+    "sidebar_count": 1,
+    "sidebar_data": [
+      {
+        "type": "action_list",
+        "title": "Onderhoudsplanning",
+        "items": [
+          "Schilderwerk Buitencheck",
+          "CV Ketel Inspectie",
+          "Dakgoot reiniging"
+        ]
+      }
+    ],
+    "main_data_summary": "1184 content blocks"
+  },
+  "4": {
+    "title": "4. Energie & Duurzaamheid",
+    "metrics_count": 4,
+    "metrics_data": [
+      {
+        "id": "label",
+        "label": "Energielabel",
+        "value": "A++",
+        "icon": "leaf",
+        "color": "green"
+      },
+      {
+        "id": "solar",
+        "label": "Zonnepanelen",
+        "value": "Geschikt",
+        "icon": "sunny"
+      },
+      {
+        "id": "iso",
+        "label": "Isolatie",
+        "value": "Check",
+        "icon": "thermometer"
+      },
+      {
+        "id": "heat",
+        "label": "Verwarming",
+        "value": "CV-Ketel",
+        "icon": "flame"
+      }
+    ],
+    "sidebar_count": 1,
+    "sidebar_data": [
+      {
+        "type": "advisor",
+        "title": "Financiering",
+        "content": "Gebruik het Warmtefonds of extra hypotheekruimte voor verduurzaming."
+      }
+    ],
+    "main_data_summary": "1049 content blocks"
+  },
+  "5": {
+    "title": "5. Indeling & Ruimtegebruik",
+    "metrics_count": 4,
+    "metrics_data": [
+      {
+        "id": "rooms",
+        "label": "Totaal Kamers",
+        "value": "5",
+        "icon": "grid"
+      },
+      {
+        "id": "bed",
+        "label": "Slaapkamers (est)",
+        "value": "4",
+        "icon": "bed"
+      },
+      {
+        "id": "living",
+        "label": "Leefruimte",
+        "value": "Ruim",
+        "icon": "resize",
+        "color": "blue"
+      },
+      {
+        "id": "bath",
+        "label": "Sanitair",
+        "value": "1+",
+        "icon": "water"
+      }
+    ],
+    "sidebar_count": 1,
+    "sidebar_data": [
+      {
+        "type": "advisor_card",
+        "title": "Flexibiliteit",
+        "content": "Is de indeling aanpasbaar? Niet-dragende muren bieden opties."
+      }
+    ],
+    "main_data_summary": "1168 content blocks"
+  },
+  "6": {
+    "title": "6. Onderhoud & Afwerking",
+    "metrics_count": 4,
+    "metrics_data": [
+      {
+        "id": "paint",
+        "label": "Schilderwerk",
+        "value": "Check",
+        "icon": "brush"
+      },
+      {
+        "id": "floor",
+        "label": "Vloeren",
+        "value": "Staat?",
+        "icon": "albums"
+      },
+      {
+        "id": "kitchen",
+        "label": "Keuken",
+        "value": "Functioneel",
+        "icon": "restaurant"
+      },
+      {
+        "id": "bath",
+        "label": "Sanitair",
+        "value": "Basis",
+        "icon": "water"
+      }
+    ],
+    "sidebar_count": 1,
+    "sidebar_data": [
+      {
+        "type": "advisor",
+        "title": "Checklist",
+        "content": "Kijk naar vochtplekken en scheurvorming bij bezichtiging."
+      }
+    ],
+    "main_data_summary": "1102 content blocks"
+  },
+  "7": {
+    "title": "7. Tuin & Buitenruimte",
+    "metrics_count": 4,
+    "metrics_data": [
+      {
+        "id": "size",
+        "label": "Tuinoppervlak",
+        "value": "~327 m²",
+        "icon": "leaf",
+        "color": "green"
+      },
+      {
+        "id": "sun",
+        "label": "Zonligging",
+        "value": "Checken",
+        "icon": "sunny"
+      },
+      {
+        "id": "privacy",
+        "label": "Privacy",
+        "value": "Gemiddeld",
+        "icon": "eye-off"
+      },
+      {
+        "id": "shed",
+        "label": "Berging",
+        "value": "Aanwezig?",
+        "icon": "key"
+      }
+    ],
+    "sidebar_count": 1,
+    "sidebar_data": [
+      {
+        "type": "advisor_card",
+        "title": "Tuinpotentie",
+        "content": "Vergunningsvrij uitbouwen vaak mogelijk tot 4 meter."
+      }
+    ],
+    "main_data_summary": "865 content blocks"
+  },
+  "8": {
+    "title": "8. Parkeren & Bereikbaarheid",
+    "metrics_count": 4,
+    "metrics_data": [
+      {
+        "id": "parking",
+        "label": "Parkeren",
+        "value": "Oprit?",
+        "icon": "car"
+      },
+      {
+        "id": "ev",
+        "label": "Laadpaal",
+        "value": "Mogelijk",
+        "icon": "flash"
+      },
+      {
+        "id": "highway",
+        "label": "Snelweg",
+        "value": "< 10 min",
+        "icon": "speedometer"
+      },
+      {
+        "id": "public",
+        "label": "OV Halte",
+        "value": "Nabij",
+        "icon": "bus"
+      }
+    ],
+    "sidebar_count": 1,
+    "sidebar_data": [
+      {
+        "type": "advisor",
+        "title": "Toekomst",
+        "content": "Elektrisch rijden neemt toe. Een eigen oprit is goud waard."
+      }
+    ],
+    "main_data_summary": "808 content blocks"
+  },
+  "9": {
+    "title": "9. Juridische Aspecten",
+    "metrics_count": 4,
+    "metrics_data": [
+      {
+        "id": "ground",
+        "label": "Grond",
+        "value": "Eigen grond?",
+        "icon": "map",
+        "trend": "neutral"
+      },
+      {
+        "id": "vve",
+        "label": "VvE",
+        "value": "N.v.t.",
+        "icon": "people"
+      },
+      {
+        "id": "zoning",
+        "label": "Bestemming",
+        "value": "Wonen",
+        "icon": "home"
+      },
+      {
+        "id": "permit",
+        "label": "Vergunningen",
+        "value": "Checken",
+        "icon": "document"
+      }
+    ],
+    "sidebar_count": 1,
+    "sidebar_data": [
+      {
+        "type": "advisor_card",
+        "title": "Notaris",
+        "content": "Vraag concept koopakte tijdig op voor controle."
+      }
+    ],
+    "main_data_summary": "997 content blocks"
+  },
+  "10": {
+    "title": "10. Financiële Analyse",
+    "metrics_count": 4,
+    "metrics_data": [
+      {
+        "id": "price",
+        "label": "Vraagprijs",
+        "value": "€ 750,000",
+        "icon": "pricetag"
+      },
+      {
+        "id": "kk",
+        "label": "Kosten Koper (est.)",
+        "value": "€ 27,750",
+        "icon": "wallet",
+        "color": "orange"
+      },
+      {
+        "id": "total",
+        "label": "Totaal Benodigd",
+        "value": "€ 777,750",
+        "icon": "cash"
+      },
+      {
+        "id": "monthly",
+        "label": "Maandlast (ind.)",
+        "value": "€ 2,592",
+        "icon": "calendar"
+      }
+    ],
+    "sidebar_count": 1,
+    "sidebar_data": [
+      {
+        "type": "advisor",
+        "title": "Biedingsadvies",
+        "content": "Overweeg een bod rond € 712,500.",
+        "style": "gradient"
+      }
+    ],
+    "main_data_summary": "910 content blocks"
+  },
+  "11": {
+    "title": "11. Marktpositie",
+    "metrics_count": 4,
+    "metrics_data": [
+      {
+        "id": "m2",
+        "label": "Vraagprijs/m²",
+        "value": "€ 5172",
+        "icon": "pricetag"
+      },
+      {
+        "id": "avg",
+        "label": "Gem. in buurt",
+        "value": "€ 4500",
+        "icon": "stats-chart"
+      },
+      {
+        "id": "days",
+        "label": "Looptijd",
+        "value": "Start",
+        "icon": "time"
+      },
+      {
+        "id": "comp",
+        "label": "Concurrentie",
+        "value": "Gemiddeld",
+        "icon": "people"
+      }
+    ],
+    "sidebar_count": 1,
+    "sidebar_data": [
+      {
+        "type": "advisor_score",
+        "title": "Verkoopbaarheid",
+        "score": 75
+      }
+    ],
+    "main_data_summary": "1022 content blocks"
+  },
+  "12": {
+    "title": "12. Advies & Conclusie",
+    "metrics_count": 4,
+    "metrics_data": [
+      {
+        "id": "final",
+        "label": "Totaalscore",
+        "value": "7.5/10",
+        "icon": "trophy",
+        "color": "blue"
+      },
+      {
+        "id": "risk",
+        "label": "Risico",
+        "value": "Laag",
+        "icon": "shield-checkmark",
+        "color": "green"
+      },
+      {
+        "id": "action",
+        "label": "Actie",
+        "value": "Bezichtig",
+        "icon": "walk"
+      },
+      {
+        "id": "bid",
+        "label": "Bieding",
+        "value": "Advies",
+        "icon": "cash"
+      }
+    ],
+    "sidebar_count": 1,
+    "sidebar_data": [
+      {
+        "type": "advisor_card",
+        "title": "Vervolgstappen",
+        "style": "gradient",
+        "content": "1. Bezichtigen 2. Documenten 3. Bieden"
+      }
+    ],
+    "main_data_summary": "1084 content blocks"
+  }
+}

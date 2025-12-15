@@ -1,0 +1,26 @@
+# [Indeling & Ruimtegebruik]
+
+**Betreft:** [Adres]
+**Datum:** 2024
+
+### Inleiding
+Dit hoofdstuk analyseert de indeling & ruimtegebruik van het object aan de [Adres]. We kijken specifiek naar de impact hiervan op de marktwaarde en woongenot.
+
+### Analyse
+Gegevens uit de advertentie tonen de volgende kernpunten:
+*   **Vraagprijs:** [Prijs]
+*   **Woonoppervlakte:** [Oppervlakte]
+*   **Perceel:** [Perceel]
+*   **Bouwjaar:** [Bouwjaar]
+
+[IF Label matches A]
+**Duurzaamheids-check:** De woning heeft een uitstekend energielabel ([Label]). Dit suggereert recente isolatiemaatregelen en lagere maandlasten.
+[ELSE]
+**Duurzaamheids-check:** Met energielabel [Label] is er waarschijnlijk ruimte voor verduurzaming.
+[ENDIF]
+
+### Conclusie voor indeling & ruimtegebruik
+Op basis van de beschikbare data beoordelen wij dit aspect als **[IF Price > 0]marktconform[ELSE]nader te onderzoeken[ENDIF]**.
+
+---
+*Gegenereerd door AI Woning Rapport voor [Adres]*

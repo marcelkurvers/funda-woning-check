@@ -1,0 +1,58 @@
+Hoofdstuk 6 – Kostenoverzicht & Total Cost of Ownership (TCO)
+
+6.1 Eenmalige Aankoopkosten
+Post                                Bedrag (€)   Grondslag
+Overdrachtsbelasting (2%)          25.000        Wettelijk tarief over {vraagprijs}
+Notariskosten + inschrijving       1.750         Gemiddeld bij koopprijs > €1M
+Hypotheekadvies + afsluitkosten    2.500         Marktconform
+Taxatiekosten                      700           Voor hypotheekverstrekking
+Bouwkundige keuring                600           Aanbevolen bij bouwjaar {bouwjaar}
+Kosten bankgarantie                1.250         1% van waarborgsom (10%)
+Kadasterkosten                     400           Standaard overdracht
+Subtotaal aankoopkosten:           €32.200
+
+6.2 Eenmalige Verbouwing en Verbeteringen
+Post                                Status               Bedrag (€)   Opmerking
+Keukenrenovatie                     Verbetering vereist  25.000       Afzuiging niet extern, indeling beperkt
+Badkamers (2x)                      Voldoende            0            Geen actie nodig
+Warmtepomp voor woning              Ontbreekt            20.000       Alleen zwembad op warmtepomp
+Ethernetbekabeling door het huis   Ontbreekt            3.000        Niet aanwezig
+Schilderwerk binnen & buiten       Verbetering vereist  12.000       Geen recente werkzaamheden vermeld
+Tuinverlichting + beregening       Ontbreekt            20.000       Groot perceel
+Buitenkeuken                        Ontbreekt            15.000       Niet aanwezig
+Geluidsisolatie mancave/studio     Ontbreekt            15.000       Voor muziekinrichting nodig
+Garage ombouw tot bruikbare ruimte Verbetering vereist  30.000       Voor mancave geschikt
+Extra zonnepanelen                 Niet nodig           0            38 panelen al aanwezig
+Subtotaal verbouwing/verbetering:  €140.000
+
+6.3 Jaarlijkse Onderhouds- en Leefkosten
+
+Structureel jaarlijks onderhoud:
+Post                                Bedrag (€)   Grondslag
+Groot woningonderhoud              12.500        1% van WOZ-waarde (€1.119.000)
+Tuinonderhoud (uitbesteed)         3.500         Voor 2.771 m² perceel
+Zwembadonderhoud                   3.000         Energie, reiniging, onderhoud
+Kleine herstellingen/schoonmaak   2.000         Algemeen
+
+Vaste lasten en energie:
+Post                                Bedrag (€)   Grondslag
+Energie (warmtepomp + zwembad)     6.000         Op basis van 12.000–16.000 kWh per jaar
+Water                               500           Gemiddeld gezin met tuingebruik
+Internet + TV                       800           Glasvezel en tv-abonnement
+Gemeentelijke belastingen          2.000         Waalre categorie vrijstaande woning
+Verzekeringen (opstal/inboedel)    700           Villa, waardevolle inboedel
+Subtotaal jaarlijks onderhoud + lasten: €31.000 per jaar
+
+6.4 Total Cost of Ownership (10 jaar)
+
+Component                           Bedrag (€)
+Eenmalige aankoopkosten             32.200
+Verbouwing & verbetering            140.000
+Jaarlijkse kosten (10 jaar)         310.000
+Totale 10-jaars TCO:                €482.200
+
+Totale investering inclusief aankoop:
+€1.250.000 (koopprijs) + €482.200 (TCO) = €1.732.200
+
+Conclusie:
+De woning vereist een aanzienlijke investering in modernisering en aanpassing aan persoonlijke wensen. Met een realistische aankoopprijs van €1.150.000–€1.175.000 en een TCO van ruim €480.000 over 10 jaar, komt de totale kostenplaat op circa €1,65–1,70 miljoen. Dat overschrijdt je ideale budget, maar zou acceptabel kunnen zijn indien de verkoper bereid is tot prijsverlaging.

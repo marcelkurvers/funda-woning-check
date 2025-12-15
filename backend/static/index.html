@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Woning Rapport - Premium</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <style>
+    /* CRITICAL DASHBOARD STYLES (INJECTED) */
+    .dash-wrapper {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding-bottom: 4rem;
+    }
+
+    .dash-hero {
+      background: white;
+      padding: 3rem;
+      border-radius: 24px;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e2e8f0;
+      text-align: center;
+      background-image: radial-gradient(circle at top right, #f8fafc, white);
+    }
+
+    .dash-hero-title {
+      font-size: 3.5rem;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.1;
+      margin: 0 0 1rem 0;
+      letter-spacing: -0.03em;
+    }
+
+    .dash-hero-badge {
+      display: inline-block;
+      background: #eff6ff;
+      color: #3b82f6;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .dash-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr) !important;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 1024px) {
+      .dash-metrics-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+    }
+
+    .dash-metric-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 20px;
+      border: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+    }
+
+    .dash-metric-icon {
+      width: 56px;
+      height: 56px;
+      background: #f8fafc;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      color: #64748b;
+      flex-shrink: 0;
+    }
+
+    .dash-metric-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .dash-metric-label {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .dash-content-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2rem;
+    }
+
+    .dash-main-card {
+      background: white;
+      padding: 3rem;
+      border-radius: 24px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .dash-sidebar-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 20px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 1.5rem;
+    }
+
+    .dash-sidebar-card.gradient-card {
+      background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+      color: white;
+      border: none;
+    }
+
+    .analysis-item {
+      background: #f8fafc;
+      padding: 1.5rem;
+      border-radius: 16px;
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .analysis-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .analysis-icon.valid {
+      color: #10b981;
+    }
+
+    .analysis-icon.warning {
+      color: #f59e0b;
+    }
+  </style>
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+  <!-- === START SCREEN === -->
+  <div id="start-screen" class="hero-container animate-fade">
+    <div class="hero-content">
+      <a href="/preferences"
+        style="position: absolute; top: 1.5rem; right: 1.5rem; color: #64748b; font-size: 1.5rem; transition: color 0.2s;"
+        title="Voorkeuren">
+        <ion-icon name="settings-outline"></ion-icon>
+      </a>
+      <div style="margin-bottom: 1.5rem;">
+        <span
+          style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">NIEUW:
+          AI ANALYSE 2.0</span>
+      </div>
+      <h1 class="hero-title">Vastgoed Inzicht.<br><span style="color: #475569;">Binnen 10 seconden.</span></h1>
+      <p style="margin-bottom: 2.5rem; color: #64748b; font-size: 1.1rem; line-height: 1.6;">
+        Upload een Funda URL en ontvang direct een compleet waarderapport,
+        inclusief <strong style="color: #0f172a;">onderhandelingsstrategie</strong> en <strong
+          style="color: #0f172a;">verbouwpotentieel</strong>.
+      </p>
+
+      <div class="input-group">
+        <input type="text" id="fc-url" class="hero-input" placeholder="https://www.funda.nl/koop/..." />
+        <button id="btn-start" class="hero-btn">Start Analyse</button>
+      </div>
+
+      <div style="margin-top: 1rem;">
+        <a href="#" id="toggle-paste" onclick="togglePasteArea(event)"
+          style="font-size: 0.9rem; color: #64748b; text-decoration: none; border-bottom: 1px dashed #94a3b8;">Of
+          gebruik broncode (handmatig)</a>
+      </div>
+
+      <!-- Paste Fallback -->
+      <div id="paste-area" class="hidden glass-panel"
+        style="margin-top: 2rem; padding: 1.5rem; border-radius: 12px; text-align: left;">
+        <p
+          style="font-size: 0.9rem; color: #ef4444; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+          <ion-icon name="warning-outline"></ion-icon> Automatische toegang geblokkeerd? Plak hier de broncode (Ctrl+U):
+        </p>
+        <textarea id="fc-paste" rows="6" class="hero-input"
+          style="font-size: 0.8rem; font-family: monospace; background: white;"
+          placeholder="<html>...</html>"></textarea>
+        <button id="btn-paste-submit" class="hero-btn" style="margin-top: 1rem; background: #334155;">Verwerk
+          Broncode</button>
+      </div>
+    </div>
+
+    <!-- Trust badge or features -->
+    <div style="margin-top: 3rem; display: flex; gap: 2rem; color: #64748b; font-size: 0.9rem;">
+      <div class="flex items-center gap-2"><ion-icon name="checkmark-circle" style="color:#10b981;"></ion-icon>
+        Marktwaarde Check</div>
+      <div class="flex items-center gap-2"><ion-icon name="checkmark-circle" style="color:#10b981;"></ion-icon>
+        Bouwkundige Disclaimer</div>
+      <div class="flex items-center gap-2"><ion-icon name="checkmark-circle" style="color:#10b981;"></ion-icon> PDF
+        Export</div>
+    </div>
+  </div>
+
+  <!-- === DASHBOARD SCREEN === -->
+  <div id="dashboard-screen" class="dashboard-layout hidden">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <ion-icon name="home" style="color: #3b82f6;"></ion-icon> AI Woning
+      </div>
+
+      <div style="margin-bottom: 2rem;">
+        <div
+          style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 1rem;">
+          Rapport Secties</div>
+        <nav id="chapter-nav">
+          <!-- Nav items injected here -->
+        </nav>
+      </div>
+
+      <div style="margin-top: auto;">
+        <button id="btn-download-pdf" class="hero-btn"
+          style="background: white; color: #0f172a; border: 1px solid #e2e8f0; margin-bottom: 1rem;">
+          <ion-icon name="document-text-outline"></ion-icon> PDF Downloaden
+        </button>
+        <button class="hero-btn" onclick="location.reload()" style="background: #3b82f6;">
+          <ion-icon name="add-circle-outline"></ion-icon> Nieuwe Analyse
+        </button>
+        <a href="/preferences" class="hero-btn"
+          style="background: transparent; border: 1px solid #cbd5e1; color: #64748b; margin-top: 0.5rem; text-align: center; text-decoration: none; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
+          <ion-icon name="settings-outline"></ion-icon> Voorkeuren
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header-bar">
+        <div>
+          <div style="font-size: 0.9rem; color: #64748b; margin-bottom: 0.25rem;">Rapport voor object:</div>
+          <div class="prop-address" id="d-address">Laden...</div>
+        </div>
+        <div class="prop-price" id="d-price">...</div>
+      </header>
+
+      <!-- AI Advisor Panel -->
+      <div id="advisor-area"></div>
+
+      <!-- KPI Widgets -->
+      <div class="kpi-grid" id="kpi-area"></div>
+
+      <!-- Report Content -->
+      <div id="report-content">
+        <div class="chapter-block">
+          <h2 class="chapter-title">Rapport wordt gegenereerd...</h2>
+          <div class="flex items-center gap-4">
+            <div class="spinner"></div>
+            <p>Onze AI analyseert momenteel 12 datapunten...</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Global function to ensure access
+    function togglePasteArea(e) {
+      if (e) e.preventDefault();
+      const pasteArea = document.getElementById('paste-area');
+      if (pasteArea) pasteArea.classList.toggle('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+      let currentRunId = null;
+      let cachedData = null;
+
+      // Removed duplicate listener for togglePaste to avoid confusion
+
+      const btnDownloadPdf = document.getElementById('btn-download-pdf');
+      if (btnDownloadPdf) {
+        btnDownloadPdf.addEventListener('click', () => {
+          if (!currentRunId) return;
+          window.open(`/runs/${currentRunId}/pdf`, '_blank');
+        });
+      }
+
+      async function createRun(url) {
+        const res = await fetch('/runs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ funda_url: url })
+        });
+        return await res.json();
+      }
+
+      const btnStart = document.getElementById('btn-start');
+      if (btnStart) {
+        btnStart.addEventListener('click', async () => {
+          const urlInput = document.getElementById('fc-url');
+          const url = urlInput ? urlInput.value : "";
+
+          if (!url) return alert("Voer eerst een URL in.");
+
+          btnStart.innerHTML = "<ion-icon name='sync-outline' class='animate-spin'></ion-icon> Bezig...";
+          btnStart.disabled = true;
+
+          try {
+            const data = await createRun(url);
+            currentRunId = data.run_id;
+            await fetch(`/runs/${currentRunId}/start`, { method: 'POST' });
+            pollStatus();
+          } catch (e) {
+            alert("Er ging iets mis: " + e.message);
+            btnStart.innerText = "Start Analyse";
+            btnStart.disabled = false;
+          }
+        });
+      }
+
+      const btnPasteSubmit = document.getElementById('btn-paste-submit');
+      if (btnPasteSubmit) {
+        btnPasteSubmit.addEventListener('click', async () => {
+          const pasteInput = document.getElementById('fc-paste');
+          const html = pasteInput ? pasteInput.value : "";
+
+          if (!html) return alert("Plak eerst de HTML.");
+
+          btnPasteSubmit.innerText = "Verwerken...";
+          btnPasteSubmit.disabled = true;
+
+          try {
+            if (!currentRunId) {
+              const data = await createRun("manual-paste");
+              currentRunId = data.run_id;
+            }
+
+            const res = await fetch(`/runs/${currentRunId}/paste`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ funda_html: html })
+            });
+            const d = await res.json();
+
+            if (d.ok) {
+              showDashboard();
+              cachedData = d;
+              renderDashboard(d); // Now robust against missing elements
+            } else {
+              alert("Fout: " + (d.error || d.detail || JSON.stringify(d)));
+              btnPasteSubmit.innerText = "Verwerk Broncode";
+              btnPasteSubmit.disabled = false;
+            }
+          } catch (e) {
+            console.error(e);
+            alert("Systeemfout: " + e.message);
+            btnPasteSubmit.innerText = "Verwerk Broncode";
+            btnPasteSubmit.disabled = false;
+          }
+        });
+      }
+
+      async function pollStatus() {
+        const interval = setInterval(async () => {
+          try {
+            if (!currentRunId) return;
+            const res = await fetch(`/runs/${currentRunId}/report`);
+            const data = await res.json();
+
+            // Fallback Logic
+            const pasteArea = document.getElementById('paste-area');
+            const btnStart = document.getElementById('btn-start');
+            if (data.property_core && data.property_core.scrape_error && pasteArea && pasteArea.classList.contains('hidden')) {
+              // Only show if we haven't found data yet
+              if (!data.kpis || Object.keys(data.kpis).length === 0) {
+                pasteArea.classList.remove('hidden');
+                if (btnStart) btnStart.innerHTML = "<ion-icon name='alert-circle-outline'></ion-icon> Mislukt";
+                clearInterval(interval);
+                return;
+              }
+            }
+
+            if (data.kpis && Object.keys(data.kpis).length > 0) {
+              clearInterval(interval);
+              cachedData = data;
+              showDashboard();
+              renderDashboard(data);
+            }
+          } catch (e) { console.error("Poll error", e); }
+        }, 1000);
+      }
+
+      function showDashboard() {
+        const startScreen = document.getElementById('start-screen');
+        const dashboardScreen = document.getElementById('dashboard-screen');
+        if (startScreen) startScreen.classList.add('hidden');
+        if (dashboardScreen) dashboardScreen.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // Lock body scroll
+      }
+
+      function renderDashboard(data) {
+        if (!data) return;
+
+        // Address
+        const dAddress = document.getElementById('d-address');
+        const dPrice = document.getElementById('d-price');
+        if (dAddress) dAddress.innerText = data.property_core.address || "Adres onbekend";
+        if (dPrice) dPrice.innerText = data.property_core.asking_price_eur || "Prijs op aanvraag";
+
+        // KPIs
+        const kpiArea = document.getElementById('kpi-area');
+        if (kpiArea) {
+          kpiArea.innerHTML = '';
+          if (data.kpis && data.kpis.dashboard_cards) {
+            data.kpis.dashboard_cards.forEach((card, idx) => {
+              const iconMap = {
+                'fit': 'heart-circle',
+                'completeness': 'pie-chart',
+                'value': 'pricetag',
+                'energy': 'leaf'
+              };
+              const icon = iconMap[card.id] || 'analytics';
+              const delay = idx * 0.1;
+
+              kpiArea.innerHTML += `
+      <div class="kpi-card animate-fade" style="animation-delay: ${delay}s">
+        <div class="flex items-center gap-2 mb-2">
+          <ion-icon name="${icon}" style="color: #64748b; font-size: 1.2rem;"></ion-icon>
+          <div class="kpi-title">${card.title}</div>
+        </div>
+        <div class="kpi-value trend-${card.trend}">${card.value}</div>
+        <div class="kpi-desc">${card.desc}</div>
+      </div>
+      `;
+            });
+          }
+        }
+
+        // Advisor
+        const advArea = document.getElementById('advisor-area');
+        if (advArea) {
+          advArea.innerHTML = '';
+          if (data.kpis && data.kpis.advisor_feedback) {
+            const panel = document.createElement('div');
+            panel.className = 'advisor-panel animate-fade';
+            panel.style.animationDelay = '0.4s';
+
+            // Premium Header
+            panel.innerHTML = `
+      <div class="flex items-center gap-3 mb-4 border-b border-white/10 pb-3">
+        <div class="p-2 bg-yellow-500/20 rounded-lg">
+          <ion-icon name="sparkles" style="color:#fbbf24; font-size: 1.2rem"></ion-icon>
+        </div>
+        <div>
+          <h3 style="margin:0; font-size: 1.1rem; font-weight: 600;">AI Woongenot Adviseur</h3>
+          <div style="font-size: 0.8rem; opacity: 0.8;">Gebaseerd op ${data.chapters ? Object.keys(data.chapters).length : 0} analysepunten
+          </div>
+        </div>
+      </div>
+      `;
+
+            data.kpis.advisor_feedback.forEach(msg => {
+              const color = msg.type === 'warning' ? '#fbbf24' : (msg.type === 'critical' ? '#f87171' : '#34d399');
+
+              panel.innerHTML += `
+      <div class="advisor-msg" style="border-left: 3px solid ${color}; background: rgba(255,255,255,0.05);">
+        <div class="font-bold flex items-center gap-2 mb-1" style="color: ${color}">
+          ${msg.title}
+        </div>
+        <div style="opacity: 0.9; line-height: 1.5;">${msg.message}</div>
+      </div>`;
+            });
+            advArea.appendChild(panel);
+          }
+        }
+
+        // Chapters Render - TABBED INTERFACE
+        const nav = document.getElementById('chapter-nav');
+        const content = document.getElementById('report-content');
+        if (nav && content) {
+          nav.innerHTML = '';
+          content.innerHTML = ''; // Clear "Loading..."
+
+          if (!data.chapters) return;
+
+          // 1. Sort chapters 0..12 explicitly
+          const sortedKeys = Object.keys(data.chapters).sort((a, b) => parseInt(a) - parseInt(b));
+
+          if (sortedKeys.length === 0) {
+            content.innerHTML = `<div class="p-8 text-center text-gray-500">Geen hoofdstukken gegenereerd.</div>`;
+            return;
+          }
+
+          // 2. Build DOM
+          sortedKeys.forEach((key, idx) => {
+            const ch = data.chapters[key];
+
+            // A. Nav Item
+            const btn = document.createElement('div');
+            btn.className = `nav-item ${idx === 0 ? 'active' : ''}`;
+            btn.dataset.target = `tab-${key}`;
+
+            // Special styling for Resume (Chapter 0)
+            if (parseInt(key) === 0) {
+              btn.innerHTML = `
+                  <div class="nav-number" style="background:var(--primary-dark); color:white;"><ion-icon name="stats-chart"></ion-icon></div>
+                  <span class="nav-label" style="font-weight:700;">Samenvatting</span>
+                  <ion-icon name="chevron-forward" class="nav-arrow"></ion-icon>
+                 `;
+            } else {
+              btn.innerHTML = `
+                  <span class="nav-number">${key}</span>
+                  <span class="nav-label">${ch.title.replace(/^\d+\.\s*/, '')}</span>
+                  <ion-icon name="chevron-forward" class="nav-arrow"></ion-icon>
+                  `;
+            }
+
+            btn.onclick = () => switchTab(key);
+            nav.appendChild(btn);
+
+            // B. Content Tab (All hidden except first)
+            const tab = document.createElement('div');
+            // Ensure first item is active, others hidden
+            tab.className = `chapter-tab animate-fade ${idx === 0 ? 'active' : 'hidden'}`;
+            tab.id = `tab-${key}`;
+
+            if (parseInt(key) === 0) {
+              // Page 0 Treatment
+              // Hide generic header bar for this specific page if desired, or just custom logic
+            }
+
+            // Modern Grid Layout
+            // Modern Grid Layout
+            if (ch.grid_layout) {
+
+              // --- SPECIALE LAYOUT VOOR HOOFDSTUK 0 (EXECUTIVE SUMMARY) ---
+              if (parseInt(key) === 0 && ch.grid_layout.layout_type === 'modern_dashboard') {
+                const d = ch.grid_layout;
+
+                // 1. Hero Section
+                const heroHtml = `
+                    <div class="dash-hero">
+                        <div class="dash-hero-content">
+                            <div class="dash-hero-badge">${d.hero.status}</div>
+                            <h1 class="dash-hero-title">${d.hero.address}</h1>
+                            <div class="dash-hero-subtitle">${d.hero.price} <span style="opacity:0.6; margin:0 0.5rem;">•</span> ${d.hero.labels.join('<span style="opacity:0.6; margin:0 0.5rem;">•</span>')}</div>
+                        </div>
+                    </div>`;
+
+                // 2. Metrics Row
+                let metricsHtml = '';
+                (d.metrics || []).forEach(m => {
+                  const colorClass = m.color === 'green' ? 'text-green-600' : (m.color === 'orange' ? 'text-orange-500' : 'text-blue-600');
+                  metricsHtml += `
+                        <div class="dash-metric-card">
+                            <div class="dash-metric-icon"><ion-icon name="${m.icon}"></ion-icon></div>
+                            <div>
+                                <div class="dash-metric-label">${m.label}</div>
+                                <div class="dash-metric-value ${colorClass}">${m.value}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                // 3. Main Text
+                const mainHtml = `
+                    <div class="dash-main-card">
+                        <h3 class="dash-section-title">${d.main.title}</h3>
+                        ${d.main.content}
+                    </div>
+                 `;
+
+                // 4. Sidebar Content
+                let sidebarHtml = '';
+                (d.sidebar || []).forEach(item => {
+                  if (item.type === 'advisor_score') {
+                    sidebarHtml += `
+                            <div class="dash-sidebar-card score-card">
+                                <div class="flex justify-between items-center mb-2">
+                                    <div class="font-bold text-slate-700">${item.title}</div>
+                                    <div class="dash-score-badge">${item.score}%</div>
+                                </div>
+                                <div class="text-sm text-slate-500">${item.content}</div>
+                                <div class="dash-progress-bar"><div style="width: ${item.score}%"></div></div>
+                            </div>`;
+                  } else if (item.type === 'advisor_card') {
+                    sidebarHtml += `
+                            <div class="dash-sidebar-card gradient-card">
+                                <h4><ion-icon name="sparkles"></ion-icon> ${item.title}</h4>
+                                <div class="content">${item.content}</div>
+                            </div>`;
+                  } else if (item.type === 'action_list') {
+                    const listItems = item.items.map(i => `<li><ion-icon name="checkbox-outline"></ion-icon> ${i}</li>`).join('');
+                    sidebarHtml += `
+                            <div class="dash-sidebar-card">
+                                <h4 class="mb-3 font-bold text-slate-700">${item.title}</h4>
+                                <ul class="dash-action-list">
+                                    ${listItems}
+                                </ul>
+                            </div>`;
+                  }
+                });
+
+                tab.innerHTML = `
+                   <div class="dash-wrapper">
+                       ${heroHtml}
+                       
+                       <div class="dash-metrics-grid">
+                           ${metricsHtml}
+                       </div>
+                       
+                       <div class="dash-content-grid">
+                           <div class="dash-col-main">
+                               ${mainHtml}
+                           </div>
+                           <div class="dash-col-side">
+                               ${sidebarHtml}
+                           </div>
+                       </div>
+                   </div>
+                 `;
+
+              } else if (parseInt(key) === 0) {
+                // Fallback for old cache (optional, but good for safety)
+                tab.innerHTML = "<div style='padding:2rem'>Reload required for new design.</div>";
+              } else {
+                // --- STANDAARD LAYOUT (HOOFDSTUK 1-12) ---
+                let leftHtml = '';
+                (ch.grid_layout.left || []).forEach(item => {
+                  if (item.type === 'info') {
+                    leftHtml += `
+                              <div class="info-card">
+                                  <div class="info-label">${item.label}</div>
+                                  <div class="info-value">${item.value || '-'}</div>
+                              </div>`;
+                  } else if (item.type === 'stat_card') {
+                    const arrow = item.trend === 'up' ? '▲' : (item.trend === 'down' ? '▼' : '●');
+                    const color = item.trend === 'up' ? 'trend-up' : (item.trend === 'down' ? 'trend-down' : 'trend-neutral');
+                    leftHtml += `
+                              <div class="stat-card">
+                                  <div class="label">${item.label}</div>
+                                  <div class="value">${item.value || '-'}</div>
+                                  <div class="${color}" style="display:flex; gap:0.25rem; align-items:center;">${arrow} Trend</div>
+                              </div>`;
+                  }
+                });
+
+                let centerHtml = `<h2 class="chapter-title-large" style="margin-bottom: 2rem;">${ch.title.replace(/^\d+\.\s*/, '')}</h2>`;
+                (ch.grid_layout.center || []).forEach(item => {
+                  if (item.type === 'markdown') {
+                    centerHtml += `<div class="prose">${(item.content || "").replace(/\n/g, '<br>')}</div>`;
+                  }
+                });
+
+                let rightHtml = '';
+                (ch.grid_layout.right || []).forEach(item => {
+                  if (item.type === 'advisor') {
+                    rightHtml += `
+                              <div class="advisor-bubble">
+                                  <h4><ion-icon name="bulb"></ion-icon> ${item.title}</h4>
+                                  <div>${item.content}</div>
+                              </div>`;
+                  } else if (item.type === 'action') {
+                    rightHtml += `
+                              <div class="action-card">
+                                  <div class="action-icon"><ion-icon name="checkbox"></ion-icon></div>
+                                  <div>
+                                      <div style="font-weight: 700; color: #1e40af; font-size: 0.95rem; margin-bottom: 0.25rem;">${item.title}</div>
+                                      <div style="font-size: 0.9rem; color: #334155; line-height: 1.4;">${item.content}</div>
+                                  </div>
+                              </div>`;
+                  }
+                });
+
+                tab.innerHTML = `
+                          <div class="chapter-grid">
+                              <div class="chapter-col chapter-col-left">${leftHtml}</div>
+                              <div class="chapter-col chapter-col-center">${centerHtml}</div>
+                              <div class="chapter-col chapter-col-right">${rightHtml}</div>
+                          </div>
+                      `;
+              }
+            } else {
+              // Fallback Legacy Layout
+              tab.innerHTML = `
+                <div class="chapter-header">
+                    <span class="chapter-kicker">Hoofdstuk ${key}</span>
+                    <h2 class="chapter-title-large">${ch.title.replace(/^\d+\.\s*/, '')}</h2>
+                </div>
+                <div class="chapter-body prose"></div>
+                `;
+              const body = tab.querySelector('.chapter-body');
+              (ch.blocks || []).forEach(b => {
+                if (b.type === 'paragraph') {
+                  const textContent = (b.data.text || "").replace(/\n/g, '<br>');
+                  body.innerHTML += `<div class="content-block">${textContent}</div>`;
+                }
+              });
+            }
+
+            content.appendChild(tab);
+          });
+
+          // Force initial state consistency (e.g. hiding headers for Chapter 0)
+          if (sortedKeys.length > 0) {
+            switchTab(sortedKeys[0]);
+          }
+        }
+      }
+
+      function switchTab(key) {
+        // Update Nav
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        const navBtn = document.querySelector(`.nav-item[data-target="tab-${key}"]`);
+        if (navBtn) navBtn.classList.add('active');
+
+        // Update Content
+        document.querySelectorAll('.chapter-tab').forEach(el => {
+          el.classList.remove('active');
+          el.classList.add('hidden'); // Force hide
+        });
+
+        const tab = document.getElementById(`tab-${key}`);
+        if (tab) {
+          tab.classList.remove('hidden'); // Unhide
+          tab.classList.add('active');    // Activate (trigger animation/styles)
+
+          // Header Logic: Hide top bar for Chapter 0? 
+          // The user said: "We do not need the top bar on every page."
+          // Let's hide the .header-bar if key == 0, show otherwise
+          // Header & Global Widgets Logic
+          // We hide the standard dashboard header, advisor panel, and KPI grid for Chapter 0
+          // because Chapter 0 has its own bespoke "Executive Summary" layout.
+          const globalElements = [
+            document.querySelector('.header-bar'),
+            document.getElementById('advisor-area'),
+            document.getElementById('kpi-area')
+          ];
+
+          if (parseInt(key) === 0) {
+            globalElements.forEach(el => !el || el.classList.add('hidden'));
+          } else {
+            globalElements.forEach(el => !el || el.classList.remove('hidden'));
+          }
+
+          // Reset scroll of main content to top
+          const mainContent = document.querySelector('.main-content');
+          if (mainContent) mainContent.scrollTop = 0;
+        } else {
+          console.error("Tab not found:", `tab-${key}`);
+        }
+      }
+
+    });
+  </script>
+</body>
+
+</html>

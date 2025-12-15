@@ -1,0 +1,67 @@
+Hoofdstuk 10 – KPI-Samenvatting & Benchmarkoverzicht
+
+10.1 Doel van dit hoofdstuk
+
+In dit hoofdstuk worden alle sleutelindicatoren (KPI’s) uit Hoofdstuk 1 t/m 9 samengebracht in een overzichtelijk schema. Dit biedt inzicht in de sterktes, risico’s en afwijkingen van de woning ten opzichte van marktstandaarden en persoonlijke eisen. Daarnaast worden vergelijkingspunten benoemd om toekomstige woningen beter te kunnen beoordelen aan de hand van objectieve maatstaven.
+
+10.2 KPI-overzicht woning
+
+| KPI  | Naam                          | Waarde         | Interpretatie                                                      |
+|------|-------------------------------|----------------|--------------------------------------------------------------------|
+| WVI  | Woonoppervlakindex            | 604 m²         | Uitzonderlijk ruim, inclusief multifunctionele ruimtes             |
+| PCI  | Perceelgrootte Index          | 3.505 m²       | Groot perceel, bovengemiddeld voor regio                           |
+| PWI  | Prijs-WOZ Index               | +11,7%         | Vraagprijs ligt 11,7% boven WOZ, licht overgewaardeerd             |
+| PMI  | Prijs-Marktwaarde Index       | +5,3%          | Vraagprijs ligt 5,3% boven marktinschatting                        |
+| TVD  | Totale Verkoopduur            | 150+ dagen     | Lange looptijd creëert onderhandelingsruimte                       |
+| PDI  | Prijsdynamiekindex            | –16,4%         | Grote prijsdaling sinds plaatsing, duidt op aanpasbaarheid verkoper |
+| TCO  | Totaal Investeringsbedrag     | €482.000       | Hoge investeringsdruk voor modernisering en voorzieningen          |
+| INS  | Infrastructuurscore           | Matig          | Geen ethernet, oude CV, afwezigheid domotica                       |
+| FDS  | Financiële Draagkracht Score  | 105%           | Totale lasten vallen binnen budget inclusief marge                 |
+| RNS  | Risico-Nadeel Score           | Matig          | Technisch en esthetisch risico door uitzicht en bouwjaar           |
+| BRI  | Buffer Ratio Index            | 5,4%           | Comfortabele financiële marge bovenop totale investering           |
+| KRI  | Keuringsrisico Index          | Hoog           | Geen funderingsrapport, verhoogd risico bij aankoop                |
+| BMI  | Belevingsmatch Index          | 8/10           | Hoge mate van match met leefstijl en voorkeuren koper              |
+| EMI  | Energie & Milieu Index        | A+ label       | Zeer goed dankzij warmtepomp, zonnepanelen en isolatie            |
+| SMI  | Studio & Mancave Index        | Geschikt       | Garage en ruimtes goed bruikbaar voor muziekstudio of werkruimte  |
+
+10.3 Benchmarkoptie voor vergelijking met andere woningen
+
+Om toekomstige woningen vergelijkbaar te analyseren, kunnen de bovenstaande KPI’s worden toegepast als normenkader. De kleuren kunnen worden gehanteerd om scores visueel te duiden:
+
+• ✅ = goed (groen)
+• ⚠️ = aandachtspunt (oranje)
+• ❌ = negatief (rood)
+
+| KPI   | Score | Beoordeling         |
+|-------|-------|----------------------|
+| WVI   | ✅    | Zeer ruim            |
+| PCI   | ✅    | Groot perceel        |
+| PWI   | ⚠️    | Licht overgewaardeerd |
+| PMI   | ⚠️    | Redelijk boven markt |
+| TVD   | ✅    | Lange looptijd       |
+| PDI   | ✅    | Grote prijsdaling    |
+| TCO   | ❌    | Hoge druk            |
+| INS   | ⚠️    | Matige infrastructuur|
+| FDS   | ✅    | Financieel haalbaar  |
+| RNS   | ⚠️    | Enkele nadelen       |
+| BRI   | ✅    | Goede buffer         |
+| KRI   | ❌    | Hoog risico           |
+| BMI   | ✅    | Goede leefmatch      |
+| EMI   | ✅    | Zeer duurzaam        |
+| SMI   | ✅    | Studio mogelijk       |
+
+10.4 Samenvattende score
+
+| Cluster               | Score (gemiddeld) |
+|-----------------------|-------------------|
+| Ruimtelijk & ligging  | 9/10              |
+| Techniek & energie    | 6,5/10            |
+| Waarde & marktpositie| 6,8/10            |
+| Financiën & risico    | 7,2/10            |
+| Leefstijl & toekomst  | 8,5/10            |
+
+Gemiddelde benchmarkscore: 7,6 / 10
+
+10.5 Conclusie
+
+De woning scoort sterk op leefstijl, ruimte en duurzaamheid, maar zwakker op technische infrastructuur en prijsprestatie. Het is een object dat goed past bij langdurig gebruik, mits de nodige investeringen worden gedaan. De KPI-benadering ondersteunt toekomstige afwegingen bij alternatieve woningen en maakt vergelijkingen eenvoudiger en objectiever.

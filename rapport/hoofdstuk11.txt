@@ -1,0 +1,52 @@
+Hoofdstuk 11 – Renovatie- en Aanpassingsplan
+
+11.1 Doel van dit hoofdstuk
+
+Dit hoofdstuk biedt een overzicht van alle verouderde of ontbrekende onderdelen in de woning aan {adres}, zoals vastgesteld op basis van fotoanalyse, plattegronden, technische gegevens en persoonlijke voorkeuren van de koper. Per kamer of functiegebied worden de belangrijkste aandachtspunten en verwachte kosten geïnventariseerd.
+
+11.2 Methodologie
+
+• Gebruikte bronnen: Funda-foto’s, plattegronden, makelaarstekst, AI-analyse
+• Referentiestijl: modern, strak, onderhoudsarm, IT-ready
+• Uitgangspunt: woning geschikt maken voor langdurige bewoning door gezin met studio-ambities
+
+11.3 Verouderde of ontbrekende elementen per ruimte
+
+| Ruimte/Functie         | Gebreken of afwijkingen                               | Aanbevolen actie                      | Verwachte kosten (€) |
+|------------------------|--------------------------------------------------------|---------------------------------------|-----------------------|
+| Keuken                | Onbekende afzuiging, geen inductie, gedateerde indeling| Vernieuwen incl. kookeiland           | 25.000                |
+| Woonkamer             | Gedateerde afwerking, mogelijk geen netwerkaansluiting | Moderniseren, ethernet aanleggen      | 7.500                 |
+| Badkamers (2x)        | Voldoende, maar geen luxe                              | Geen directe actie                     | 0                     |
+| Slaapkamers           | Voldoende, maar akoestisch niet geschikt voor studio   | Isolatie aanbrengen op één kamer       | 3.000                 |
+| Garage                | Niet ingericht als mancave                             | Volledige ombouw met isolatie         | 30.000                |
+| Tuin                  | Geen verlichting of beregening                         | Installatie automatisch systeem        | 20.000                |
+| Zwembadomgeving       | Functioneel, maar geen overkapping                     | Overkapping + beveiliging              | 10.000                |
+| Netwerkinfrastructuur | Niet aanwezig                                           | Volledige ethernetbekabeling          | 3.000                 |
+| Elektrisch systeem    | Verouderd, geen domotica of glasvezel                  | Moderniseren met domotica              | 10.000                |
+| Schilderwerk binnen/buiten | Geen recente updates                              | Schilderen, houtrotcontrole            | 12.000                |
+
+11.4 Extra wensen en uitbreidingsopties
+
+| Element                     | Beschikbaarheid woning | Mogelijkheid aanwezig? | Opmerking                              |
+|----------------------------|------------------------|------------------------|----------------------------------------|
+| Wijnkelder                 | Nee                    | Nee                    | Geen souterrain                        |
+| Studio/muziekruimte        | Ja (garage)            | Ja                     | Vereist isolatie en afwerking          |
+| Domotica & IT              | Nee                    | Ja                     | Integratie vereist modern systeem      |
+| Zwemvijver                 | Nee (zwembad aanwezig) | Niet nodig             | Vervalt                                |
+| Extra zonnepanelen         | Ja                     | Niet nodig             | Reeds 38 aanwezig                      |
+| Gastenslaapkamer beneden   | Ja                     | Ja                     | Reeds aanwezig                         |
+
+11.5 Samenvatting verwachte investeringen
+
+| Categorie                  | Verwachte investering (€) |
+|---------------------------|----------------------------|
+| Technische upgrades       | 25.000                     |
+| Keuken & interieur        | 25.000                     |
+| Tuin & buitenruimte       | 30.000                     |
+| Geluidsisolatie studio    | 15.000                     |
+| Schilderwerk algemeen     | 12.000                     |
+| Totaal investering        | €107.000                   |
+
+11.6 Conclusie
+
+De woning biedt een uitstekend casco, maar vereist een omvangrijk moderniseringsprogramma om volledig te voldoen aan de persoonlijke eisen en hedendaagse standaarden. De verwachte investering is circa €107.000, exclusief structurele lasten (zoals zwembadonderhoud). Met deze aanpassingen wordt de woning toekomstbestendig, levensloopgeschikt en geschikt voor zowel wooncomfort als studio-gebruik.

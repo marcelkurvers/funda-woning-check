@@ -1,0 +1,52 @@
+Hoofdstuk 3 – Waarde-inschatting & Afwijkingsanalyse
+
+In dit hoofdstuk wordt onderzocht of de gevraagde prijs van de woning marktconform is, overgewaardeerd of juist scherp geprijsd. Er wordt gekeken naar de WOZ-waarde, marktwaarde, prijsverloop, en potentiële plus- of minpunten die invloed uitoefenen op de waardering.
+
+3.1 Waardebronnen en prijsverloop
+Element	                Waarde / Status
+Vraagprijs	            {vraagprijs}
+WOZ-waarde	            €1.119.000
+Marktwaarde (geschat)	€1.187.500 (bron: woningstats.nl)
+Startprijs december 2024	€1.495.000
+Prijsverlaging april 2025	–16,4%
+Verkoopduur	            >150 dagen
+
+3.2 Afwijkingen t.o.v. referentiewaarden
+Vergelijking	                    Afwijking	        Beoordeling
+Vraagprijs vs. WOZ	            +11,7%	            Licht overgewaardeerd
+Vraagprijs vs. marktwaarde	    +5,3%	            Boven markt, onderhandelbaar
+Prijsdaling sinds start	        −16,4%	            Grote daling = ruimte
+Verkoopduur	                    Lange verkooptijd	Onderhandelingspositie koper
+
+3.3 Pluspunten – waardeverhogend
+1.  Zonnepanelen (38 stuks)
+2.  Energielabel A
+3.  Zwembad met warmtepomp
+4.  Groot perceel (2.771 m²)
+5.  Ligging aan bosrand / doodlopende straat
+6.  Slaapkamer op begane grond
+7.  Mogelijkheid voor uitbouw (garage/schuur)
+8.  Privacyrijke tuin
+9.  Airco aanwezig (indirect genoemd in advertentie)
+10. Rustige wijk met hoge inkomensklasse
+
+3.4 Minpunten – waardedrukkend
+1.  Verouderde bouw (1971) zonder funderingsrapport
+2.  Alleen CV-ketel (gas) voor woningverwarming
+3.  Uitzicht op grote serviceflat (Eeckenrhode)
+4.  Lange tijd te koop zonder interesse
+5.  Grote investering nodig om woning te moderniseren
+6.  Geen vermelding ethernet / domotica / glasvezel
+7.  Geen kelder of bergruimte onder huis
+8.  Geen tuininrichting (beregening/verlichting ontbreekt)
+9.  Geen directe elektrische keuken / afzuiging onbekend
+10. Geen recent schilderwerk of renovatierapporten beschikbaar
+
+3.5 Waarde-indicatie en onderhandelingsruimte
+Element	                Inschatting
+Marktconforme richtprijs	± €1.175.000
+Mogelijke biedmarge	        ± €75.000 (6%)
+Geschikte openingsbod	    €1.150.000
+
+Conclusie:
+De woning is initieel te hoog in de markt gezet en na een significante prijsdaling nog steeds licht overgewaardeerd. De combinatie van een langdurige verkooptijd en een eerder afgeprijsde vraagprijs biedt duidelijke onderhandelingsruimte. Gezien de bijkomende investeringen is een prijs rond €1.150.000 verdedigbaar.

@@ -1,0 +1,78 @@
+{
+  "executed_at": "2025-12-15T09:00:09.756908Z",
+  "root": "/Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local/backend",
+  "summary": {
+    "total_runs": 6,
+    "success": 0,
+    "failed": 1,
+    "skipped": 5
+  },
+  "runs": [
+    {
+      "framework": "pytest",
+      "command": "pytest",
+      "exit_code": 1,
+      "raw_output": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.4, pytest-9.0.2, pluggy-1.6.0\nrootdir: /Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local/backend\nplugins: anyio-4.10.0\ncollected 37 items\n\ntest_complex_parsing.py .                                                [  2%]\ntest_comprehensive.py ...                                                [ 10%]\ntest_frontend.py ..                                                      [ 16%]\ntest_integration.py .                                                    [ 18%]\ntest_modern_chapter.py ..                                                [ 24%]\ntest_modern_design_compliance.py ....                                    [ 35%]\ntest_parser.py .                                                         [ 37%]\ntest_suite.py ...........                                                [ 67%]\ntests/test_audit_codebase.py F                                           [ 70%]\ntests/test_chapters.py ..                                                [ 75%]\ntests/test_consistency.py .....                                          [ 89%]\ntests/test_dynamic_chapters.py ...                                       [ 97%]\ntests/test_explore_insights.py .                                         [100%]\n\n=================================== FAILURES ===================================\n______________ test_audit_codebase_for_mocks_and_hardcoded_items _______________\n\n    def test_audit_codebase_for_mocks_and_hardcoded_items():\n        \"\"\"\n        Scans the codebase for mock data, hardcoded items, TODOs, etc.\n        Writes findings to audit_mocks_hardcoded.md.\n        Fails if any unexpected mock/hardcoded items are found in production code.\n        \"\"\"\n    \n        all_findings = []\n    \n        for root, dirs, files in os.walk(SEARCH_ROOT):\n            # Filter directories\n            dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]\n    \n            for file in files:\n                if file in EXCLUDE_FILES:\n                    continue\n                # Exclude strict test files (starting with test_) even if they are in root\n                if file.startswith(\"test_\"):\n                    continue\n    \n                if not any(file.endswith(ext) for ext in EXTENSIONS):\n                    continue\n    \n                filepath = os.path.join(root, file)\n                all_findings.extend(scan_file(filepath))\n    \n        # Write Report\n        with open(OUTPUT_FILE, \"w\", encoding=\"utf-8\") as f:\n            f.write(\"# Audit Report: Mocks, Hardcoded Items, and TODOs\\n\\n\")\n            f.write(f\"Generated during test execution.\\n\\n\")\n    \n            if not all_findings:\n                f.write(\"No issues found! Great job.\\n\")\n            else:\n                f.write(f\"Found {len(all_findings)} items:\\n\\n\")\n                # Group by file\n                files_dict = {}\n                for item in all_findings:\n                    if item['file'] not in files_dict:\n                        files_dict[item['file']] = []\n                    files_dict[item['file']].append(item)\n    \n                for filepath, items in files_dict.items():\n                    relpath = os.path.relpath(filepath, SEARCH_ROOT)\n                    f.write(f\"### {relpath}\\n\")\n                    for item in items:\n                        f.write(f\"- **{item['type']}** (Line {item['line']}): `{item['content']}`\\n\")\n                    f.write(\"\\n\")\n    \n        # Assert success - Un-comment the assert below to force failure when items are found.\n        # The user asked to \"address these errors every time we run the tests\".\n        # Failing ensures they are addressed (or acknowledged).\n        issue_count = len(all_findings)\n        if issue_count > 0:\n>           pytest.fail(f\"Found {issue_count} mock/hardcoded/todo items in codebase. See {OUTPUT_FILE} for details.\")\nE           Failed: Found 3 mock/hardcoded/todo items in codebase. See /Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local/backend/audit_mocks_hardcoded.md for details.\n\ntests/test_audit_codebase.py:102: Failed\n=============================== warnings summary ===============================\nmain.py:144\n  /Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local/backend/main.py:144: DeprecationWarning: \n          on_event is deprecated, use lifespan event handlers instead.\n  \n          Read more about it in the\n          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n          \n    @app.on_event(\"startup\")\n\n../../../../../../Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/fastapi/applications.py:4495\n  /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/fastapi/applications.py:4495: DeprecationWarning: \n          on_event is deprecated, use lifespan event handlers instead.\n  \n          Read more about it in the\n          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n          \n    return self.router.on_event(event_type)\n\ntest_comprehensive.py: 39 warnings\ntest_integration.py: 34 warnings\ntest_modern_chapter.py: 26 warnings\ntest_modern_design_compliance.py: 52 warnings\ntest_suite.py: 56 warnings\ntests/test_consistency.py: 65 warnings\ntests/test_explore_insights.py: 13 warnings\n  /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/pydantic/main.py:1087: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.8/migration/\n    warnings.warn('The `dict` method is deprecated; use `model_dump` instead.', category=PydanticDeprecatedSince20)\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_audit_codebase.py::test_audit_codebase_for_mocks_and_hardcoded_items\n================== 1 failed, 36 passed, 287 warnings in 6.02s ==================",
+      "start_time": "2025-12-15T09:00:02.224516Z",
+      "end_time": "2025-12-15T09:00:08.900261Z",
+      "status": "failed",
+      "reason": null,
+      "parsed_results": null
+    },
+    {
+      "framework": "jest",
+      "command": "npx jest --runInBand",
+      "exit_code": -1,
+      "raw_output": "Skipped: no JS/TS test files found.",
+      "start_time": "2025-12-15T09:00:02.223603Z",
+      "end_time": "2025-12-15T09:00:02.223603Z",
+      "status": "skipped",
+      "reason": "Detected 1 JS/TS source files but no test files to execute.",
+      "parsed_results": null
+    },
+    {
+      "framework": "go test",
+      "command": "go test ./... -v",
+      "exit_code": -1,
+      "raw_output": "Skipped: no Go source files detected.",
+      "start_time": "2025-12-15T09:00:02.223603Z",
+      "end_time": "2025-12-15T09:00:02.223603Z",
+      "status": "skipped",
+      "reason": "No Go source files detected in repository.",
+      "parsed_results": null
+    },
+    {
+      "framework": "cargo test",
+      "command": "cargo test --verbose",
+      "exit_code": -1,
+      "raw_output": "Skipped: no Rust source files detected.",
+      "start_time": "2025-12-15T09:00:02.223603Z",
+      "end_time": "2025-12-15T09:00:02.223603Z",
+      "status": "skipped",
+      "reason": "No Rust source files detected in repository.",
+      "parsed_results": null
+    },
+    {
+      "framework": "maven/gradle",
+      "command": "mvn test || gradle test",
+      "exit_code": -1,
+      "raw_output": "Skipped: no Java source files detected.",
+      "start_time": "2025-12-15T09:00:02.223603Z",
+      "end_time": "2025-12-15T09:00:02.223603Z",
+      "status": "skipped",
+      "reason": "No Java source files detected in repository.",
+      "parsed_results": null
+    },
+    {
+      "framework": "rspec/minitest",
+      "command": "rspec || rake test",
+      "exit_code": -1,
+      "raw_output": "Skipped: no Ruby source files detected.",
+      "start_time": "2025-12-15T09:00:02.223603Z",
+      "end_time": "2025-12-15T09:00:02.223603Z",
+      "status": "skipped",
+      "reason": "No Ruby source files detected in repository.",
+      "parsed_results": null
+    }
+  ]
+}
