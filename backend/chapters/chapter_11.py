@@ -29,10 +29,10 @@ class MarketPosition(BaseChapter):
         }
         
         metrics = [
-            {"id": "m2", "label": "Vraagprijs/m²", "value": f"€ {price_m2}", "icon": "pricetag"},
-            {"id": "avg", "label": "Gem. in buurt", "value": f"€ {avg_m2}", "icon": "stats-chart"},
-            {"id": "days", "label": "Looptijd", "value": "Start", "icon": "time"},
-            {"id": "comp", "label": "Concurrentie", "value": "Gemiddeld", "icon": "people"}
+            {"id": "m2", "label": "Vraagprijs/m²", "value": f"€ {price_m2}", "icon": "pricetag", "color": "blue", "explanation": "Gebaseerd op woonopp."},
+            {"id": "avg", "label": "Gem. in buurt", "value": f"€ {avg_m2}", "icon": "stats-chart", "color": "blue", "explanation": "Wijk gemiddelde"},
+            {"id": "days", "label": "Looptijd", "value": "Start", "icon": "time", "color": "green", "explanation": "Net op de markt"},
+            {"id": "comp", "label": "Concurrentie", "value": "Gemiddeld", "icon": "people", "color": "orange", "explanation": "Verwachting"}
         ]
         # New metrics (additive)
         price_val = IntelligenceEngine._parse_int(ctx.get('prijs') or ctx.get('asking_price_eur'))
@@ -48,22 +48,38 @@ class MarketPosition(BaseChapter):
         future_score = 80 if label in ["A","A+","A++","B"] else 60 if label in ["C","D"] else 40
         metrics.append({"id":"energy_future","label":"Energie Toekomstscore","value":f"{future_score}","icon":"leaf","color":"green" if future_score>=70 else "orange" if future_score>=50 else "red","trend":"neutral"})
         maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
-        metrics.append({"id":"maintenance_intensity","label":"Onderhoudsintensiteit","value":maintenance,"icon":"hammer","trend":"neutral"})
+        maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
+        metrics.append({"id":"maintenance_intensity","label":"Onderhoud","value":maintenance,"icon":"hammer","trend":"neutral", "color": "red" if reno_cost > 30000 else "green"})
         family = "Geschikt voor gezin" if (IntelligenceEngine._parse_int(ctx.get('oppervlakte','0')) or 0) >= 120 else "Minder geschikt voor groot gezin"
         metrics.append({"id":"family_suitability","label":"Gezinsgeschiktheid","value":family,"icon":"people","trend":"neutral"})
         lt_quality = "Hoog" if "jong" in construction_alert.lower() else "Middelmatig" if "aandacht" in construction_alert.lower() else "Laag"
         metrics.append({"id":"long_term_quality","label":"Lange-termijn kwaliteit","value":lt_quality,"icon":"shield","trend":"neutral"})
         
+        pct_width_this = min(100, (price_m2 / 6000) * 100)
+        pct_width_avg = min(100, (avg_m2 / 6000) * 100)
+        
         chart_html = f"""
-        <div class="market-chart">
-            <div class="chart-label">Deze Woning</div>
-            <div class="chart-bar-container">
-                <div class="chart-bar primary" style="width: {min(100, (price_m2/5000)*100)}%;">€ {price_m2}</div>
+        <div class="bg-slate-50 border border-slate-200 p-6 rounded-xl">
+            <h4 class="font-bold text-slate-800 mb-4">Vierkante meter prijs vergelijking</h4>
+            
+            <div class="mb-4">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="font-medium text-slate-700">Deze Woning</span>
+                    <span class="font-bold text-blue-600">€ {price_m2}</span>
+                </div>
+                <div class="w-full bg-slate-200 rounded-full h-4 overflow-hidden">
+                    <div class="bg-blue-500 h-4 rounded-full" style="width: {pct_width_this}%"></div>
+                </div>
             </div>
             
-            <div class="chart-label">Gemiddeld Wijk</div>
-             <div class="chart-bar-container">
-                <div class="chart-bar secondary" style="width: {min(100, (avg_m2/5000)*100)}%;">€ {avg_m2}</div>
+            <div>
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="font-medium text-slate-700">Gemiddeld Wijk</span>
+                    <span class="font-bold text-slate-600">€ {avg_m2}</span>
+                </div>
+                <div class="w-full bg-slate-200 rounded-full h-4 overflow-hidden">
+                    <div class="bg-slate-400 h-4 rounded-full" style="width: {pct_width_avg}%"></div>
+                </div>
             </div>
         </div>
         """
@@ -94,5 +110,6 @@ class MarketPosition(BaseChapter):
         return ChapterOutput(
             title="11. Marktpositie",
             grid_layout=layout, 
-            blocks=[]
+            blocks=[],
+            chapter_data=narrative
         )

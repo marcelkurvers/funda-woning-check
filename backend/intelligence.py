@@ -739,7 +739,7 @@ class IntelligenceEngine:
         advice = "<ul><li>Vraag de makelaar naar het biedingsproces.</li><li>Zorg dat uw dossier (werkgeversverklaring etc.) op orde is.</li></ul>"
         strengths = ["Courant object"]
 
-        conclusion = "<strong>Conclusie:</strong> Hete markt, koel hoofd houden."
+        conclusion = "Hete markt, koel hoofd houden."
         return {
             "title": "Marktpositie",
             "intro": intro, 
