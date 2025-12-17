@@ -16,6 +16,12 @@ from pydantic import BaseModel
 from scraper import Scraper
 from parser import Parser
 from chapters.registry import get_chapter_class
+from intelligence import IntelligenceEngine
+try:
+    from ollama_client import OllamaClient
+except ImportError:
+    OllamaClient = None
+
 import logging
 
 # Configure Logging
@@ -157,6 +163,14 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 @app.on_event("startup")
 def _startup():
     init_db()
+    # Initialize Ollama Client
+    if OllamaClient:
+        try:
+             client = OllamaClient()
+             IntelligenceEngine.set_client(client)
+             logger.info("Ollama Client initialized and attached to IntelligenceEngine.")
+        except Exception as e:
+             logger.warning(f"Failed to initialize Ollama Client: {e}")
 
 @app.get("/", response_class=HTMLResponse)
 def root():
@@ -209,6 +223,17 @@ def get_preferences():
 def save_preferences(prefs: Dict[str, Any]):
     set_kv("preferences", prefs)
     return {"ok": True}
+
+@app.get("/api/ai/models")
+def list_ai_models():
+    if not OllamaClient:
+        return {"models": [], "error": "Ollama client not available"}
+    try:
+        client = OllamaClient() # lightweight init
+        models = client.list_models()
+        return {"models": models}
+    except Exception as e:
+        return {"models": [], "error": str(e)}
 
 # --- CORE LOGIC ---
 

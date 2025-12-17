@@ -617,7 +617,7 @@ class IntelligenceEngine:
         if garden > 100: strengths.append("Royale tuin")
         if garden == 0: strengths.append("Onderhoudsvrij")
 
-        conclusion = f"<strong>Conclusie:</strong> Buitenruimte score: {8 if garden > 100 else 6}/10."
+        conclusion = f"Buitenruimte score: {8 if garden > 100 else 6}/10."
         return {
             "title": "Tuin & Buiten",
             "intro": intro, 

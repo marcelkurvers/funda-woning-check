@@ -1,6 +1,8 @@
 from typing import List, Dict, Any
 from chapters.base import BaseChapter
 from domain.models import ChapterOutput, UIComponent
+from domain.models import ChapterOutput, UIComponent
+from intelligence import IntelligenceEngine
 import re
 import logging
 
@@ -12,6 +14,9 @@ class ExecutiveSummary(BaseChapter):
         ctx = self.context
         
         # --- 1. INTELLIGENCE ENGINE ---
+        # Generate Narrative (This triggers the AI Backend if available)
+        narrative = IntelligenceEngine.generate_chapter_narrative(0, ctx)
+
         # Parse inputs
         # Parse inputs
         try:
@@ -198,37 +203,42 @@ class ExecutiveSummary(BaseChapter):
 
 
         # Strategic Main Content with Color Legend
-        # Investment text for main body
-        if total_expected_invest > 0:
-            invest_sentence = f"moet rekening gehouden worden met een investering van circa € {total_expected_invest:,} om het object te optimaliseren."
-        else:
-            invest_sentence = "hoeft u geen directe investeringen te verwachten."
-
+        # We use the text from the IntelligenceEngine (possibly AI generated)
+        # but wrap it in our rich HTML structure.
+        
+        # If AI is used, narrative['main_analysis'] will contain the rich text.
+        # We preserve the detailed hardcoded structure as a "Strategic Dashboard" 
+        # but append the AI's narrative analysis below it or as the lead text.
+        
         summary_html = f"""
-        <p class="lead-text">
-            <strong>Strategische Analyse:</strong> Het object {intro_address_text} positioneert zich als een 
-            <strong>{valuation_status}</strong> in de huidige markt. Met een vierkantemeterprijs van € {price_m2} ligt het 
-            {abs(market_delta)}% { "boven" if market_delta > 0 else "onder" } het gemiddelde.
-        </p>
+        <div class="lead-text" style="font-size: 1.1rem; line-height: 1.6; color: #334155; margin-bottom: 2rem;">
+            {narrative.get('intro', '')}
+        </div>
 
         <div class="analysis-grid" style="margin-bottom: 2rem;">
             <div class="analysis-item">
                 <div class="analysis-icon {'warning' if total_expected_invest > 0 else 'valid'}"><ion-icon name="construct"></ion-icon></div>
                 <div class="analysis-text">
-                    <strong>Bouwtechnische Staat & Risico's</strong><br>
-                    {construction_alert} Gezien het energielabel {label} {invest_sentence}
+                    <strong>Bouwtechnische Staat</strong><br>
+                    {construction_alert}
                 </div>
             </div>
             <div class="analysis-item">
                 <div class="analysis-icon valid"><ion-icon name="cash"></ion-icon></div>
                 <div class="analysis-text">
-                    <strong>Waardering & Loopopties</strong><br>
-                    Gezien de marktdruk en de staat van onderhoud is de {valuation_status.lower()} een belangrijk onderhandelpunt. {sustain_advice}
+                    <strong>Waardering</strong><br>
+                    {valuation_status} ({delta_str})
                 </div>
             </div>
         </div>
 
-        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; margin-top: 2rem;">
+        <div class="ai-analysis-content" style="margin-bottom: 2rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border-left: 4px solid #6366f1;">
+            <h4 style="margin-top:0; color:#4f46e5;">AI Analyse</h4>
+            {narrative.get('main_analysis', 'Data niet beschikbaar.')}
+            {narrative.get('interpretation', '')}
+        </div>
+
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem;">
             <h4 style="margin-top:0; color:#334155; margin-bottom: 1rem;">Sterke & Zwakke Punten</h4>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                 <div>
@@ -255,7 +265,7 @@ class ExecutiveSummary(BaseChapter):
                 "type": "advisor_card", 
                 "title": "Strategisch Advies", 
                 "style": "gradient",
-                "content": f"Op basis van de analyse: <strong>{'Koopwaardig' if ai_score > 70 else 'Risicovol'}</strong>. { 'Focus op de prijs-kwaliteit.' if ai_score > 70 else 'Verdere inspectie is cruciaal.' }"
+                "content": narrative.get('conclusion', f"Op basis van de analyse: <strong>{'Koopwaardig' if ai_score > 70 else 'Risicovol'}</strong>.")
             },
             {
                 "type": "action_list",
@@ -289,12 +299,12 @@ class ExecutiveSummary(BaseChapter):
         
         chapter_data = {
             "title": "Executive Summary",
-            "intro": f"Strategische Analyse: Het object {intro_address_text} positioneert zich als een {valuation_status} in de huidige markt.",
+            "intro": narrative.get('intro', ''),
             "main_analysis": summary_html,
-            "conclusion": f"AI Score: {ai_score}/100 - {valuation_status}. {'Koopwaardig' if ai_score > 70 else 'Risicovol'}.",
+            "conclusion": narrative.get('conclusion', ''),
             "strengths": pros,
             "advice": cons,
-            "interpretation": f"Waardering: {valuation_status} (Label {label})",
+            "interpretation": narrative.get('interpretation', ''),
             "sidebar_items": sidebar
         }
 
