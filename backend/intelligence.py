@@ -296,7 +296,7 @@ class IntelligenceEngine:
         if p_misses: advice += f"<li>Petra: Beoordeel ter plaatse de {', '.join(p_misses[:2])}.</li>"
         advice += "</ul>"
 
-        conclusion = f"<strong>Conclusie:</strong> Een {score_pct}% match. {'Een sterke kandidaat!' if score_pct > 60 else 'Voldoet aan de basis, maar concessies zijn nodig.'}"
+        conclusion = f"Een {score_pct}% match. {'Een sterke kandidaat!' if score_pct > 60 else 'Voldoet aan de basis, maar concessies zijn nodig.'}"
         
         return {
             "title": "Matchanalyse M&P",
