@@ -362,7 +362,7 @@ class IntelligenceEngine:
         if d['year'] < 1940: strengths.append("Karakteristiek")
         if d['year'] > 2005: strengths.append("Betonvloeren (geluidsisolatie)")
 
-        conclusion = f"<strong>Conclusie:</strong> Risicoprofiel: {'Laag (Instapklaar)' if not risks else 'Gemiddeld (Inspectie vereist)'}."
+        conclusion = f"Risicoprofiel: {'Laag (Instapklaar)' if not risks else 'Gemiddeld (Inspectie vereist)'}."
         
         return {
             "title": "Bouwkundige Staat",
