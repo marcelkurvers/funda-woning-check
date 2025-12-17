@@ -15,6 +15,10 @@ class TestOllamaIntegration(unittest.TestCase):
     def setUp(self):
         # Reset client before each test
         IntelligenceEngine.set_client(None)
+
+    def tearDown(self):
+        # Ensure client is reset after tests too
+        IntelligenceEngine.set_client(None)
     
     def test_client_injection(self):
         """Test that the client can be injected into the engine."""

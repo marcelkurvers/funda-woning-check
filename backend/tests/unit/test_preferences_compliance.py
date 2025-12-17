@@ -13,6 +13,10 @@ class TestPreferencesCompliance(unittest.TestCase):
     (Marcel and Petra) against property data.
     """
 
+    def setUp(self):
+        # Ensure no residual client is attached
+        IntelligenceEngine.set_client(None)
+
     def test_marcel_petra_preferences_match(self):
         """
         Test that specific preferences for Marcel (Tech) and Petra (Atmosphere) are check

@@ -763,15 +763,39 @@ class IntelligenceEngine:
         label = get('label')
         # Intro
         intro_parts = []
-        intro_parts.append(f"Welkom bij de analyse van het object aan {address}.")
-        if price != "onbekend":
-            intro_parts.append(f"De vraagprijs bedraagt €{price:,}.")
+        
+        # Smart Address Display Logic (Shared with Ch 0 logic)
+        raw_address = str(address)
+        generic_titles = ['mijn huis', 'te koop', 'woning', 'object', 'huis', 'appartement']
+        is_generic = raw_address.lower().strip() in generic_titles
+        display_address = raw_address if not is_generic else "dit object"
+        intro_addr_text = f"aan de {raw_address}" if not is_generic else "op deze locatie"
+        
+        intro_parts.append(f"Welkom bij de analyse van het object {intro_addr_text}.")
+        
+        m2_price = 0
+        if price != "onbekend" and area != "onbekend" and area > 0:
+            m2_price = round(price / area)
+            intro_parts.append(f"De vraagprijs bedraagt €{price:,} (circa €{m2_price:,}/m²).")
+        elif price != "onbekend":
+             intro_parts.append(f"De vraagprijs bedraagt €{price:,}.")
+             
         if area != "onbekend":
             intro_parts.append(f"Het woonoppervlak is {area} m².")
         intro_parts.append(f"Energielabel: {label}.")
+        
         intro = " ".join(intro_parts)
         # Main analysis – note missing KPI handling
-        analysis = "\n<p>De beschikbare KPI's zijn beperkt; sommige waarden ontbreken of zijn niet ingevuld.</p>"
+        # Main analysis – note missing KPI handling
+        analysis = ""
+        # Investment / Reform logic check for narrative
+        label_clean = str(label).upper()
+        if "F" in label_clean or "G" in label_clean:
+             analysis += "<p>Gezien het energielabel is verduurzaming noodzakelijk. Houd rekening met een stevige investering.</p>"
+        else:
+             analysis += "<p>De woning lijkt instapklaar; wij voorzien in de basis geen directe investering voor verduurzaming.</p>"
+        
+        analysis += "\n<p>De beschikbare KPI's zijn beperkt; sommige waarden ontbreken of zijn niet ingevuld.</p>"
         # AI usage note
         interpretation = "<p>Deze analyse is gegenereerd met behulp van een AI‑engine die de beschikbare data interpreteert.</p>"
         # Conclusion
