@@ -1,6 +1,6 @@
 # Test Coverage Map
 
-**Generated**: 2025-12-17 16:33:21 UTC
+**Generated**: 2025-12-17 16:53:41 UTC
 **Project**: `/Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local`
 
 ## Executive Summary
@@ -23,7 +23,7 @@
 - **Test ratio**: 100% (34 test files per 34 source files)
 
 ### ✓ Javascript/Typescript
-- **Source files**: 15
+- **Source files**: 16
 - **Test files**: 0
 
 ### ○ Go
@@ -58,7 +58,7 @@
 
 | Framework | Reason |
 |-----------|--------|
-| jest | Detected 15 JS/TS source files but no test files to execute. |
+| jest | Detected 16 JS/TS source files but no test files to execute. |
 | go test | No Go source files detected in repository. |
 | cargo test | No Rust source files detected in repository. |
 | maven/gradle | No Java source files detected in repository. |

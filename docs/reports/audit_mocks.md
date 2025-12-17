@@ -7,10 +7,10 @@ Found **24** potential issues.
 ### 📄 `intelligence.py`
 | Line | Type | Content |
 | :--- | :--- | :--- |
-| 89 | **Hardcoded Item** | `# Merge or replace. If AI fails or returns partial, we kept the hardcoded one?` |
-| 96 | **Hardcoded Item** | `# Fallback silently to hardcoded` |
-| 148 | **Hardcoded Item** | `**Current Hardcoded Draft (Reference)**: {json.dumps(fallback, default=str)}` |
-| 831 | **Mock Data/Functionality** | `# Final Score Logic (Mock)` |
+| 88 | **Hardcoded Item** | `# Merge or replace. If AI fails or returns partial, we kept the hardcoded one?` |
+| 95 | **Hardcoded Item** | `# Fallback silently to hardcoded` |
+| 147 | **Hardcoded Item** | `**Current Hardcoded Draft (Reference)**: {json.dumps(fallback, default=str)}` |
+| 830 | **Mock Data/Functionality** | `# Final Score Logic (Mock)` |
 
 ### 📄 `main.py`
 | Line | Type | Content |

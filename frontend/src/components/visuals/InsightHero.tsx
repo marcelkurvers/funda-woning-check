@@ -27,9 +27,10 @@ export const InsightHero = ({ content, title = "AI Interpretatie", variant = 'bl
                 <h3 className="font-bold text-lg tracking-wide uppercase">{title}</h3>
             </div>
 
-            <p className="text-white/95 leading-relaxed font-medium">
-                {content}
-            </p>
+            <div
+                className="text-white/95 leading-relaxed font-medium prose prose-invert prose-p:my-0"
+                dangerouslySetInnerHTML={{ __html: content }}
+            />
         </motion.div>
     );
 };

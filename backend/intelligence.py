@@ -76,8 +76,7 @@ class IntelligenceEngine:
             result = IntelligenceEngine._narrative_ch11(data)
         elif chapter_id == 12:
             result = IntelligenceEngine._narrative_ch12(data)
-        elif chapter_id == 12:
-            result = IntelligenceEngine._narrative_ch12(data)
+
         else:
             result = {"title": "Analyse", "intro": "Generieke analyse.", "main_analysis": "Geen data.", "conclusion": "N.v.t."}
         
@@ -795,9 +794,9 @@ class IntelligenceEngine:
         else:
              analysis += "<p>De woning lijkt instapklaar; wij voorzien in de basis geen directe investering voor verduurzaming.</p>"
         
-        analysis += "\n<p>De beschikbare KPI's zijn beperkt; sommige waarden ontbreken of zijn niet ingevuld.</p>"
+
         # AI usage note
-        interpretation = "<p>Deze analyse is gegenereerd met behulp van een AI‑engine die de beschikbare data interpreteert.</p>"
+        interpretation = ""
         # Conclusion
         conclusion = "<strong>Conclusie:</strong> Controleer de ontbrekende gegevens voor een volledige beoordeling."
         return {
