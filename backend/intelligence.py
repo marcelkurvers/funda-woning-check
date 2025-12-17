@@ -807,7 +807,7 @@ class IntelligenceEngine:
         # Final Score Logic (Mock)
         final_score = 8.5 if d['label'] in ['A','B'] else 7.0
 
-        conclusion = f"<strong>Eindcijfer: {final_score}/10.</strong> {'KOOPWAARDIG' if final_score > 7 else 'AANDACHT VEREIST'}."
+        conclusion = f"Eindcijfer: {final_score}/10. {'KOOPWAARDIG' if final_score > 7 else 'AANDACHT VEREIST'}."
         
         return {
             "title": "Advies & Conclusie",

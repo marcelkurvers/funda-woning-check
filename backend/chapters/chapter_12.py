@@ -22,10 +22,10 @@ class AdviceConclusion(BaseChapter):
         main_content = self._render_rich_narrative(narrative)
         
         metrics = [
-            {"id": "final", "label": "Totaalscore", "value": "7.5/10", "icon": "trophy", "color": "blue"},
-            {"id": "risk", "label": "Risico", "value": "Laag", "icon": "shield-checkmark", "color": "green"},
-            {"id": "action", "label": "Actie", "value": "Bezichtig", "icon": "walk"},
-            {"id": "bid", "label": "Bieding", "value": "Advies", "icon": "cash"}
+            {"id": "final", "label": "Totaalscore", "value": "7.5/10", "icon": "trophy", "color": "blue", "explanation": "Goede investering"},
+            {"id": "risk", "label": "Risico", "value": "Laag", "icon": "shield-checkmark", "color": "green", "explanation": "Stabiele waarde"},
+            {"id": "action", "label": "Actie", "value": "Bezichtig", "icon": "walk", "color": "blue", "explanation": "Vraag direct aan"},
+            {"id": "bid", "label": "Bieding", "value": "Op Aanvraag", "icon": "cash", "color": "orange", "explanation": "Zie strategie"}
         ]
         # New metrics (additive)
         price_val = IntelligenceEngine._parse_int(ctx.get('prijs') or ctx.get('asking_price_eur'))
@@ -41,7 +41,8 @@ class AdviceConclusion(BaseChapter):
         future_score = 80 if label in ["A","A+","A++","B"] else 60 if label in ["C","D"] else 40
         metrics.append({"id":"energy_future","label":"Energie Toekomstscore","value":f"{future_score}","icon":"leaf","color":"green" if future_score>=70 else "orange" if future_score>=50 else "red","trend":"neutral"})
         maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
-        metrics.append({"id":"maintenance_intensity","label":"Onderhoudsintensiteit","value":maintenance,"icon":"hammer","trend":"neutral"})
+        maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
+        metrics.append({"id":"maintenance_intensity","label":"Onderhoud","value":maintenance,"icon":"hammer","trend":"neutral", "color": "red" if reno_cost > 30000 else "green"})
         family = "Geschikt voor gezin" if (IntelligenceEngine._parse_int(ctx.get('oppervlakte','0')) or 0) >= 120 else "Minder geschikt voor groot gezin"
         metrics.append({"id":"family_suitability","label":"Gezinsgeschiktheid","value":family,"icon":"people","trend":"neutral"})
         lt_quality = "Hoog" if "jong" in construction_alert.lower() else "Middelmatig" if "aandacht" in construction_alert.lower() else "Laag"
@@ -69,5 +70,6 @@ class AdviceConclusion(BaseChapter):
         return ChapterOutput(
             title="12. Advies & Conclusie",
             grid_layout=layout, 
-            blocks=[]
+            blocks=[],
+            chapter_data=narrative
         )
