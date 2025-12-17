@@ -28,7 +28,10 @@ class IntelligenceEngine:
             "plot": plot_val,
             "year": year_val,
             "label": label,
-            "address": ctx.get('adres', 'het object')
+            "address": ctx.get('adres', 'het object'),
+            "description": ctx.get('description', ''),
+            "features": ctx.get('features', []),
+            "_preferences": ctx.get('_preferences', {})
         }
 
         if chapter_id == 1:

@@ -169,36 +169,6 @@ class ExecutiveSummary(BaseChapter):
 
         # Strategic Main Content with Color Legend
         summary_html = f"""
-        <div class="color-legend">
-            <div class="color-legend-title">
-                <ion-icon name="information-circle"></ion-icon>
-                Kleurcodering in dit rapport
-            </div>
-            <div class="color-legend-items">
-                <div class="color-legend-item">
-                    <div class="color-legend-dot good"></div>
-                    <div>
-                        <span class="color-legend-label">Groen = Goed</span>
-                        <div class="color-legend-text">Positieve aspecten, gunstige waarden</div>
-                    </div>
-                </div>
-                <div class="color-legend-item">
-                    <div class="color-legend-dot caution"></div>
-                    <div>
-                        <span class="color-legend-label">Oranje = Let op</span>
-                        <div class="color-legend-text">Gemiddeld, aandacht vereist</div>
-                    </div>
-                </div>
-                <div class="color-legend-item">
-                    <div class="color-legend-dot bad"></div>
-                    <div>
-                        <span class="color-legend-label">Rood = Zorgpunt</span>
-                        <div class="color-legend-text">Aandachtspunten, actie nodig</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
         <p class="lead-text">
             <strong>Strategische Analyse:</strong> Het object aan de {ctx.get('adres')} positioneert zich als een 
             <strong>{valuation_status}</strong> in de huidige markt. Met een vierkantemeterprijs van € {price_m2} ligt het 

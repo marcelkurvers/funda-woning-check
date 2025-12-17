@@ -7,7 +7,7 @@ Found **7** potential issues.
 ### 📄 `intelligence.py`
 | Line | Type | Content |
 | :--- | :--- | :--- |
-| 664 | **Mock Data/Functionality** | `# Final Score Logic (Mock)` |
+| 667 | **Mock Data/Functionality** | `# Final Score Logic (Mock)` |
 
 ### 📄 `main.py`
 | Line | Type | Content |
@@ -32,7 +32,7 @@ Found **7** potential issues.
 ### 📄 `static/index.html`
 | Line | Type | Content |
 | :--- | :--- | :--- |
-| 567 | **Generic Variable Name** | `// Header Logic: Hide top bar for Chapter 0 (Executive Summary)` |
+| 563 | **Generic Variable Name** | `// Header Logic: Hide top bar for Chapter 0 (Executive Summary)` |
 
 ### 📄 `static/styles.css`
 | Line | Type | Content |

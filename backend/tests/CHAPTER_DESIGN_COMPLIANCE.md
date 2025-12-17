@@ -1,6 +1,6 @@
 # Design & UX Compliance Report
 **Date:** 17-12-2025
-**Time:** 14:49
+**Time:** 15:01
 **Status:** ✅ ALL SYSTEMS GO
 
 ## 🎨 Visual Design Executive Summary
@@ -10,7 +10,7 @@ We verified that every page is driven by a dedicated routine, ensuring a unique 
 **Key Design Metrics Detected:**
 - **Total KPI Datapoints:** 117
 - **Visual Assets (Icons/Graphs):** 143
-- **Avg. Screen 'Breathing Room':** 66% (Target: >40%)
+- **Avg. Screen 'Breathing Room':** 67% (Target: >40%)
 - **Layout Compliance:** 100% Modern 4K Grid
 
 ## 📄 detailed Chapter Breakdown
@@ -20,7 +20,7 @@ Below is the generated blueprint for the User Interface. Each page corresponds t
 - **Routine:** `chapter_0.py`
 - **Design System:** Mobile & 4K Ready
 - **Visual Elements:** 12 Graphics/Icons
-- **Layout Balance:** 9 Key Metrics | ~71% Active Whitespace
+- **Layout Balance:** 9 Key Metrics | ~81% Active Whitespace
 - **KPIs Displayed:** `Vraagprijs per m²`, `Duurzaamheid`, `Verw. Investering`, `Verhuurpotentie`, `Prijsafwijking %`, `Energie Toekomstscore`, `Onderhoudsintensiteit`, `Gezinsgeschiktheid`, `Lange-termijn kwaliteit`
 - **Status:** ✅ PASS
 
