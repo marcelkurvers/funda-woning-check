@@ -25,10 +25,10 @@ class GardenOutdoor(BaseChapter):
         }
         
         metrics = [
-            {"id": "size", "label": "Tuinoppervlak", "value": f"~{garden_size} m²", "icon": "leaf", "color": "green"},
-            {"id": "sun", "label": "Zonligging", "value": "Checken", "icon": "sunny"},
-            {"id": "privacy", "label": "Privacy", "value": "Gemiddeld", "icon": "eye-off"},
-            {"id": "shed", "label": "Berging", "value": "Aanwezig?", "icon": "key"}
+            {"id": "size", "label": "Tuinoppervlak", "value": f"~{garden_size} m²", "icon": "leaf", "color": "green", "explanation": "Geschat (Perceel - Woon/2)"},
+            {"id": "sun", "label": "Zonligging", "value": "Checken", "icon": "sunny", "color": "orange", "explanation": "Open kompas-app"},
+            {"id": "privacy", "label": "Privacy", "value": "Gemiddeld", "icon": "eye-off", "color": "blue", "explanation": "Afhankelijk van buren"},
+            {"id": "shed", "label": "Berging", "value": "Aanwezig?", "icon": "key", "color": "blue"}
         ]
         # New metrics (additive)
         price_val = IntelligenceEngine._parse_int(ctx.get('prijs') or ctx.get('asking_price_eur'))
@@ -44,16 +44,17 @@ class GardenOutdoor(BaseChapter):
         future_score = 80 if label in ["A","A+","A++","B"] else 60 if label in ["C","D"] else 40
         metrics.append({"id":"energy_future","label":"Energie Toekomstscore","value":f"{future_score}","icon":"leaf","color":"green" if future_score>=70 else "orange" if future_score>=50 else "red","trend":"neutral"})
         maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
-        metrics.append({"id":"maintenance_intensity","label":"Onderhoudsintensiteit","value":maintenance,"icon":"hammer","trend":"neutral"})
+        maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
+        metrics.append({"id":"maintenance_intensity","label":"Onderhoud","value":maintenance,"icon":"hammer","trend":"neutral", "color": "red" if reno_cost > 30000 else "green"})
         family = "Geschikt voor gezin" if (IntelligenceEngine._parse_int(ctx.get('oppervlakte','0')) or 0) >= 120 else "Minder geschikt voor groot gezin"
         metrics.append({"id":"family_suitability","label":"Gezinsgeschiktheid","value":family,"icon":"people","trend":"neutral"})
         lt_quality = "Hoog" if "jong" in construction_alert.lower() else "Middelmatig" if "aandacht" in construction_alert.lower() else "Laag"
         metrics.append({"id":"long_term_quality","label":"Lange-termijn kwaliteit","value":lt_quality,"icon":"shield","trend":"neutral"})
         
         main_content = self._render_rich_narrative(narrative, extra_html=f"""
-        <div class="sun-path-widget">
-            <div class="sun-icon">☀️</div>
-            <div class="sun-text"><strong>Zoncheck:</strong> Open kompas-app tijdens bezichtiging. Zuid/Zuid-West is ideaal voor middag/avondzon.</div>
+        <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center gap-4 sun-path-widget">
+            <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-2xl sun-icon"><ion-icon name="sunny"></ion-icon></div>
+            <div class="sun-text text-amber-900"><strong>Zoncheck:</strong> Open kompas-app tijdens bezichtiging. Zuid/Zuid-West is ideaal voor middag/avondzon.</div>
         </div>
         """)
         
@@ -79,5 +80,6 @@ class GardenOutdoor(BaseChapter):
         return ChapterOutput(
             title="7. Tuin & Buitenruimte",
             grid_layout=layout, 
-            blocks=[]
+            blocks=[],
+            chapter_data=narrative
         )
