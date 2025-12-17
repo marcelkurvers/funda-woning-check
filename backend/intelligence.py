@@ -1,6 +1,16 @@
 import random
 import re
-from typing import Dict, Any
+
+from typing import Dict, Any, Optional
+import json
+import logging
+
+try:
+    from ollama_client import OllamaClient
+except ImportError:
+    OllamaClient = Any
+
+logger = logging.getLogger(__name__)
 
 class IntelligenceEngine:
     """
@@ -8,6 +18,11 @@ class IntelligenceEngine:
     based on property data. In a full production version, this would 
     interface with an LLM (e.g., OpenAI API).
     """
+    _client: Optional[OllamaClient] = None
+
+    @classmethod
+    def set_client(cls, client: OllamaClient):
+        cls._client = client
 
     @staticmethod
     def generate_chapter_narrative(chapter_id: int, ctx: Dict[str, Any]) -> Dict[str, str]:
@@ -61,8 +76,24 @@ class IntelligenceEngine:
             result = IntelligenceEngine._narrative_ch11(data)
         elif chapter_id == 12:
             result = IntelligenceEngine._narrative_ch12(data)
+        elif chapter_id == 12:
+            result = IntelligenceEngine._narrative_ch12(data)
         else:
             result = {"title": "Analyse", "intro": "Generieke analyse.", "main_analysis": "Geen data.", "conclusion": "N.v.t."}
+        
+        # AI OVERRIDE
+        if IntelligenceEngine._client:
+            try:
+                ai_result = IntelligenceEngine._generate_ai_narrative(chapter_id, data, result)
+                if ai_result:
+                     # Merge or replace. If AI fails or returns partial, we kept the hardcoded one?
+                     # Ideally AI result is comprehensive.
+                     # We force the structure to match.
+                     result.update(ai_result)
+                     result["interpretation"] += " (AI Enhanced)"
+            except Exception as e:
+                logger.error(f"AI Generation failed for Chapter {chapter_id}: {e}")
+                # Fallback silently to hardcoded
         
         # Append missing KPI notice if any critical fields are missing or zero
         missing_keys = [k for k in ["price", "area", "plot", "year", "label"] if not data.get(k)]
@@ -89,6 +120,56 @@ class IntelligenceEngine:
             return int(digits) if digits else 0
         except:
             return 0
+
+    @classmethod
+    def _generate_ai_narrative(cls, chapter_id: int, data: Dict[str, Any], fallback: Dict[str, str]) -> Optional[Dict[str, str]]:
+        """
+        Uses Ollama to generate the narrative.
+        """
+        if not cls._client: return None
+        
+        # Construct Prompt
+        # We strip heavy fields to save context matching if needed, but local LLMs handle 4k/8k usually.
+        # Ensure preferences are known
+        prefs = data.get('_preferences', {})
+        
+        system_prompt = (
+            "You are an expert Real Estate Analyst for 'Funda AI Rapport'. "
+            "Your clients are Marcel (Tech/Infra focus) and Petra (Atmosphere/Comfort focus). "
+            "Analyze the provided property data STRICTLY based on the requested chapter context. "
+            "Output must be valid JSON matching the structure: "
+            "{'title': str, 'intro': str, 'main_analysis': str, 'interpretation': str, 'advice': str, 'conclusion': str, 'strengths': [str]}. "
+            "Use Dutch language. Use HTML tags <p>, <ul>, <li>, <strong> for formatting where appropriate."
+        )
+        
+        user_prompt = f"""
+        **Context**: Chapter {chapter_id}
+        **Property Data**: {json.dumps(data, default=str)}
+        **Current Hardcoded Draft (Reference)**: {json.dumps(fallback, default=str)}
+        
+        **Task**:
+        1. Rewrite the content to be more insightful and personalized for Marcel & Petra.
+        2. Check specific preferences: {json.dumps(prefs.get('marcel', {}))} and {json.dumps(prefs.get('petra', {}))}.
+        3. Keep the same Keys. 'main_analysis' should be detailed.
+        4. If data is missing (0 or null), explicitly mention it in 'advice'.
+        
+        Return ONLY the JSON object.
+        """
+        
+        try:
+            response_text = cls._client.generate(user_prompt, system=system_prompt, json_mode=True)
+            # Parse JSON
+            # Sometimes local models wrap in ```json ... ```
+            clean_text = response_text.strip()
+            if clean_text.startswith("```json"):
+                clean_text = clean_text.split("```json")[1].split("```")[0]
+            elif clean_text.startswith("```"):
+                clean_text = clean_text.split("```")[1].split("```")[0]
+            
+            return json.loads(clean_text)
+        except Exception as e:
+            logger.error(f"Failed to parse AI response: {e}\nResponse: {response_text}")
+            return None
 
     # --- NARRATIVES ---
 
@@ -497,7 +578,7 @@ class IntelligenceEngine:
         strengths = ["Basisstructuur"]
         if d['year'] > 2010: strengths.append("Modern Sanitair")
 
-        conclusion = f"<strong>Conclusie:</strong> Project '{target}'."
+        conclusion = f"Project '{target}'."
         return {
             "title": "Onderhoud & Afwerking",
             "intro": intro, 
