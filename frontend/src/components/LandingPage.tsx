@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { UploadCloud, Link as LinkIcon, ArrowRight, FileText, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { UploadCloud, ArrowRight, CheckCircle2, Loader2, ClipboardType } from 'lucide-react';
 
 interface LandingPageProps {
     onStartAnalysis: (type: 'url' | 'paste', content: string) => Promise<void>;
@@ -9,13 +9,13 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ onStartAnalysis, isLoading, error }: LandingPageProps) {
-    const [activeTab, setActiveTab] = useState<'paste' | 'url'>('paste');
     const [content, setContent] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!content.trim()) return;
-        onStartAnalysis(activeTab, content);
+        // Always use 'paste' mode as URL scraping is disabled
+        onStartAnalysis('paste', content);
     };
 
     return (
@@ -41,35 +41,21 @@ export function LandingPage({ onStartAnalysis, isLoading, error }: LandingPagePr
                     </h1>
                     <p className="text-lg text-slate-400 font-medium leading-relaxed">
                         Genereer in enkele seconden een diepgaand aankoopadvies.
-                        Analyseer waarde, locatie en potentie met één klik.
+                        Plak de woninginformatie en krijg direct inzicht.
                     </p>
                 </div>
 
-                {/* Card Component */} // Added comment to break up the file
+                {/* Card Component */}
                 <div className="w-full max-w-xl bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 hover:shadow-blue-900/10 hover:border-slate-600/50 group">
 
-                    {/* Tabs */}
-                    <div className="grid grid-cols-2 border-b border-slate-700/50">
-                        <button
-                            onClick={() => setActiveTab('paste')}
-                            className={`flex items-center justify-center gap-2 py-4 text-sm font-bold transition-all relative
-                ${activeTab === 'paste' ? 'text-white bg-slate-700/30' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/30'}
-              `}
-                        >
-                            <FileText className="w-4 h-4" />
-                            Directe Invoer
-                            {activeTab === 'paste' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-500 shadow-[0_-2px_10px_rgba(59,130,246,0.5)]" />}
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('url')}
-                            className={`flex items-center justify-center gap-2 py-4 text-sm font-bold transition-all relative
-                ${activeTab === 'url' ? 'text-white bg-slate-700/30' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/30'}
-              `}
-                        >
-                            <LinkIcon className="w-4 h-4" />
-                            Funda URL
-                            {activeTab === 'url' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-500 shadow-[0_-2px_10px_rgba(59,130,246,0.5)]" />}
-                        </button>
+                    {/* Header Strip (Visual only now) */}
+                    <div className="border-b border-slate-700/50 bg-slate-800/30 px-6 py-4 flex items-center gap-3">
+                        <div className="p-2 bg-blue-500/10 rounded-lg">
+                            <ClipboardType className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <span className="text-sm font-bold text-slate-200">
+                            Directe Analyse Module
+                        </span>
                     </div>
 
                     {/* Form Area */}
@@ -78,46 +64,29 @@ export function LandingPage({ onStartAnalysis, isLoading, error }: LandingPagePr
 
                             <div className="space-y-2">
                                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">
-                                    {activeTab === 'paste' ? 'Plak Woning Informatie (HTML/Tekst)' : 'Plak Funda Link'}
+                                    Plak Woning Informatie (HTML/Tekst)
                                 </label>
 
-                                {activeTab === 'paste' ? (
-                                    <div className="relative group/input">
-                                        <textarea
-                                            value={content}
-                                            onChange={(e) => setContent(e.target.value)}
-                                            placeholder="Plak hier de volledige tekst of HTML van de woningpagina..."
-                                            className="w-full h-40 bg-slate-900/50 border-2 border-slate-700 rounded-xl p-4 text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all resize-none text-sm font-mono leading-relaxed"
-                                        />
-                                        <div className="absolute bottom-3 right-3 pointer-events-none">
-                                            <UploadCloud className="w-5 h-5 text-slate-600 group-focus-within/input:text-blue-500 transition-colors" />
-                                        </div>
+                                <div className="relative group/input">
+                                    <textarea
+                                        value={content}
+                                        onChange={(e) => setContent(e.target.value)}
+                                        placeholder="Selecteer alle tekst (Ctrl+A) op de Funda pagina, kopieer en plak het hier..."
+                                        className="w-full h-48 bg-slate-900/50 border-2 border-slate-700 rounded-xl p-4 text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all resize-none text-sm font-mono leading-relaxed"
+                                    />
+                                    <div className="absolute bottom-3 right-3 pointer-events-none">
+                                        <UploadCloud className="w-5 h-5 text-slate-600 group-focus-within/input:text-blue-500 transition-colors" />
                                     </div>
-                                ) : (
-                                    <div className="relative group/input">
-                                        <input
-                                            type="url"
-                                            value={content}
-                                            onChange={(e) => setContent(e.target.value)}
-                                            placeholder="https://www.funda.nl/..."
-                                            className="w-full bg-slate-900/50 border-2 border-slate-700 rounded-xl p-4 pr-12 text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                                        />
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
-                                            <LinkIcon className="w-5 h-5 group-focus-within/input:text-blue-500 transition-colors" />
-                                        </div>
-                                    </div>
-                                )}
+                                </div>
                             </div>
 
                             {/* Info Note */}
                             <div className="flex gap-3 bg-slate-900/30 p-4 rounded-lg border border-slate-700/50">
                                 <div className="mt-0.5 shrink-0">
-                                    {activeTab === 'paste' ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <AlertCircle className="w-4 h-4 text-amber-500" />}
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                                 </div>
                                 <p className="text-xs text-slate-400 leading-relaxed">
-                                    {activeTab === 'paste'
-                                        ? "Aanbevolen: Kopiëren en plakken is sneller en betrouwbaarder dan scraping. Selecteer alle tekst (Ctrl+A) op de Funda pagina en plak hier."
-                                        : "Funda scraping is momenteel beperkt door beveiliging. Gebruik bij voorkeur 'Directe Invoer' als dit niet werkt."}
+                                    Voor het beste resultaat: open de woningpagina op Funda, selecteer alles (Ctrl+A / Cmd+A), kopieer en plak hier.
                                 </p>
                             </div>
 
@@ -158,7 +127,7 @@ export function LandingPage({ onStartAnalysis, isLoading, error }: LandingPagePr
 
                 {/* Footer */}
                 <div className="mt-12 flex gap-8 text-slate-600 text-xs font-mono opacity-60 hover:opacity-100 transition-opacity">
-                    <span>v2.4.0-Stable</span>
+                    <span>v2.5.0-PasteOnly</span>
                     <span>•</span>
                     <span>Powered by Deepseek R1</span>
                     <span>•</span>

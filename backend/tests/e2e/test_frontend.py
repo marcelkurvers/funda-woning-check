@@ -29,9 +29,11 @@ class TestFrontendStructure(unittest.TestCase):
         
         # 3. Check Critical Components
         self.assertIn("DOMContentLoaded", str(soup))
-        # Ensure fallback paste area exists
+        # Ensure paste area exists (Primary Input)
         self.assertIsNotNone(soup.find(id="paste-area"), "Paste area missing")
-        self.assertIsNotNone(soup.find(id="toggle-paste"), "Paste Toggle missing")
+        # Ensure Toggle & URL input are GONE
+        self.assertIsNone(soup.find(id="toggle-paste"), "Paste toggle should be removed")
+        self.assertIsNone(soup.find(id="fc-url"), "Legacy URL input should be removed")
         
         # 4. Check Dashboard Containers (Targeted by JS)
         self.assertIsNotNone(soup.find(id="btn-download-pdf"), "PDF Download button missing")

@@ -22,27 +22,23 @@
           style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">NIEUW:
           AI ANALYSE 2.0</span></div>
       <h1 class="hero-title">Vastgoed Inzicht.<br><span style="color: #475569;">Binnen 10 seconden.</span></h1>
-      <p style="margin-bottom: 2.5rem; color: #64748b; font-size: 1.1rem; line-height: 1.6;">Upload een Funda URL en
+      <p style="margin-bottom: 2.5rem; color: #64748b; font-size: 1.1rem; line-height: 1.6;">Upload de broncode van een
+        Funda pagina en
         ontvang direct een compleet waarderapport,
-        inclusief <strong style="color: #0f172a;">onderhandelingsstrategie</strong>en <strong
+        inclusief <strong style="color: #0f172a;">onderhandelingsstrategie</strong> en <strong
           style="color: #0f172a;">verbouwpotentieel</strong>. </p>
-      <div class="input-group"><input type="text" id="fc-url" class="hero-input"
-          placeholder="https://www.funda.nl/koop/..." /><button id="btn-start" class="hero-btn">Start Analyse</button>
-      </div>
-      <div style="margin-top: 1rem;"><a href="#" id="toggle-paste" onclick="togglePasteArea(event)"
-          style="font-size: 0.9rem; color: #64748b; text-decoration: none; border-bottom: 1px dashed #94a3b8;">Of
-          gebruik broncode (handmatig)</a></div>
-      <!-- Paste Fallback -->
-      <div id="paste-area" class="hidden glass-panel"
+
+      <!-- Paste Area (Now Default) -->
+      <div id="paste-area" class="glass-panel"
         style="margin-top: 2rem; padding: 1.5rem; border-radius: 12px; text-align: left;">
         <p
-          style="font-size: 0.9rem; color: #ef4444; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-          <ion-icon name="warning-outline"></ion-icon>Automatische toegang geblokkeerd? Plak hier de broncode
-          (Ctrl+U):
-        </p><textarea id="fc-paste" rows="6" class="hero-input"
+          style="font-size: 0.9rem; color: #3b82f6; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+          <ion-icon name="clipboard-outline"></ion-icon><strong>Stap 1:</strong> Selecteer alle tekst op de Funda pagina
+          (Ctrl+A), kopieer (Ctrl+C) en plak hier:
+        </p><textarea id="fc-paste" rows="8" class="hero-input"
           style="font-size: 0.8rem; font-family: monospace; background: white;"
-          placeholder="<html>...</html>"></textarea><button id="btn-paste-submit" class="hero-btn"
-          style="margin-top: 1rem; background: #334155;">Verwerk Broncode</button>
+          placeholder="Plak hier de volledige tekst of HTML..."></textarea><button id="btn-paste-submit"
+          class="hero-btn" style="margin-top: 1rem; width: 100%;">Start Analyse</button>
       </div>
     </div>
     <!-- Trust badge or features -->
