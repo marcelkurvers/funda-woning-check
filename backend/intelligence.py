@@ -462,7 +462,7 @@ class IntelligenceEngine:
 
         strengths = [f"Gebruiksoppervlakte {d['area']} m²", "Indelingsvrijheid"]
 
-        conclusion = "<strong>Conclusie:</strong> Flexibiliteit is de troef van dit object."
+        conclusion = "Flexibiliteit is de troef van dit object."
         return {
             "title": "Indeling & Ruimte",
             "intro": intro, 

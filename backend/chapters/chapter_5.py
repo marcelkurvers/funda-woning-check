@@ -32,10 +32,10 @@ class LayoutAnalysis(BaseChapter):
         }
         
         metrics = [
-            {"id": "rooms", "label": "Totaal Kamers", "value": str(rooms), "icon": "grid"},
-            {"id": "bed", "label": "Slaapkamers (est)", "value": str(bedrooms), "icon": "bed"},
-            {"id": "living", "label": "Leefruimte", "value": "Ruim", "icon": "resize", "color": "blue"},
-            {"id": "bath", "label": "Sanitair", "value": "1+", "icon": "water"}
+            {"id": "rooms", "label": "Totaal Kamers", "value": str(rooms), "icon": "grid", "color": "blue"},
+            {"id": "bed", "label": "Slaapkamers", "value": str(bedrooms), "icon": "bed", "explanation": "Geschat o.b.v. m²"},
+            {"id": "living", "label": "Leefruimte", "value": "Ruim", "icon": "resize", "color": "green", "explanation": "Veel mogelijkheden"},
+            {"id": "bath", "label": "Sanitair", "value": "1+", "icon": "water", "explanation": "Basics aanwezig", "color": "blue"}
         ]
         # New metrics (additive)
         price_val = IntelligenceEngine._parse_int(ctx.get('prijs') or ctx.get('asking_price_eur'))
@@ -47,11 +47,14 @@ class LayoutAnalysis(BaseChapter):
         construction_alert = "Aandacht nodig" if construction_year < 1990 else "Relatief jong"
         if market_avg_m2:
             price_dev_pct = round(((price_m2 - market_avg_m2) / market_avg_m2) * 100)
-            metrics.append({"id":"price_deviation","label":"Prijsafwijking %","value":f"{price_dev_pct:+,}%" if price_dev_pct != 0 else "0%","icon":"trend-up" if price_dev_pct>0 else "trend-down" if price_dev_pct<0 else "neutral","trend":"up" if price_dev_pct>0 else "down" if price_dev_pct<0 else "neutral","trend_text":f"{price_dev_pct:+}% vs markt"})
+        if market_avg_m2:
+            price_dev_pct = round(((price_m2 - market_avg_m2) / market_avg_m2) * 100)
+            metrics.append({"id":"price_deviation","label":"Prijsafwijking","value":f"{price_dev_pct:+,}%" if price_dev_pct != 0 else "0%","icon":"analytics","color":"green" if price_dev_pct < 5 else "orange","explanation": "vs markt"})
         future_score = 80 if label in ["A","A+","A++","B"] else 60 if label in ["C","D"] else 40
         metrics.append({"id":"energy_future","label":"Energie Toekomstscore","value":f"{future_score}","icon":"leaf","color":"green" if future_score>=70 else "orange" if future_score>=50 else "red","trend":"neutral"})
         maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
-        metrics.append({"id":"maintenance_intensity","label":"Onderhoudsintensiteit","value":maintenance,"icon":"hammer","trend":"neutral"})
+        maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
+        metrics.append({"id":"maintenance_intensity","label":"Onderhoud","value":maintenance,"icon":"hammer","trend":"neutral", "color": "red" if reno_cost > 30000 else "green"})
         family = "Geschikt voor gezin" if (IntelligenceEngine._parse_int(ctx.get('oppervlakte','0')) or 0) >= 120 else "Minder geschikt voor groot gezin"
         metrics.append({"id":"family_suitability","label":"Gezinsgeschiktheid","value":family,"icon":"people","trend":"neutral"})
         lt_quality = "Hoog" if "jong" in construction_alert.lower() else "Middelmatig" if "aandacht" in construction_alert.lower() else "Laag"
@@ -92,5 +95,6 @@ class LayoutAnalysis(BaseChapter):
         return ChapterOutput(
             title="5. Indeling & Ruimtegebruik",
             grid_layout=layout, 
-            blocks=[]
+            blocks=[],
+            chapter_data=narrative
         )
