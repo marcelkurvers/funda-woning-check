@@ -77,48 +77,85 @@ class IntelligenceEngine:
         ratio = int(d['area'] / d['plot'] * 100) if d['plot'] else 100
         rooms_est = max(3, int(d['area']/25))
         
-        # 1. Intro
-        intro = f"Voor de woning aan de {d['address']} hebben we een diepgaande analyse uitgevoerd van de fysieke eigenschappen. " \
-                f"Met een woonoppervlakte van {d['area']} m² en een perceel van {d['plot']} m² spreken we van een " \
-                f"{'royaal' if d['area'] > 150 else 'courant'} object."
+        # 1. Intro - Dynamic Builder
+        intro_parts = []
+        if d['area'] < 60:
+            intro_parts.append(f"Dit compacte stadsappartement aan de {d['address']} biedt een efficiënte woonbeleving op {d['area']} m².")
+        elif d['area'] > 200:
+            intro_parts.append(f"Resideren in weelde aan de {d['address']}. Met een imposant woonoppervlak van {d['area']} m² spreken we van een buitencategorie object.")
+        else:
+            intro_parts.append(f"Aan de {d['address']} vinden we deze courante woning met een gebruiksoppervlakte van {d['area']} m².")
+            
+        if d['plot'] > 1000:
+            intro_parts.append(f"Het landgoed van {d['plot']} m² waarborgt absolute privacy en rust.")
+        elif d['plot'] == 0:
+            intro_parts.append("Het object betreft een appartementsrecht zonder eigen grondgebonden buitenruimte, wat het onderhoud minimaliseert.")
+        else:
+            intro_parts.append(f"De kavel van {d['plot']} m² biedt een prettige balans tussen tuin en bebouwing.")
+            
+        intro = " ".join(intro_parts)
 
-        # 2. Main Analysis (Legacy support)
-        analysis = f"""
-        <p>De verhouding tussen wonen en perceel bedraagt circa {ratio}%. 
-        {'Dit duidt op een stedelijke dichtheid met maximale benutting van de kavel.' if ratio > 60 else 'Dit geeft aan dat de woning vrij gelegen is met veel ruimte rondom.'}
-        Het bouwjaar {d['year']} plaatst het object in een periode waarin {'isolatie nog geen standaard was' if d['year'] < 1980 else 'moderne bouwtechnieken hun intrede deden'}.</p>
+        # 2. Main Analysis - Dynamic Vocab
+        analysis_parts = []
         
-        <p>Op basis van het volume schatten we een inhoud van circa {d['area']*3} m³, wat mogelijkheden biedt voor {rooms_est} { 'royale' if d['area'] > 180 else 'functionele'} kamers.</p>
-        """
+        # Ratio Analysis
+        if ratio > 80:
+            analysis_parts.append(f"<p>De bebouwingsdichtheid is hoog (circa {ratio}%), wat typerend is voor een stedelijke of centrum-locatie. Elke vierkante meter wordt hier benut.</p>")
+        elif ratio < 20:
+            analysis_parts.append(f"<p>Slechts {ratio}% van het perceel is bebouwd. Dit geeft het object een vrij en groen karakter met volop uitbreidingsmogelijkheden.</p>")
+        else:
+            analysis_parts.append(f"<p>De verhouding wonen/perceel ({ratio}%) is marktconform voor deze wijkopzet.</p>")
 
-        # 3. Rich AI Interpretation (New)
-        interpretation = f"""
-        <p>Dit betreft een {'zeer ruim bemeten' if d['area'] > 200 else 'marktconform'} woning die duidelijk positie kiest in het {'hogere' if d['price'] > 750000 else 'midden'}segment. 
-        De combinatie van {d['area']} m² woonoppervlakte op een perceel van {d['plot']} m² is {'uniek' if d['plot'] > d['area']*3 else 'in balans'}. 
-        Het volume en de indeling suggereren een gebruik als {'luxe gezinswoning' if d['area'] > 150 else 'praktische eengezinswoning'} met {'multifunctionele mogelijkheden' if d['area'] > 250 else 'voldoende ruimte'}.</p>
-        """
+        # Year Analysis
+        if d['year'] < 1940:
+             analysis_parts.append(f"<p>Historisch karakter uit {d['year']}. De authentieke details en sfeer zijn unieke assets, al vraagt de bouwkundige staat ('ouderdomsclausule') om aandacht.</p>")
+        elif d['year'] > 2020:
+             analysis_parts.append(f"<p>Nieuwbouwkwaliteit uit {d['year']}. Dit betekent: gasloos, uitstekend geïsoleerd en klaar voor de toekomst. Een zorgeloze investering.</p>")
+        else:
+             analysis_parts.append(f"<p>Degelijke bouw uit {d['year']}. Een periode waarin praktische indelingen centraal stonden.</p>")
+             
+        analysis = "".join(analysis_parts)
+        
+        # 3. Rich AI Interpretation
+        interpretation = ""
+        if d['price'] > 1000000:
+            interpretation = f"<p>In dit topsegment draait het niet alleen om stenen, maar om 'levensstijl'. De combinatie van {d['area']} m² wonen op deze locatie rechtvaardigt de vraagprijs.</p>"
+        elif d['price'] < 300000:
+            interpretation = f"<p>Een ideale instap in de woningmarkt. Voor dit budget krijgt u relatief veel functionaliteit, al is modernisering wellicht gewenst.</p>"
+        else:
+            interpretation = f"<p>Een solide gezinswoning in het middensegment. De prijs/kwaliteitverhouding oogt in balans.</p>"
 
         # 4. Advice / Attention Points
         advice = []
         if d['year'] < 1980:
-            advice.append("Controleer de isolatiestandaard (dak/vloer/glas) gezien het bouwjaar.")
-            advice.append("Houd rekening met modernisering van installaties.")
+            advice.append("Check: Asbestclausule van toepassing?")
+            advice.append("Advies: Bouwkundige keuring (fundering/dak).")
         if d['label'] in ['E', 'F', 'G']:
-            advice.append("Verduurzaming is noodzakelijk voor toekomstbestendigheid.")
+            advice.append("Budgettip: Reserveer €20k-€40k voor verduurzaming.")
+        if d['year'] > 2000 and d['label'] == 'A':
+            advice.append("Comfort: Controleer werking WTW-unit en filters.")
+        
         if not advice:
-            advice.append("Geen directe bouwkundige aandachtspunten op basis van deze data.")
+            advice.append("Geen specifieke risico's op basis van data.")
         
         advice_html = "<ul>" + "".join([f"<li>{point}</li>" for point in advice]) + "</ul>"
 
         # 5. Strengths (Sterktes)
         strengths = []
-        if d['area'] > 150: strengths.append(f"Royaal woonoppervlak ({d['area']} m²)")
-        if d['plot'] > 500: strengths.append(f"Groot perceel ({d['plot']} m²)")
-        if "A" in d['label']: strengths.append("Energiezuinig label")
+        if d['area'] > 150: strengths.append("Royaal Wonen")
+        if d['plot'] > 500: strengths.append("Vrijheid & Privacy")
+        if "A" in d['label']: strengths.append("Toekomstbestendig Label")
+        if d['year'] < 1940: strengths.append("Authentieke Sfeer")
+        if d['year'] > 2010: strengths.append("Onderhoudsarm")
         
         # 6. Conclusion
-        score = "Marktconform" if d['area'] > 100 else "Compact"
-        conclusion = f"<strong>Conclusie:</strong> Een {score.lower()} object met {'veel' if d['plot'] > d['area']*2 else 'voldoende'} ontwikkelpotentie."
+        conclusion = ""
+        if d['price'] > 1000000 or d['area'] > 200:
+            conclusion = "<strong>Conclusie:</strong> Een uniek, hoogwaardig object voor de liefhebber van luxe."
+        elif d['area'] < 60:
+            conclusion = "<strong>Conclusie:</strong> Slimme stadswoning, ideaal voor starters of verhuur."
+        else:
+            conclusion = "<strong>Conclusie:</strong> Een courant object met potentie."
         
         return {
             "title": "Algemene Woningkenmerken",
@@ -133,9 +170,16 @@ class IntelligenceEngine:
     @staticmethod
     def _narrative_ch2(d):
         prefs = d.get('_preferences', {})
-        marcel_prio = prefs.get('marcel', {}).get('priorities', [])
-        petra_prio = prefs.get('petra', {}).get('priorities', [])
+        marcel_props = prefs.get('marcel', {})
+        petra_props = prefs.get('petra', {})
         
+        marcel_prio = marcel_props.get('priorities', [])
+        marcel_hidden = marcel_props.get('hidden_priorities', [])
+        
+        petra_prio = petra_props.get('priorities', [])
+        petra_hidden = petra_props.get('hidden_priorities', [])
+        
+        # Simple keyword matching helper
         # Simple keyword matching helper
         def check_features(priorities, source_text):
             matches = []
@@ -143,13 +187,26 @@ class IntelligenceEngine:
             source_lower = source_text.lower()
             for p in priorities:
                 # Naive matching: property feature descriptions often contain these words
-                # In a real system, we'd map 'Solar' to 'Zonnepanelen', 'Warmtepomp' to 'Warmtepomp', etc.
-                keyword = p.lower()
-                if keyword == "solar": keyword = "zonnepanelen"
-                if keyword == "accu": keyword = "batterij"
-                if keyword == "jaren 30": keyword = "193" # rudimentary year check
+                p_lower = p.lower()
                 
-                if keyword in source_lower:
+                # Handling for compound tags like "CAT6 / Ethernet"
+                # If ANY of the sub-components are found, we count it as a match
+                sub_tokens = [t.strip() for t in p_lower.split('/') if len(t.strip()) > 2]
+                if not sub_tokens: sub_tokens = [p_lower]
+                
+                is_match = False
+                for token in sub_tokens:
+                    # Specialized mappings
+                    if token == "solar": token = "zonnepanelen"
+                    if token == "accu": token = "batterij"
+                    if token == "jaren 30": token = "193" # rudimentary year check
+                    if token == "warmtepomp": token = "warmtepomp"
+                    
+                    if token in source_lower:
+                        is_match = True
+                        break
+                
+                if is_match:
                     matches.append(p)
                 else:
                     misses.append(p)
@@ -160,15 +217,23 @@ class IntelligenceEngine:
         features = str(d.get('features', []))
         source_blob = f"{description} {features}"
         
+        # Check Visible Priorities
         m_matches, m_misses = check_features(marcel_prio, source_blob)
         p_matches, p_misses = check_features(petra_prio, source_blob)
         
-        total_prio = len(marcel_prio) + len(petra_prio)
-        total_match = len(m_matches) + len(p_matches)
+        # Check Hidden Priorities
+        mh_matches, mh_misses = check_features(marcel_hidden, source_blob)
+        ph_matches, ph_misses = check_features(petra_hidden, source_blob)
+        
+        # Scoring includes BOTH visible and hidden
+        total_prio = len(marcel_prio) + len(petra_prio) + len(marcel_hidden) + len(petra_hidden)
+        total_match = len(m_matches) + len(p_matches) + len(mh_matches) + len(ph_matches)
+        
         score_pct = int((total_match / total_prio * 100)) if total_prio > 0 else 50 # Default 50 if no prefs
 
         intro = f"Op basis van de aangescherpte profielen van Marcel (Tech & Infra) en Petra (Sfeer & Comfort) scoort deze woning een match van {score_pct}%."
         
+        # Analysis ONLY shows visible priorities
         analysis = "<h4>Marcel's Tech-Check</h4><ul>"
         if m_matches:
             analysis += "".join([f"<li class='text-green-600'>✓ {m} gevonden</li>" for m in m_matches])
@@ -188,7 +253,7 @@ class IntelligenceEngine:
         analysis += "</ul>"
 
         interpretation = f"""
-        <p>De woning sluit voor <strong>{'Marcel' if len(m_matches) > len(p_matches) else 'Petra'}</strong> op papier het beste aan. 
+        <p>De woning sluit voor <strong>{'Marcel' if (len(m_matches)+len(mh_matches)) > (len(p_matches)+len(ph_matches)) else 'Petra'}</strong> op papier het beste aan. 
         {'De technische infrastructuur lijkt veelbelovend.' if 'Glasvezel' in m_matches or 'Zonnepanelen' in m_matches else 'De technische basisvoorzieningen vragen nader onderzoek.'}
         {'De sfeer en uitstraling matchen met de gezochte esthetiek.' if 'Jaren 30' in p_matches or 'Karakteristiek' in p_matches else 'De woning kan met de juiste styling naar wens worden gemaakt.'}</p>
         """
@@ -220,34 +285,57 @@ class IntelligenceEngine:
     def _narrative_ch3(d):
         risks = []
         if d['year'] < 1930: risks.append("de fundering (hout/staal?)")
-        if d['year'] < 1980: risks.append("de aanwezigheid van asbest")
-        if d['year'] < 1990: risks.append("de staat van het leidingwerk")
+        if d['year'] < 1980: risks.append("asbestverdachte materialen")
+        if d['year'] < 1990: risks.append("het leidingwerk (lood/koper)")
         
-        risk_text = f"Gezien het bouwjaar {d['year']} adviseren wij specifiek te letten op {', '.join(risks)}." if risks else "Gezien het recente bouwjaar verwachten we geen structurele gebreken."
-
-        intro = f"Met een oorsprong in {d['year']} draagt dit pand een specifieke bouwkundige signatuur."
+        # Dynamic Intro
+        intro_parts = []
+        if d['year'] < 1920:
+             intro_parts.append(f"Dit monumentale pand ademt de geschiedenis van {d['year']}. Een bouwkundig juweel, maar wel een met 'gebruiksaanwijzing'.")
+        elif d['year'] < 1970:
+             intro_parts.append(f"Gebouwd in {d['year']}, een periode van wederopbouw en systeembouw. De basis is vaak degelijk, maar isolatie was destijds geen prioriteit.")
+        elif d['year'] > 2010:
+             intro_parts.append(f"Met bouwjaar {d['year']} voldoet dit object aan de strengste moderne bouwbesluiten. Zorgeloos wonen staat hier centraal.")
+        else:
+             intro_parts.append(f"Een solide basis uit {d['year']}, kenmerkend voor de functionele bouwstijl van die tijd.")
         
-        analysis = f"""
-        <p>De constructieve staat oogt op basis van de kerngegevens {'solide' if d['year'] > 1990 else 'aandachtbehoevend'}. 
-        {risk_text}</p>
-        <p>Dak & Gevel: De levensduur van dakpannen is ca. 40-50 jaar. Bij dit object is {(2025-d['year']) % 50} jaar geleden theoretisch vervanging/groot onderhoud nodig geweest.</p>
-        """
+        intro = " ".join(intro_parts)
+        
+        # Dynamic Analysis
+        analysis_parts = []
+        risks_str = ", ".join(risks)
+        risk_sentence = f"Let echter specifiek op {risks_str}." if risks else "Er zijn geen directe risico-indicatoren."
+        analysis_parts.append(f"<p>De constructieve staat oogt {'uitstekend' if d['year'] > 2000 else 'voldoende, gezien de leeftijd'}. {risk_sentence}</p>")
+        
+        if d['year'] < 1990:
+             analysis_parts.append(f"<p>Dak & Gevel: Gezien de leeftijd van {2025-d['year']} jaar is het aannemelijk dat het dak of de goten al eens vervangen zijn of binnenkort aan de beurt zijn.</p>")
+        else:
+             analysis_parts.append("<p>De schil van de woning (dak, gevel, kozijnen) bevindt zich waarschijnlijk nog in de eerste levensfase en vereist minimaal onderhoud.</p>")
+             
+        analysis = "".join(analysis_parts)
 
-        interpretation = f"""
-        <p>Het pand is gebouwd met de kwaliteitsnormen van {d['year']}. Dit betekent dat modernisering naar huidige maatstaven {'een optie' if d['year'] > 2000 else 'een noodzaak'} is.
-        De bouwkundige structuur lijkt {'standaard' if d['year'] > 1980 else 'traditioneel'}.</p>
-        """
+        # Interpretation
+        if d['year'] < 1940:
+            interpretation = "<p>Oude woningen 'werken'. Scheurvorming is niet ongewoon, maar dient wel beoordeeld te worden op stabiliteit. De charme wint het hier vaak van de perfectie.</p>"
+        elif d['year'] > 2000:
+            interpretation = "<p>Dit huis is 'af'. De focus ligt hier niet op renoveren, maar op personaliseren. Bouwtechnisch is dit de veiligste categorie in de markt.</p>"
+        else:
+            interpretation = "<p>Een prima casco dat zich goed leent voor modernisering. De structuur laat vaak toe om wanden te verwijderen voor een modernere indeling.</p>"
 
-        advice = "<ul>"
-        advice += f"<li>Bouwkundige keuring is {'essentieel' if risks else 'aanbevolen'}.</li>"
-        if d['year'] < 1980: advice += "<li>Inventariseer risico op asbest.</li>"
-        advice += "</ul>"
+        # Advice
+        advice_list = []
+        advice_list.append(f"Bouwkundige keuring is {'noodzakelijk' if d['year'] < 1990 else 'altijd verstandig'}.")
+        if d['year'] < 1980: advice_list.append("Laat een asbestinventarisatie uitvoeren bij verbouwplannen.")
+        if "hout" in str(d.get('features','')).lower(): advice_list.append("Controleer schilderwerk en houtrot kritisch.")
+        
+        advice = "<ul>" + "".join([f"<li>{item}</li>" for item in advice_list]) + "</ul>"
 
         strengths = []
-        if d['year'] > 1990: strengths.append("Modern bouwbesluit (bouwtechnisch veilig)")
-        if d['year'] < 1940: strengths.append("Karakteristieke bouwstijl")
+        if d['year'] > 1990: strengths.append("Modern Bouwbesluit")
+        if d['year'] < 1940: strengths.append("Karakteristiek")
+        if d['year'] > 2005: strengths.append("Betonvloeren (geluidsisolatie)")
 
-        conclusion = f"<strong>Conclusie:</strong> Bouwtechnisch beoordelen we het risico als {'Laag' if not risks else 'Gemiddeld tot Hoog'}."
+        conclusion = f"<strong>Conclusie:</strong> Risicoprofiel: {'Laag (Instapklaar)' if not risks else 'Gemiddeld (Inspectie vereist)'}."
         
         return {
             "title": "Bouwkundige Staat",
@@ -264,29 +352,48 @@ class IntelligenceEngine:
         green = ["A", "A+", "A++", "A+++", "B"]
         is_green = any(x in d['label'] for x in green)
         
-        intro = f"Duurzaamheid is key voor waardebehoud. Met energielabel {d['label']} scoort deze woning {'boven' if is_green else 'onder'} de moderne standaard."
+        # Intro
+        if is_green:
+            intro = f"Gefeliciteerd, met energielabel {d['label']} behoort deze woning tot de 'groene' voorhoede. Dit betekent direct comfort en lagere maandlasten."
+        elif d['label'] in ['C', 'D']:
+            intro = f"Met energielabel {d['label']} presteert de woning gemiddeld. Er is een solide basis, maar optimalisatie is zeker mogelijk."
+        else:
+            intro = f"Energielabel {d['label']} is een duidelijk signaal: hier valt winst te behalen. Duurzaamheid is bij dit object de belangrijkste investeringspost."
         
-        analysis = f"""
-        <p>Het huidige label impliceert dat er {'reeds flink geïnvesteerd is' if is_green else 'nog winst te behalen valt'}. 
-        Voor een woning uit {d['year']} is dit label {'een knappe prestatie' if is_green else 'volgens verwachting'}.</p>
-        <p>Besparingspotentieel: {'Optimalisatie van installaties' if is_green else 'Het isoleren van schil (dak/vloer/gevel) is de eerste stap naar lagere lasten'}.</p>
-        """
+        # Analysis
+        analysis_parts = []
+        if d['year'] < 1980 and not is_green:
+            analysis_parts.append(f"<p>Gezien het bouwjaar {d['year']} is de isolatie van de spouw, vloer en dak waarschijnlijk de 'laaghangende fruit' investering. Dit verdien je vaak binnen 5-7 jaar terug.</p>")
+        elif is_green:
+             analysis_parts.append("<p>De woning is reeds 'toekomstproof'. De volgende stap zou 'Off-Grid' kunnen zijn met extra zonnepanelen of een thuisbatterij.</p>")
+        else:
+             analysis_parts.append("<p>Het huidige label suggereert enkelglas of verouderde CV-techniek. Een energiescan zal de exacte pijnpunten blootleggen.</p>")
+             
+        analysis = "".join(analysis_parts)
         
-        interpretation = f"""
-        <p>De woning { 'voldoet aan' if is_green else 'blijft achter bij' } de huidige duurzaamheidseisen.
-        Met het oog op de gasloze toekomst is een investeringsplan {'raadzaam' if is_green else 'noodzakelijk'}.</p>
-        """
-
-        advice = "<ul>"
-        if not is_green: advice += "<li>Overweeg na-isolatie van spouw en dak.</li>"
-        advice += "<li>Onderzoek mogelijkheden voor warmtepomp/zonnepanelen.</li></ul>"
+        # Interpretation
+        if is_green:
+            interpretation = "<p>In de huidige markt is dit label een 'waarde-vermeerderaar'. Kopers betalen graag een premie voor instapklaar comfort.</p>"
+        else:
+            interpretation = "<p>Zie dit als een kans. Subsidies voor verduurzaming zijn ruim voorhanden, en na renovatie stijgt de woningwaarde direct.</p>"
+            
+        advice_list = []
+        if not is_green: 
+            advice_list.append("Vraag offertes op voor spouwmuurisolatie.")
+            advice_list.append("Vervang eventueel resterend enkel glas door HR++.")
+        else:
+            advice_list.append("Optimaliseer de instellingen van de huidige installaties.")
+        
+        if d['plot'] and d['plot'] > 0: advice_list.append("dakligging checken voor zonnepanelen.")
+        
+        advice = "<ul>" + "".join([f"<li>{item}</li>" for item in advice_list]) + "</ul>"
 
         strengths = []
-        if is_green: strengths.append(f"Energielabel {d['label']}")
-        strengths.append("Dakligging geschikt voor zonnepanelen (check oriëntatie)")
-
-        conclusion = f"<strong>Conclusie:</strong> {d['label']}-label geeft een {'solide basis' if is_green else 'duidelijke renovatieopgave'}."
+        if is_green: strengths.append(f"Uitstekend Label {d['label']}")
+        if d['year'] > 2020: strengths.append("Gasloos")
         
+        conclusion = f"<strong>Conclusie:</strong> {'Groene Modelwoning' if is_green else 'Renovatieproject met Potentie'}."
+
         return {
             "title": "Energie & Duurzaamheid",
             "intro": intro, 
@@ -300,21 +407,35 @@ class IntelligenceEngine:
     @staticmethod
     def _narrative_ch5(d):
         rooms = max(2, int(d['area'] / 25))
-        intro = f"Met {d['area']} m² gebruiksoppervlakte biedt deze woning ruimte aan diverse leefscenario's."
         
-        analysis = f"""
-        <p>De indeling faciliteren naar schatting {rooms} leefruimtes. 
-        {'Dit is ideaal voor een gezin' if rooms > 3 else 'Dit past perfect bij een starter of stel'}. 
-        De flow van de woning kan bij oudere won ({d['year']}) soms hokkerig zijn; overweeg het doorbreken van een wand voor een open concept.</p>
-        """
+        if d['area'] > 150:
+             intro = f"Zeeën van ruimte. Met {d['area']} m² is dit object een canvas voor uw woondromen, van thuiswerkplek tot home-gym."
+        elif d['area'] < 70:
+             intro = f"Compact en slim ingedeeld. De {d['area']} m² zijn efficiënt benut, wat resulteert in een knusse en beheersbare woonomgeving."
+        else:
+             intro = f"Met {d['area']} m² biedt deze woning precies de juiste maatvoering voor een comfortabel huishouden."
+             
+        analysis_parts = []
+        if rooms > 5:
+             analysis_parts.append(f"<p>We tellen (of schatten) maar liefst {rooms} kamers. Dit biedt ongekende flexibiliteit voor samengestelde gezinnen of hobbyisten.</p>")
+        else:
+             analysis_parts.append(f"<p>De indeling is functioneel met circa {rooms} hoofdvertrekken.</p>")
+             
+        if d['year'] < 1940:
+             analysis_parts.append("<p>De klassieke 'en suite' indeling of voorkamer/achterkamer structuur is hier vaak nog voelbaar (of aanwezig). Dit geeft sfeer, maar kan de lichtinval beperken.</p>")
+        elif d['year'] > 1990:
+             analysis_parts.append("<p>Moderne 'recht-toe-recht-aan' architectuur zorgt ervoor dat vrijwel elke m² bruikbaar is. Geen verloren hoekjes.</p>")
+             
+        analysis = "".join(analysis_parts)
+        
+        interpretation = "<p>De 'flow' van het huis bepaalt het woonplezier. Een moderne woonkeuken is vaak het hart; check of de muur tussen keuken en kamer dragend is als u wilt doorbreken.</p>"
+        
+        advice_list = ["Neem een meetlint mee naar de bezichtiging.", "Check de internetverbinding op zolder/werkkamer."]
+        advice = "<ul>" + "".join([f"<li>{item}</li>" for item in advice_list]) + "</ul>"
 
-        interpretation = f"<p>De m² zijn {'ruim' if d['area'] > 120 else 'compact'} verdeeld. De woning biedt {'veel' if rooms > 4 else 'beperkte'} flexibiliteit voor thuiswerken of gezinsuitbreiding.</p>"
+        strengths = [f"Gebruiksoppervlakte {d['area']} m²", "Indelingsvrijheid"]
 
-        advice = "<ul><li>Beoordeel de dragende wanden bij herindeling.</li><li>Kijk naar mogelijkheden voor open keuken.</li></ul>"
-
-        strengths = [f"Woonoppervlakte {d['area']} m²", f"Potentieel {rooms} kamers"]
-
-        conclusion = "<strong>Conclusie:</strong> Functioneel en flexibel in te delen."
+        conclusion = "<strong>Conclusie:</strong> Flexibiliteit is de troef van dit object."
         return {
             "title": "Indeling & Ruimte",
             "intro": intro, 
@@ -328,19 +449,28 @@ class IntelligenceEngine:
     @staticmethod
     def _narrative_ch6(d):
         target = "modernisering" if d['year'] < 2010 else "finetuning"
-        intro = "De staat van onderhoud en het afwerkingsniveau bepalen direct uw verhuisbudget."
+        
+        if d['year'] < 2015:
+            intro = f"Laten we eerlijk zijn: u koopt hier de 'potentie'. De afwerking is functioneel, maar een update naar {2025} is waarschijnlijk gewenst."
+        else:
+            intro = "Instapklaar. Dozen uitpakken en wonen. De staat van onderhoud is uitstekend."
+            
         analysis = f"""
-        <p>Op de foto's (indien geanalyseerd) en data baseren we dat u rekening moet houden met {target}. 
-        Keukens en badkamers gaan gemiddeld 15 jaar mee. Bij bouwjaar {d['year']} zit u nu in de {(2025-d['year']) // 15 + 1}e levenscyclus van het sanitair.</p>
+        <p>Op basis van het bouwjaar {d['year']} verwachten we dat de keuken en badkamer in de {(2025-d['year']) // 15 + 1}e fase van hun levensduur zitten.
+        {'Houd rekening met vervanging.' if d['year'] < 2010 else 'Deze kunnen nog jaren mee.'}</p>
         """
-
-        interpretation = f"<p>Het afwerkingsniveau lijkt {'basis' if d['year'] < 2015 else 'luxe'}. Houd rekening met een budget voor {'vloeren en wanden' if target=='modernisering' else 'klein onderhoud'}.</p>"
         
-        advice = "<ul><li>Maak een kostenraming voor direct noodzakelijk onderhoud.</li><li>Check leeftijd CV-ketel en apparatuur.</li></ul>"
+        if target == "modernisering":
+            interpretation = "<p>Onderschat de impact van stuc- en schilderwerk niet. Een frisse witte basis doet wonderen voor de lichtbeleving en verkoopwaarde.</p>"
+        else:
+            interpretation = "<p>De luxe afwerking (indien aanwezig) rechtvaardigt de hogere m²-prijs. U bespaart immers direct op aannemerskosten en wachttijden.</p>"
         
-        strengths = ["Basis lijkt solide"] # Generic
+        advice = "<ul><li>Maak een begroting vóór het bieden.</li><li>Vraag naar garanties op keukenapparatuur.</li></ul>"
+        
+        strengths = ["Basisstructuur"]
+        if d['year'] > 2010: strengths.append("Modern Sanitair")
 
-        conclusion = f"<strong>Conclusie:</strong> Reserveer budget voor {target}."
+        conclusion = f"<strong>Conclusie:</strong> Project '{target}'."
         return {
             "title": "Onderhoud & Afwerking",
             "intro": intro, 
@@ -353,20 +483,33 @@ class IntelligenceEngine:
 
     @staticmethod
     def _narrative_ch7(d):
-        garden = max(0, d['plot'] - (d['area']/2))
-        intro = "Een eigen buitenruimte is een verlengstuk van de woonkamer."
-        analysis = f"""
-        <p>Met circa {int(garden)} m² aan onbebouwde grond (schatting) is er {'volop ruimte voor tuinieren en recratie' if garden > 50 else 'sprake van een onderhoudsvriendelijke buitenruimte'}.
-        De privacy en zonligging moeten ter plaatse geverifieerd worden, maar de perceelgrootte is veelbelovend.</p>
-        """
+        garden = max(0, d['plot'] - (d['area']/2)) if d['plot'] else 0
+        
+        # Intro
+        if garden > 200:
+             intro = f"Het buitenleven roept! Met naar schatting {int(garden)} m² tuin heeft u hier uw eigen parkje."
+        elif garden > 40:
+             intro = "De tuin heeft een fijn, behapbaar formaat. Genoeg plek voor een BBQ en loungehoek, zonder dat u elk weekend in het groen moet werken."
+        else:
+             intro = "De buitenruimte is compact. Ideaal voor wie houdt van een espresso in de zon, maar niet van grasmaaien."
+             
+        analysis_parts = []
+        if d['plot'] > 0:
+            analysis_parts.append(f"<p>De perceelgrootte van {d['plot']} m² is een waarde-anker. Grond wordt immers niet meer bijgemaakt.</p>")
+            analysis_parts.append("<p>Let op de oriëntatie: Een tuin op het zuid(west)en is goud waard, maar een noord-tuin biedt koelte in hete zomers.</p>")
+        else:
+            analysis_parts.append("<p>Bij dit appartement vertrouwt u op het balkon of dakterras (check VvE regels voor gebruik).</p>")
+            
+        analysis = "".join(analysis_parts)
+        
+        interpretation = "<p>Privacy is het sleutelwoord. Staan er hoge bomen? Zijn er inkijkende buren? Dit gevoel laat zich niet in data vangen, maar moet u ervaren.</p>"
 
-        interpretation = f"<p>De tuin biedt {'veel' if garden > 100 else 'beperkte'} privacy. De verhouding steen/groen is {'gunstig' if garden > 50 else 'stedelijk'}.</p>"
-
-        advice = "<ul><li>Controleer de zonnestand op uw favoriete momenten.</li><li>Let op inkijk van buren.</li></ul>"
+        advice = "<ul><li>Check kadastrale erfgrenzen (staat het hek goed?).</li><li>Let op bomen (kapvergunning nodig?).</li></ul>"
         strengths = []
         if garden > 100: strengths.append("Royale tuin")
+        if garden == 0: strengths.append("Onderhoudsvrij")
 
-        conclusion = "<strong>Conclusie:</strong> Buitenruimte is een sterke asset bij dit object."
+        conclusion = f"<strong>Conclusie:</strong> Buitenruimte score: {8 if garden > 100 else 6}/10."
         return {
             "title": "Tuin & Buiten",
             "intro": intro, 
@@ -379,16 +522,30 @@ class IntelligenceEngine:
 
     @staticmethod
     def _narrative_ch8(d):
-        intro = "Bereikbaarheid en mobiliteit zijn cruciaal voor dagelijks comfort."
-        analysis = """
-        <p>De parkeersituatie in deze wijktype vereist vaak een check op vergunningen. 
-        De nabijheid van uitvalswegen en OV lijkt volgens onze kaartanalyse in orde.</p>
-        """
-        interpretation = "<p>De locatie is goed ontsloten. Voor forenzen is dit een strategische plek.</p>"
-        advice = "<ul><li>Controleer parkeerbeleid gemeente.</li><li>Test reistijd in de spits.</li></ul>"
-        strengths = ["Goede bereikbaarheid"]
+        intro_parts = []
+        if d['price'] > 500000:
+             intro_parts.append("Kiezen voor deze locatie is kiezen voor comfort. De bereikbaarheid speelt daarbij een sleutelrol.")
+        else:
+             intro_parts.append("Een praktische locatie voor wie mobiel wil zijn.")
+        intro = "".join(intro_parts)
+        
+        analysis_parts = []
+        analysis_parts.append("<p>Op basis van de postcode-data zien we dat de afstand tot snelwegen en OV-knooppunten 'gemiddeld tot goed' is.</p>")
+        
+        if d['year'] < 1920:
+             analysis_parts.append("<p>In historische stadscentra zoals deze is parkeren vaak de grootste uitdaging. Een bewonersvergunning is waarschijnlijk vereist en er kunnen wachtlijsten zijn.</p>")
+        else:
+             analysis_parts.append("<p>De wijkopzet uit deze bouwperiode houdt rekening met autobezit. Parkeren kan vermoedelijk ruimschoots in de straat of op eigen terrein.</p>")
+             
+        analysis = "".join(analysis_parts)
+        
+        interpretation = "<p>Voor forenzen is de reistijd-tot-werk de bepalende factor. Test dit zelf op een dinsdagochtend.</p>"
+        
+        advice = "<ul><li>Controleer parkeerbeleid gemeente (kosten/vergunning).</li><li>Test de OV-verbinding in de spits.</li></ul>"
+        strengths = ["Centrale ligging"]
 
-        conclusion = "<strong>Conclusie:</strong> Mobiliteitsscore: Voldoende."
+        conclusion = "<strong>Conclusie:</strong> Mobiliteitsscore: Voldoende, parkeren vergt aandacht."
+        
         return {
             "title": "Mobiliteit",
             "intro": intro, 
@@ -401,16 +558,24 @@ class IntelligenceEngine:
 
     @staticmethod
     def _narrative_ch9(d):
-        intro = "Juridische verrassingen wilt u te allen tijde voorkomen."
-        analysis = """
-        <p>Controleer altijd het eigendomsbewijs op erfdienstbaarheden. 
-        Is er sprake van eigen grond of erfpacht? Gezien de regio is dit een belangrijk controlepunt.</p>
-        """
-        interpretation = "<p>Juridisch lijkt dit een standaard object (volle eigendom aangenomen), maar check de kleine lettertjes.</p>"
-        advice = "<ul><li>Vraag eigendomsbewijs op.</li><li>Check kadastrale kaart op grenzen.</li></ul>"
-        strengths = ["Waarschijnlijk volle eigendom (te verifiëren)"]
+        intro = "Juridische zekerheid is het fundament van uw investering."
+        analysis_parts = []
+        
+        if d['year'] < 1992:
+             analysis_parts.append("<p>Oude aktes bevatten soms vergeten erfdienstbaarheden (recht van overpad). Dit kan invloed hebben op uw privacy.</p>")
+        else:
+             analysis_parts.append("<p>Bij nieuwere woningbouw zijn de juridische kaders vaak strak vastgelegd in de koopovereenkomst en eventuele mandeligheid.</p>")
+             
+        if "appartement" in d.get('address', '').lower(): # Weak check
+             analysis_parts.append("<p>Let op: U koopt een appartementsrecht, geen pand. De VvE-reglementen zijn leidend.</p>")
+             
+        analysis = "".join(analysis_parts)
+        
+        interpretation = "<p>Wij zien geen directe 'rode vlaggen' in de basisgegevens, maar de duivel zit in de details van het eigendomsbewijs.</p>"
+        advice = "<ul><li>Laat de koopakte screenen door een jurist/notaris.</li><li>Controleer erfpachtvoorwaarden (indien van toepassing).</li></ul>"
+        strengths = ["Geen complexe constructies bekend"]
 
-        conclusion = "<strong>Conclusie:</strong> Juridische status vergt nader onderzoek bij het kadaster."
+        conclusion = "<strong>Conclusie:</strong> Juridisch 'standaard' risico."
         return {
             "title": "Juridische Aspecten",
             "intro": intro, 
@@ -423,17 +588,24 @@ class IntelligenceEngine:
 
     @staticmethod
     def _narrative_ch10(d):
-        intro = "Een nuchtere kijk op de financiën."
-        kk = int(d['price'] * 0.04) # approx
+        intro = "Is de vraagprijs reëel? Een financiële deep-dive."
+        kk = int(d['price'] * 0.04)
+        m2_price = int(d['price']/d['area']) if d['area'] else 0
+        
         analysis = f"""
-        <p>Met een vraagprijs van € {d['price']:,} komt het totaalplaatje inclusief kosten koper op circa € {d['price']+kk:,}.
-        De vierkantemeterprijs van € {int(d['price']/d['area']) if d['area'] else '?'} ligt in lijn met de huidige markttrends.</p>
+        <p>Met een m²-prijs van €{m2_price} bevindt dit object zich {'aan de bovenkant van de markt' if m2_price > 6000 else 'in een toegankelijk segment'}. 
+        Houd rekening met bijkomende kosten (k.k. + inrichting) van circa € {int(kk * 1.5):,}.</p>
         """
-        interpretation = "<p>De vraagprijs lijkt {'scherp' if d['price'] < 500000 else 'marktconform'} gezien de m². De TCO (Total Cost of Ownership) zal hoger liggen door energie/onderhoud.</p>"
-        advice = "<ul><li>Maak een sluitende financieringsopzet.</li><li>Houd rekening met overbieden in deze markt.</li></ul>"
-        strengths = ["Courante prijsklasse"]
+        
+        if d['label'] == 'G':
+            interpretation = "<p>Let op: Bij een laag energielabel is uw leencapaciteit wellicht beperkter, maar u kunt mogelijk wel een bouwdepot voor verduurzaming meefinancieren.</p>"
+        else:
+            interpretation = "<p>Het goede energielabel kan zorgen voor rentekorting bij sommige hypotheekverstrekkers ('Groenhypotheek').</p>"
+            
+        advice = "<ul><li>Bespreek een bouwdepot met uw adviseur.</li><li>Neem ontbindende voorwaarden op voor financiering.</li></ul>"
+        strengths = ["Transparante prijsstelling"]
 
-        conclusion = "<strong>Conclusie:</strong> Financieel haalbaar indien passend binnen leencapaciteit."
+        conclusion = f"<strong>Conclusie:</strong> Totale investering schatten op € {d['price'] + kk + 20000:,}."
         return {
             "title": "Financiële Analyse",
             "intro": intro, 
@@ -446,16 +618,20 @@ class IntelligenceEngine:
         
     @staticmethod
     def _narrative_ch11(d):
-        intro = "Hoe ligt dit object in de huidige woningmarkt?"
-        analysis = """
-        <p>De marktkoeling lijkt te stabiliseren, wat kansen biedt voor kopers. 
-        Dergelijke objecten hebben doorgaans een looptijd van 2-4 weken.</p>
-        """
-        interpretation = "<p>De gewildheid van dit type woningen is hoog. Snel handelen is geboden.</p>"
-        advice = "<ul><li>Plan direct een bezichtiging.</li><li>Zorg dat uw dossier compleet is.</li></ul>"
-        strengths = ["Hoge verkoopbaarheid"]
+        intro = "Timing is alles. Hoe ligt dit object in de markt?"
+        
+        if d['price'] < 400000:
+             analysis = "<p>In dit prijssegment is de concurrentie moordend. Verwacht veel bezichtigingen en mogelijk een inschrijvingsprocedure.</p>"
+        elif d['price'] > 1000000:
+             analysis = "<p>Het hogere segment kent een langere doorlooptijd. Dit geeft u iets meer ademruimte voor onderhandeling en due diligence.</p>"
+        else:
+             analysis = "<p>Een courante gezinswoning. De verkoopsnelheid hangt sterk af van de presentatie en 'look & feel'.</p>"
+             
+        interpretation = "<p>Wees voorbereid op snel schakelen, maar laat u niet opjagen.</p>"
+        advice = "<ul><li>Vraag de makelaar naar het biedingsproces.</li><li>Zorg dat uw dossier (werkgeversverklaring etc.) op orde is.</li></ul>"
+        strengths = ["Courant object"]
 
-        conclusion = "<strong>Conclusie:</strong> Courante woning met goede verkoopbaarheid."
+        conclusion = "<strong>Conclusie:</strong> Hete markt, koel hoofd houden."
         return {
             "title": "Marktpositie",
             "intro": intro, 
@@ -468,15 +644,28 @@ class IntelligenceEngine:
 
     @staticmethod
     def _narrative_ch12(d):
-        intro = "Alles samenvattend komen we tot het volgende advies."
-        analysis = f"""
-        <p>De woning aan de {d['address']} scoort solide op ruimte en locatie. De aandachtspunten op gebied van {'duurzaamheid' if "G" in d['label'] else 'onderhoud'} wegen wij mee.</p>
-        """
-        interpretation = "<p>Dit object is een {'buitenkans' if d['plot'] > 500 else 'degelijke aankoop'} voor wie zoekt naar kwaliteit en ruimte.</p>"
-        advice = "<ul><li>Doe een openingsbod gebaseerd op feiten.</li><li>Laat u niet gek maken door emotie.</li></ul>"
-        strengths = [f"Locatie {d['address']}", "Potentie"]
+        intro = "Na deze diepgaande analyse komen we tot de slotsom."
+        
+        narrative_parts = []
+        narrative_parts.append(f"<p>De woning aan de {d['address']} heeft indruk gemaakt met zijn {d['area']} m² en karakter.</p>")
+        
+        if d['year'] < 1980 or "G" in d['label']:
+             narrative_parts.append("<p><strong>De Uitdaging:</strong> De investering stopt niet bij de aankoop. Verduurzaming en modernisering vragen om visie en budget.</p>")
+        else:
+             narrative_parts.append("<p><strong>Het Comfort:</strong> De basis is uitstekend. U koopt hier vooral woonplezier, geen bouwproject.</p>")
+             
+        analysis = "".join(narrative_parts)
+        
+        interpretation = "<p>Is dit uw droomhuis? Dat bepaalt uw gevoel. Is het een verstandige aankoop? De data zegt: 'Ja, mits de prijs in lijn is met de staat'.</p>"
+        
+        advice = "<ul><li>Laatste check: Bestemmingsplan omgeving.</li><li>Biedt strategisch (geen ronde getallen).</li></ul>"
+        strengths = ["Unieke combinatie locatie/ruimte"]
+        
+        # Final Score Logic (Mock)
+        final_score = 8.5 if d['label'] in ['A','B'] else 7.0
 
-        conclusion = "<strong>Conclusie: KOOPWAARDIG (onder voorbehoud keuring).</strong>"
+        conclusion = f"<strong>Eindcijfer: {final_score}/10.</strong> {'KOOPWAARDIG' if final_score > 7 else 'AANDACHT VEREIST'}."
+        
         return {
             "title": "Advies & Conclusie",
             "intro": intro, 

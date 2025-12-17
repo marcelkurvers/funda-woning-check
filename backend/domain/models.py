@@ -38,3 +38,5 @@ class ChapterOutput(BaseModel):
     grid_layout: Any # Was ChapterLayout, relaxed to Any to support Modern Dashboard dicts
     # Legacy blocks for PDF if needed
     blocks: List[Dict[str, Any]] = []
+    # Raw data for frontend rendering
+    chapter_data: Optional[Dict[str, Any]] = None

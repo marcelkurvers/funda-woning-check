@@ -7,20 +7,9 @@ from main import build_chapters, build_kpis
 
 class TestComprehensive(unittest.TestCase):
     def setUp(self):
-        # Sample data simulating a parsed Funda page
-        self.core_data = {
-            "address": "Teststraat 99, 1234 AB Amsterdam",
-            "asking_price_eur": "€ 750.000",
-            "living_area_m2": "145",
-            "plot_area_m2": "300",
-            "build_year": "1990",
-            "energy_label": "A",
-            "rooms": "5",
-            "bedrooms": "4",
-            "insulation": "Volledig geïsoleerd",
-            "heating": "CV-ketel, Vloerverwarming",
-            "garden": "Achtertuin (Zuid)"
-        }
+        # MANDATORY: Load from test-data directory
+        from tests.data_loader import load_test_data
+        self.core_data = load_test_data()
 
     def test_all_chapters_generated(self):
         """

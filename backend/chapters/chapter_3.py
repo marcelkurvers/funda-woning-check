@@ -70,11 +70,31 @@ class TechnicalState(BaseChapter):
         </div>
         """)
         
+        # Left sidebar: Construction timeline
+        left_sidebar = [
+            {
+                "type": "key_facts",
+                "title": "Bouwgegevens",
+                "facts": [
+                    {"label": "Bouwjaar", "value": f"{build_year}"},
+                    {"label": "Ouderdom", "value": f"{age} jaar"},
+                    {"label": "Risicoprofiel", "value": risk_level}
+                ]
+            },
+            {
+                "type": "highlight_card",
+                "icon": "warning" if risk_level != "Laag" else "shield-checkmark",
+                "title": "Inspectie Advies",
+                "content": f"{'Bouwkundige keuring sterk aanbevolen' if risk_level == 'Hoog' else 'Standaard inspectie voldoende' if risk_level == 'Laag' else 'Keuring aanbevolen'}"
+            }
+        ]
+        
         layout = {
             "layout_type": "modern_dashboard",
             "hero": hero,
             "metrics": metrics,
             "main": {"title": "Bouwkundige Diepte-analyse", "content": risk_html},
+            "left_sidebar": left_sidebar,
             "sidebar": [
                 {"type": "advisor_card", "title": "Risico Analyse", "content": f"Gezien het bouwjaar {build_year} is het risiconiveau <strong>{risk_level}</strong>. Een bouwkundige keuring wordt { 'sterk ' if risk_level == 'Hoog' else '' }aangeraden."},
                 {"type": "action_list", "title": "Onderhoudsplanning", "items": ["Schilderwerk Buitencheck", "CV Ketel Inspectie", "Dakgoot reiniging"]}

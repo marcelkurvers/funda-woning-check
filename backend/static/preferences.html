@@ -3,60 +3,353 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Voorkeuren</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Woning Rapport - Voorkeuren</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            margin: 2rem;
-            background: #f9fafb;
         }
 
-        .container {
-            max-width: 800px;
-            margin: auto;
+        .tag-checkbox:checked+div {
+            background-color: #eff6ff;
+            border-color: #3b82f6;
+            color: #1d4ed8;
         }
 
-        .field {
-            margin-bottom: 1rem;
-        }
-
-        label {
+        .tag-checkbox:checked+div .check-icon {
             display: block;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        input {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-        }
-
-        button {
-            background: #2563eb;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #1d4ed8;
         }
     </style>
 </head>
 
-<body>
-    <div class="container">
-        <h1>Voorkeuren</h1>
-        <div class="field">
-            <label for="shared-budget">Budget</label>
-            <input type="number" id="shared-budget" name="budget" placeholder="Voer uw budget in" />
+<body class="bg-slate-50 text-slate-900 min-h-screen font-sans">
+
+    <!-- Full Width Container for 4K -->
+    <div class="w-full max-w-[2400px] mx-auto py-8 px-8">
+
+        <div class="flex items-center justify-between mb-8 pb-4 border-b border-slate-200">
+            <div>
+                <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight">AI Woning Voorkeuren <span
+                        class="text-blue-600">2.0</span></h1>
+                <p class="text-lg text-slate-500 mt-1">Gepersonaliseerde analyse-parameters voor Marcel & Petra.</p>
+            </div>
+            <a href="/"
+                class="group flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-600 hover:text-blue-600 hover:border-blue-300 transition-all font-medium shadow-sm">
+                <svg class="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Terug naar Dashboard
+            </a>
         </div>
-        <button id="btn-save">Opslaan</button>
+
+        <form id="prefs-form">
+            <!-- 2-Column Grid for 4K Split View -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 h-full">
+
+                <!-- MARCEL SECTION (LEFT) -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                    <div
+                        class="p-8 bg-gradient-to-r from-blue-50 to-white border-b border-blue-100 flex items-center gap-5">
+                        <div
+                            class="h-16 w-16 rounded-full bg-blue-600 text-white flex items-center justify-center text-3xl font-bold shadow-lg shadow-blue-200">
+                            M</div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-slate-800">Marcel</h2>
+                            <p class="text-blue-700 font-medium opacity-90">Techniek, Strategie & Studio</p>
+                        </div>
+                    </div>
+
+                    <div class="p-8 space-y-8 flex-1 overflow-y-auto">
+                        <!-- Dynamic Tag Categories will be injected here -->
+                        <div id="marcel-container" class="space-y-8"></div>
+
+                        <!-- Custom Inputs -->
+                        <div class="p-6 bg-slate-50 rounded-xl border border-slate-100">
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Specifieke 'Hard' Requirements
+                                (Tekst)</label>
+                            <input type="text" name="marcel_custom"
+                                class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3"
+                                placeholder="Bijv: Vrije hoogte garage > 2.5m...">
+
+                            <label class="block text-sm font-bold text-slate-700 mt-4 mb-2 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                Verborgen Wegingsfactoren
+                            </label>
+                            <input type="text" name="marcel_hidden"
+                                class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 bg-white"
+                                placeholder="Factoren die meewegen maar niet in het rapport verschijnen...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PETRA SECTION (RIGHT) -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                    <div
+                        class="p-8 bg-gradient-to-r from-pink-50 to-white border-b border-pink-100 flex items-center gap-5">
+                        <div
+                            class="h-16 w-16 rounded-full bg-pink-500 text-white flex items-center justify-center text-3xl font-bold shadow-lg shadow-pink-200">
+                            P</div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-slate-800">Petra</h2>
+                            <p class="text-pink-700 font-medium opacity-90">Sfeer, Indeling op Gevoel & Comfort</p>
+                        </div>
+                    </div>
+
+                    <div class="p-8 space-y-8 flex-1 overflow-y-auto">
+                        <!-- Dynamic Tag Categories will be injected here -->
+                        <div id="petra-container" class="space-y-8"></div>
+
+                        <!-- Custom Inputs -->
+                        <div class="p-6 bg-slate-50 rounded-xl border border-slate-100">
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Specifieke Woonwensen
+                                (Tekst)</label>
+                            <input type="text" name="petra_custom"
+                                class="w-full rounded-lg border-slate-300 shadow-sm focus:border-pink-500 focus:ring-pink-500 p-3"
+                                placeholder="Bijv: En-suite deuren, glas-in-lood...">
+
+                            <label class="block text-sm font-bold text-slate-700 mt-4 mb-2 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                Verborgen Wegingsfactoren
+                            </label>
+                            <input type="text" name="petra_hidden"
+                                class="w-full rounded-lg border-slate-300 shadow-sm focus:border-pink-500 focus:ring-pink-500 p-3 bg-white"
+                                placeholder="Gevoelsmatige criteria...">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Sticky Action Bar -->
+            <div class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50">
+                <div
+                    class="bg-slate-900/90 backdrop-blur-md text-white px-8 py-4 rounded-full shadow-2xl flex items-center gap-6 border border-slate-700/50">
+                    <p id="status-msg" class="text-sm font-medium text-emerald-400 hidden"></p>
+                    <button type="submit" id="btn-save"
+                        class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-10 rounded-full shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
+                            </path>
+                        </svg>
+                        Profielen Opslaan
+                    </button>
+                    <button type="button" onclick="history.back()"
+                        class="text-slate-400 hover:text-white font-medium text-sm px-4">
+                        Annuleren
+                    </button>
+                </div>
+            </div>
+
+        </form>
     </div>
+
+    <script>
+        // NEW DEFINITION BASED ON USER REQUIREMENTS
+        const PREF_DEFINITIONS = {
+            marcel: {
+                "Functioneel & Ruimte": [
+                    "3+ Slaapkamers", "Slpkmr Begane Grond", "Mancave / Studio", "Garage > Studio Potentie",
+                    "Geluidsisolatie", "Aparte Werkplek", "Grote Woonkamer", "Eettafel > 2m"
+                ],
+                "Techniek & Infra": [
+                    "CAT6 / Ethernet", "Moderne Groepenkast", "Domotica Voorbereid", "AI / Energiesturing",
+                    "Gasloos / Warmtepomp", "Krachtstroom"
+                ],
+                "Buiten & Omgeving": [
+                    "Rustige Ligging", "Geen Doorgaand Verkeer", "Grote Tuin (Privacy)", "Nabij Bos/Natuur",
+                    "Geen Drukke Kruising"
+                ],
+                "Strategie & Financieel": [
+                    "Onderhandelbare Vraagprijs", "Investeringsruimte", "Waardevast", "Goede TCO (10jr)"
+                ]
+            },
+            petra: {
+                "Indeling & Comfort": [
+                    "Logische Routing", "Leefkeuken", "Elektrisch Koken", "Meerdere Badkamers",
+                    "Separaat Toilet", "Tuinverbinding", "Gezellige Proporties"
+                ],
+                "Sfeer & Beleving": [
+                    "Veel Daglicht", "Lichte Uitstraling", "Goede Eerste Indruk", "Warme Atmosfeer",
+                    "Kloppend Gevoel"
+                ],
+                "Buitenruimte": [
+                    "Tuin Privacy", "Relax / Buitenleven", "Mogelijkheid Buitenkeuken", "Geen Inkijk",
+                    "Veilig Gevoel"
+                ],
+                "Locatie & Praktisch": [
+                    "Veilige Buurt", "Nabij Voorzieningen", "Bereikbaarheid Eindhoven", "Onderhoudsarm",
+                    "Levensloopbestendig"
+                ]
+            }
+        };
+
+        function createSection(key, title, tags, person, selectedItems) {
+            const wrapper = document.createElement('div');
+            wrapper.className = "space-y-3";
+
+            const header = document.createElement('h3');
+            header.className = `text-sm uppercase tracking-wider font-bold ${person === 'marcel' ? 'text-blue-400' : 'text-pink-400'} mb-2 border-b border-slate-100 pb-1`;
+            header.innerText = title;
+            wrapper.appendChild(header);
+
+            const grid = document.createElement('div');
+            grid.className = "grid grid-cols-2 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-3"; // Responsive grid
+
+            tags.forEach(tag => {
+                const isChecked = selectedItems.includes(tag);
+                const label = document.createElement('label');
+                label.className = "cursor-pointer group relative";
+                label.innerHTML = `
+                    <input type="checkbox" name="${person}_tags" value="${tag}" class="peer hidden" ${isChecked ? 'checked' : ''}>
+                    <div class="h-full px-4 py-3 rounded-lg border border-slate-200 bg-white hover:border-${person === 'marcel' ? 'blue' : 'pink'}-300 hover:shadow-md transition-all peer-checked:border-${person === 'marcel' ? 'blue' : 'pink'}-500 peer-checked:bg-${person === 'marcel' ? 'blue' : 'pink'}-50 peer-checked:text-${person === 'marcel' ? 'blue' : 'pink'}-800 flex items-center gap-3">
+                        <div class="w-5 h-5 rounded border border-slate-300 flex items-center justify-center peer-checked:bg-${person === 'marcel' ? 'blue' : 'pink'}-500 peer-checked:border-${person === 'marcel' ? 'blue' : 'pink'}-500 transition-colors">
+                             <svg class="w-3 h-3 text-white opacity-0 peer-checked:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        <span class="text-sm font-medium text-slate-600 group-hover:text-slate-900 peer-checked:font-semibold">${tag}</span>
+                    </div>
+                `;
+                // Add conditional visual check tick
+                const checkbox = label.querySelector('input');
+                const box = label.querySelector('div div');
+                const tick = label.querySelector('div div svg');
+
+                // Simple sync for visual state if needed, but CSS peer-checked handles most
+                if (isChecked) {
+                    tick.classList.remove('opacity-0');
+                    box.classList.add(person === 'marcel' ? 'bg-blue-500' : 'bg-pink-500', 'border-transparent');
+                }
+
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        tick.classList.remove('opacity-0');
+                        box.classList.add(person === 'marcel' ? 'bg-blue-500' : 'bg-pink-500', 'border-transparent');
+                        box.classList.remove('border-slate-300');
+                    } else {
+                        tick.classList.add('opacity-0');
+                        box.classList.remove(person === 'marcel' ? 'bg-blue-500' : 'bg-pink-500', 'border-transparent');
+                        box.classList.add('border-slate-300');
+                    }
+                });
+
+                grid.appendChild(label);
+            });
+
+            wrapper.appendChild(grid);
+            return wrapper;
+        }
+
+        async function loadPreferences() {
+            try {
+                const res = await fetch('/api/preferences');
+                const data = await res.json();
+
+                const m = data.marcel || {};
+                const p = data.petra || {};
+                const m_all = m.priorities || [];
+                const p_all = p.priorities || [];
+
+                // Render Marcel
+                const mContainer = document.getElementById('marcel-container');
+                mContainer.innerHTML = '';
+                for (const [category, tags] of Object.entries(PREF_DEFINITIONS.marcel)) {
+                    mContainer.appendChild(createSection(category, category, tags, 'marcel', m_all));
+                }
+
+                // Render Petra
+                const pContainer = document.getElementById('petra-container');
+                pContainer.innerHTML = '';
+                for (const [category, tags] of Object.entries(PREF_DEFINITIONS.petra)) {
+                    pContainer.appendChild(createSection(category, category, tags, 'petra', p_all));
+                }
+
+                // Extract Custom items (items that are in DB but NOT in our predefined lists)
+                // Flatten all predefined tags
+                const m_defined = Object.values(PREF_DEFINITIONS.marcel).flat();
+                const p_defined = Object.values(PREF_DEFINITIONS.petra).flat();
+
+                const m_custom = m_all.filter(x => !m_defined.includes(x));
+                const p_custom = p_all.filter(x => !p_defined.includes(x));
+
+                document.querySelector('[name="marcel_custom"]').value = m_custom.join(', ');
+                document.querySelector('[name="petra_custom"]').value = p_custom.join(', ');
+
+                document.querySelector('[name="marcel_hidden"]').value = (m.hidden_priorities || []).join(', ');
+                document.querySelector('[name="petra_hidden"]').value = (p.hidden_priorities || []).join(', ');
+
+            } catch (e) {
+                console.error("Failed to load prefs", e);
+            }
+        }
+
+        // Logic handled by existing submit listener if kept generic, but let's re-verify it works with new structure
+        document.getElementById('prefs-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            const getVals = (name) => formData.getAll(name);
+            const parseCustom = (str) => str.split(',').map(s => s.trim()).filter(s => s.length > 0);
+
+            const m_tags = getVals('marcel_tags');
+            const m_custom = parseCustom(formData.get('marcel_custom'));
+            const m_hidden = parseCustom(formData.get('marcel_hidden'));
+
+            const p_tags = getVals('petra_tags');
+            const p_custom = parseCustom(formData.get('petra_custom'));
+            const p_hidden = parseCustom(formData.get('petra_hidden'));
+
+            const payload = {
+                marcel: {
+                    priorities: [...new Set([...m_tags, ...m_custom])],
+                    hidden_priorities: m_hidden
+                },
+                petra: {
+                    priorities: [...new Set([...p_tags, ...p_custom])],
+                    hidden_priorities: p_hidden
+                }
+            };
+
+            const btn = document.getElementById('btn-save');
+            const origHTML = btn.innerHTML;
+            btn.innerHTML = "Opslaan...";
+            btn.disabled = true;
+
+            try {
+                await fetch('/api/preferences', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const status = document.getElementById('status-msg');
+                status.innerText = "Succesvol opgeslagen!";
+                status.classList.remove('hidden');
+                setTimeout(() => status.classList.add('hidden'), 3000);
+            } catch (err) {
+                alert("Fout bij opslaan");
+            } finally {
+                btn.innerHTML = origHTML;
+                btn.disabled = false;
+            }
+        });
+
+        loadPreferences();
+    </script>
 </body>
 
 </html>

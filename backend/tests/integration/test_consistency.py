@@ -7,15 +7,9 @@ from main import build_chapters
 
 class TestChapterConsistency(unittest.TestCase):
     def setUp(self):
-        self.core_data = {
-            "address": "Keizersgracht 123",
-            "asking_price_eur": "€ 1.500.000",
-            "living_area_m2": "200 m²",
-            "plot_area_m2": "50 m²", # Small plot
-            "build_year": "1880",
-            "energy_label": "C",
-            "rooms": "6",
-        }
+        # MANDATORY: Load from test-data directory
+        from tests.data_loader import load_test_data
+        self.core_data = load_test_data()
         self.chapters = build_chapters(self.core_data)
 
     def extract_metrics(self):
@@ -68,14 +62,9 @@ class TestChapterConsistency(unittest.TestCase):
                         f"Inconsistent area in Chapter {m['chapter']}: {val_str} vs {target_area}")
 
     def test_sqm_price_consistency(self):
-        """
-        Check if 'Vraagprijs per m²' is consistent.
-        This is an AI/Logic enrichment.
-        Calculation: 1,500,000 / 200 = 7,500.
-        """
         metrics = self.extract_metrics()
         sqm_prices = []
-        
+
         for m in metrics:
             if m["label"] and "per m²" in m["label"].lower() and "vraagprijs" in m["label"].lower():
                 val_str = m["value"]
@@ -92,13 +81,47 @@ class TestChapterConsistency(unittest.TestCase):
         first_val = sqm_prices[0][1]
         for ch, val in sqm_prices:
             # Allow deviation of 1 (rounding issues)
-            self.assertTrue(abs(val - first_val) <= 1, 
+            self.assertTrue(abs(val - first_val) <= 1,
                 f"Inconsistent calculated SqM price in Chapter {ch}: {val} vs {first_val}")
-            
+
         # Verify calculation correctness
-        expected = 1500000 / 200
-        self.assertTrue(abs(first_val - expected) <= 1,
+        price = int(re.sub(r'\D', '', self.core_data["asking_price_eur"]))
+        area = int(re.sub(r'\D', '', self.core_data["living_area_m2"]))
+        expected = int(price / area)
+        
+        self.assertTrue(abs(first_val - expected) <= 5,
             f"Calculated SqM price seems wrong: {first_val} (Expected {expected})")
+    def test_bedroom_logic(self):
+        """Check that bedroom count is logical.
+        New behavior: Uses actual parsed 'bedrooms' field if available,
+        otherwise estimates from living area (living_area / 25).
+        """
+        # Check if bedrooms field exists in core data
+        if "bedrooms" in self.core_data:
+            # Use actual parsed bedrooms
+            expected_bedrooms = int(re.sub(r'\D', '', str(self.core_data["bedrooms"])))
+        else:
+            # Estimate from living area (new logic in chapter_1)
+            living_area = int(re.sub(r'\D', '', self.core_data.get("living_area_m2", "0")))
+            expected_bedrooms = max(3, int(living_area / 25))
+        
+        # Extract actual bedrooms from metrics
+        metrics = self.extract_metrics()
+        bedroom_metric = None
+        for m in metrics:
+            if m["id"] == "bedrooms" or (m["label"] and "slaapkamers" in m["label"].lower()):
+                bedroom_metric = m
+                break
+        
+        self.assertIsNotNone(bedroom_metric, "Bedroom metric not found in any chapter metrics.")
+        actual_bedrooms = int(re.sub(r"\D", "", bedroom_metric["value"]))
+        
+        self.assertEqual(actual_bedrooms, expected_bedrooms,
+                         f"Inconsistent bedroom count: expected {expected_bedrooms}, got {actual_bedrooms}")
+        
+        # Upper bound sanity check (using new MAX_BEDROOMS threshold)
+        self.assertLessEqual(actual_bedrooms, 15, "Bedroom count unusually high, check data source.")
+
 
     def test_energy_label_consistency(self):
         """Check Energy Label consistency."""

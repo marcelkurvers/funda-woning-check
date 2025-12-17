@@ -27,16 +27,25 @@ class BaseChapter(ABC):
                 
                 if a > 0: price_m2 = f"€ {int(p/a):,}"
             except: pass
-            
-        return {
+        
+        # Build context with ALL fields from data, plus backward-compatible aliases
+        context = {
+            # Backward compatible field names (old names)
             "adres": self.data.get("address", "het object"),
             "prijs": self.data.get("asking_price_eur", "nader te bepalen"),
             "oppervlakte": self.data.get("living_area_m2", "? m²"),
             "perceel": self.data.get("plot_area_m2", "? m²"),
             "label": self.data.get("energy_label", "onbekend"),
             "bouwjaar": self.data.get("build_year", "onbekend"),
-            "prijs_m2": price_m2
+            "prijs_m2": price_m2,
         }
+        
+        # Add ALL fields from the parsed data (new fields pass through)
+        for key, value in self.data.items():
+            if key not in context:  # Don't override backward-compatible aliases
+                context[key] = value
+        
+        return context
 
     @abstractmethod
     def get_title(self) -> str:
@@ -54,77 +63,116 @@ class BaseChapter(ABC):
         )
 
     def _render_rich_narrative(self, narrative: Dict[str, Any], extra_html: str = "") -> str:
-        """
-        Renders a consistent HTML block for the AI Driven Narrative.
-        Expects keys: intro, main_analysis, interpretation, advice, strengths, conclusion.
-        extra_html: Optional HTML to insert between analysis and AI sections.
-        """
+        # --- MODERN MAGAZINE LAYOUT GENERATOR ---
         
-        # Strengths (Pros)
+        # 1. VISUALIZE STRENGTHS (Green Grid)
         strengths_html = ""
         val_strengths = narrative.get('strengths')
         if val_strengths and isinstance(val_strengths, list) and len(val_strengths) > 0:
-            items = "".join([f"<li><ion-icon name='checkmark-circle' style='color:#10b981'></ion-icon> <span>{s}</span></li>" for s in val_strengths])
+            # Convert list to an Icon Grid
+            items = "".join([f"""
+                <div class="mag-feature-item success">
+                    <div class="mag-icon-box success"><ion-icon name="checkmark-circle"></ion-icon></div>
+                    <span class="mag-feature-text">{s}</span>
+                </div>
+            """ for s in val_strengths])
+            
             strengths_html = f"""
-            <div class="ai-card success">
-                <h4 class="ai-card-title"><ion-icon name="thumbs-up"></ion-icon> Sterke Punten</h4>
-                <ul class="ai-list">{items}</ul>
+            <div class="mag-widget-card">
+                <h4 class="mag-widget-title text-emerald-700"><ion-icon name="thumbs-up"></ion-icon> Sterke Punten</h4>
+                <div class="mag-feature-grid">
+                    {items}
+                </div>
             </div>
             """
 
-        # Interpretation (Brain)
+        # 2. VISUALIZE RISKS (Yellow Grid)
+        advice_html = ""
+        val_advice = narrative.get('advice')
+        if val_advice:
+            if isinstance(val_advice, list):
+                items = "".join([f"""
+                <div class="mag-feature-item warning">
+                    <div class="mag-icon-box warning"><ion-icon name="alert-circle"></ion-icon></div>
+                    <span class="mag-feature-text">{s}</span>
+                </div>
+                """ for s in val_advice])
+                content = f'<div class="mag-feature-grid">{items}</div>'
+            else:
+                content = f'<div class="mag-text-content">{val_advice}</div>'
+
+            advice_html = f"""
+            <div class="mag-widget-card">
+                <h4 class="mag-widget-title text-amber-700"><ion-icon name="warning"></ion-icon> Aandachtspunten</h4>
+                {content}
+            </div>
+            """
+
+        # 3. AI INTERPRETATION (The "Hero" Insight)
         interpretation_html = ""
         val_interp = narrative.get('interpretation')
         if val_interp:
             interpretation_html = f"""
-            <div class="ai-card info">
-                <h4 class="ai-card-title"><ion-icon name="analytics"></ion-icon> AI Interpretatie</h4>
-                <div class="text-slate-600">{val_interp}</div>
+            <div class="mag-hero-card gradient-blue">
+                <div class="mag-hero-header">
+                    <ion-icon name="analytics" class="mag-hero-icon"></ion-icon>
+                    <h4 class="mag-hero-title">AI Interpretatie</h4>
+                </div>
+                <div class="mag-hero-body">
+                    {val_interp}
+                </div>
             </div>
             """
 
-        # Advice (Warnings/Cons)
-        advice_html = ""
-        val_advice = narrative.get('advice')
-        if val_advice:
-            # Check if advice is list or string
-            if isinstance(val_advice, list):
-                advice_content = "<ul class='ai-list'>" + "".join([f"<li><ion-icon name='alert-circle' style='color:#f59e0b'></ion-icon> <span>{s}</span></li>" for s in val_advice]) + "</ul>"
-            else:
-                advice_content = f"<div class='text-slate-600'>{val_advice}</div>"
-
-            advice_html = f"""
-            <div class="ai-card warning">
-                <h4 class="ai-card-title"><ion-icon name="warning"></ion-icon> Aandachtspunten</h4>
-                {advice_content}
-            </div>
-            """
-
+        # 4. CONCLUSION (Bottom Bar)
         conclusion_html = ""
         if narrative.get('conclusion'):
              conclusion_html = f"""
-            <div class="ai-card dark">
-                <h4 class="ai-card-title"><ion-icon name="ribbon"></ion-icon> Conclusie</h4>
-                <div style="opacity:0.9">{narrative.get('conclusion')}</div>
+            <div class="mag-conclusion-bar">
+                <div class="mag-conclusion-icon"><ion-icon name="ribbon"></ion-icon></div>
+                <div class="mag-conclusion-text">
+                    <strong>Conclusie:</strong> {narrative.get('conclusion')}
+                </div>
             </div>
             """
 
+        # 5. ASSEMBLE THE MAGAZINE LAYOUT
+        # Structure:
+        # [   HEADER (Intro)   ]
+        # [ TEXT (L) | VIS (R) ]
+            
         return f"""
-        <div class="introduction text-lg font-medium text-slate-600 mb-6">
-            {narrative.get('intro', '')}
-        </div>
-        
-        <div class="analysis-section prose mb-6">
-            {narrative.get('main_analysis', '')}
-        </div>
+        <div class="mag-layout-container">
+            
+            <!-- 1. HERO INTRO -->
+            <div class="mag-intro-section">
+                <div class="mag-lead-text">
+                    {narrative.get('intro', '')}
+                </div>
+            </div>
 
-        {extra_html}
+            <!-- 2. SPLIT CONTENT AREA -->
+            <div class="mag-split-grid">
+                
+                <!-- LEFT COL: Narrative Text -->
+                <div class="mag-col-text">
+                    <div class="mag-prose">
+                        {narrative.get('main_analysis', '')}
+                    </div>
+                    {extra_html} <!-- e.g. Verduurzamingskansen injected here -->
+                    {conclusion_html}
+                </div>
 
-        {interpretation_html}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {strengths_html}
-            {advice_html}
+                <!-- RIGHT COL: Visuals & Widgets -->
+                <div class="mag-col-visuals">
+                    {interpretation_html}
+                    {strengths_html}
+                    {advice_html}
+                    <!-- Right Sidebar items will be injected here by JS if possible, 
+                         or they sit in the sidebar. Ideally we merge them here. -->
+                    <div id="mag-dynamic-sidebar-target"></div> 
+                </div>
+
+            </div>
         </div>
-        
-        {conclusion_html}
         """

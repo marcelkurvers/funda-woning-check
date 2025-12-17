@@ -72,11 +72,32 @@ class LocationAnalysis(BaseChapter):
         </div>
         """)
         
+        # Left sidebar: Location proximity
+        left_sidebar = [
+            {
+                "type": "stat_list",
+                "title": "Nabijheid",
+                "stats": [
+                    {"label": "Supermarkt", "value": "5 min", "icon": "cart"},
+                    {"label": "Treinstation", "value": "10 min", "icon": "train"},
+                    {"label": "Basisschool", "value": "2 min", "icon": "school"},
+                    {"label": "Centrum", "value": "15 min", "icon": "business"}
+                ]
+            },
+            {
+                "type": "highlight_card",
+                "icon": "location",
+                "title": "Buurttype",
+                "content": f"{vibe} - Rustige woonwijk met goede voorzieningen"
+            }
+        ]
+        
         layout = {
             "layout_type": "modern_dashboard",
             "hero": hero,
             "metrics": metrics,
             "main": {"title": "Locatie & Omgeving Analyse", "content": amenity_html},
+            "left_sidebar": left_sidebar,
             "sidebar": [
                 {"type": "advisor_score", "title": "Leefbaarheid", "score": 82, "content": "Score gebaseerd op voorzieningen en bereikbaarheid."},
                 {"type": "action_list", "title": "Buurt Check", "items": ["Bestemmingsplan checken", "Parkeervergunning nodig?", "Buurtpreventie app"]}
@@ -86,5 +107,6 @@ class LocationAnalysis(BaseChapter):
         return ChapterOutput(
             title="2. Locatie & Omgeving",
             grid_layout=layout, 
-            blocks=[]
+            blocks=[],
+            chapter_data=narrative
         )

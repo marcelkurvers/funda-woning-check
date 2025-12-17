@@ -226,12 +226,8 @@ class TestMasterSuite(unittest.TestCase):
         """
         Validates that build_chapters can find the template files and generate content.
         """
-        core = {
-            "address": "Teststraat 1",
-            "asking_price_eur": "€ 500.000", 
-            "living_area_m2": "120",
-            "energy_label": "A"
-        }
+        from tests.data_loader import load_test_data
+        core = load_test_data()
         chapters = build_chapters(core)
         self.assertTrue(len(chapters) > 0, "No chapters generated")
         
@@ -244,7 +240,8 @@ class TestMasterSuite(unittest.TestCase):
         text = layout["main"]["content"]
         
         # Check text injection
-        self.assertIn("Teststraat 1", text, "Address not injected")
+        # Check text injection
+        self.assertIn(core.get("address", "Address"), text, "Address not injected")
         #self.assertIn("€ 500.000", text, "Price not injected") # Might be formatted differently now
         
         # Check AI Logic
@@ -294,11 +291,18 @@ class TestMasterSuite(unittest.TestCase):
         
         resp = client.get(f"/runs/{run_id}/pdf")
         if resp.status_code == 501:
-            print("Skipping PDF test: WeasyPrint not installed/available")
+            self.skipTest("Skipping PDF test: WeasyPrint not installed/available")
             return
         self.assertEqual(resp.status_code, 200, f"PDF Generation failed: {resp.text}")
         self.assertEqual(resp.headers["content-type"], "application/pdf")
         self.assertTrue(len(resp.content) > 100, "PDF content too small")
+
+    def test_23_dynamism_check(self):
+        """Executes Dynamism KPI tests"""
+        from tests.quality.test_dynamism import TestDynamism
+        suite = unittest.TestLoader().loadTestsFromTestCase(TestDynamism)
+        result = unittest.TextTestRunner(stream=sys.stdout, verbosity=0).run(suite)
+        self.assertTrue(result.wasSuccessful())
 
 if __name__ == "__main__":
     unittest.main()

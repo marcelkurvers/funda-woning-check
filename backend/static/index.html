@@ -331,83 +331,151 @@
             // Modern Grid Layout
             if (ch.grid_layout) {
               const d = ch.grid_layout;
+              // Initialize core data BEFORE using it in templates
+              const core = data.property_core || {};
 
               // 1. Hero Section
               const heroHtml = `<div class="dash-hero">
                   <div class="dash-hero-content">
                     <div class="dash-hero-badge">${d.hero.status || 'Analyse Gereed'}</div>
                     <h1 class="dash-hero-title">${d.hero.address || 'Adres Onbekend'}</h1>
-                    <div class="dash-hero-subtitle">${d.hero.price || ''} <span style="opacity:0.6; margin:0 0.5rem;">•</span> ${(d.hero.labels || []).join('<span style="opacity:0.6; margin:0 0.5rem;">•</span>')}</div>
+                    <div class="dash-hero-subtitle">
+                      <span style="font-weight: 600; color: #0f172a;">${d.hero.price || ''}</span>
+                      ${(d.hero.labels || []).map(label => `<span style="opacity:0.6;">•</span> <span>${label}</span>`).join(' ')}
+                    </div>
+                  </div>
+                  <div class="dash-hero-meta">
+                    <div class="dash-hero-meta-item">
+                      <div class="dash-hero-meta-label">Bouwjaar</div>
+                      <div class="dash-hero-meta-value">${core.build_year || '-'}</div>
+                    </div>
+                    <div class="dash-hero-meta-item">
+                      <div class="dash-hero-meta-label">Woonoppervlak</div>
+                      <div class="dash-hero-meta-value">${core.living_area_m2 || '-'}</div>
+                    </div>
+                    <div class="dash-hero-meta-item">
+                      <div class="dash-hero-meta-label">Perceel</div>
+                      <div class="dash-hero-meta-value">${core.plot_area_m2 || '-'}</div>
+                    </div>
+                    <div class="dash-hero-meta-item">
+                      <div class="dash-hero-meta-label">Energie</div>
+                      <div class="dash-hero-meta-value">${core.energy_label || '-'}</div>
+                    </div>
                   </div>
                 </div>`;
 
               // 2. Metrics Row
               let metricsHtml = '';
               (d.metrics || []).forEach(m => {
-                const colorClass = m.color === 'green' ? 'text-green-600' : (m.color === 'orange' ? 'text-orange-500' : 'text-blue-600');
-                metricsHtml += `<div class="dash-metric-card">
+                // Determine semantic color class
+                let colorClass = 'text-blue-600';
+                let metricClass = '';
+                if (m.color === 'green') {
+                  colorClass = 'text-green-600';
+                  metricClass = 'metric-good';
+                } else if (m.color === 'orange' || m.color === 'yellow') {
+                  colorClass = 'text-orange-500';
+                  metricClass = 'metric-caution';
+                } else if (m.color === 'red') {
+                  colorClass = 'text-red-600';
+                  metricClass = 'metric-bad';
+                }
+
+                // Add explanation badge if provided
+                let explanationHtml = '';
+                if (m.explanation) {
+                  let explanationClass = 'good';
+                  if (m.color === 'orange' || m.color === 'yellow') {
+                    explanationClass = 'caution';
+                  } else if (m.color === 'red') {
+                    explanationClass = 'bad';
+                  }
+                  explanationHtml = `<div class="color-explanation ${explanationClass}">
+                    <ion-icon name="${m.color === 'green' ? 'checkmark-circle' : m.color === 'red' ? 'close-circle' : 'alert-circle'}"></ion-icon>
+                    ${m.explanation}
+                  </div>`;
+                }
+
+                metricsHtml += `<div class="dash-metric-card ${metricClass}">
                     <div class="dash-metric-icon"><ion-icon name="${m.icon}"></ion-icon></div>
                     <div>
                       <div class="dash-metric-label">${m.label}</div>
                       <div class="dash-metric-value ${colorClass}">${m.value}</div>
+                      ${explanationHtml}
                     </div>
                   </div>`;
               });
 
               // 3. 3-Column Content Layout
-              const core = data.property_core || {};
 
-              // LEFT COLUMN: Static Property Facts
-              const leftHtml = `
-                  <div class="dash-sidebar-card">
-                     <h4 class="mb-3 font-bold text-slate-700">Woningdetails</h4>
-                     <ul class="space-y-3 text-sm text-slate-600" style="list-style:none; padding:0;">
-                        <li class="flex justify-between border-b pb-2"><span>Bouwjaar</span> <span class="font-bold text-slate-800">${core.build_year || '-'}</span></li>
-                        <li class="flex justify-between border-b pb-2"><span>Wonen</span> <span class="font-bold text-slate-800">${core.living_area_m2 || '-'} m²</span></li>
-                        <li class="flex justify-between border-b pb-2"><span>Perceel</span> <span class="font-bold text-slate-800">${core.plot_area_m2 || '-'} m²</span></li>
-                        <li class="flex justify-between border-b pb-2"><span>Label</span> <span class="font-bold text-slate-800">${core.energy_label || '-'}</span></li>
-                         <li class="flex justify-between pt-2"><span>Type</span> <span class="font-bold text-slate-800">${core.house_type || 'Woonhuis'}</span></li>
-                     </ul>
-                  </div>
-                  <div class="dash-sidebar-card gradient-card">
-                      <h4 class="flex items-center gap-2 mb-2 font-bold"><ion-icon name="trending-up"></ion-icon> Markt Potentie</h4>
-                      <div class="text-sm opacity-90">Op basis van ${core.living_area_m2 || '0'}m² en huidige markttrends lijkt hier ruimte voor optimalisatie.</div>
-                  </div>
-                `;
+              // LEFT COLUMN: Chapter-specific or minimal default
+              let leftHtml = '';
 
-              // CENTER COLUMN: Main Content
-              const mainHtml = `<div class="dash-main-card">
-                  <h3 class="dash-section-title">${d.main.title}</h3>
-                  <div class="prose max-w-none text-slate-600">
-                    ${d.main.content}
-                  </div>
-                </div>`;
+              // Debug: Log what we're receiving
+              console.log(`Chapter ${key} - left_sidebar:`, d.left_sidebar);
 
-              // RIGHT COLUMN: Sidebar Content
-              let rightHtml = '';
-              (d.sidebar || []).forEach(item => {
-                if (item.type === 'advisor_score') {
-                  rightHtml += `<div class="dash-sidebar-card score-card">
-                      <div class="flex justify-between items-center mb-2">
-                        <div class="font-bold text-slate-700">${item.title}</div>
-                        <div class="dash-score-badge">${item.score}%</div>
-                      </div>
-                      <div class="text-sm text-slate-500 mb-2">${item.content}</div>
-                      <div class="dash-progress-bar"><div style="width: ${item.score}%"></div></div>
-                    </div>`;
-                } else if (item.type === 'advisor_card') {
-                  rightHtml += `<div class="dash-sidebar-card" style="border-left: 4px solid #3b82f6;">
-                      <h4 class="font-bold text-slate-700 mb-2 flex items-center"><ion-icon name="bulb" class="text-blue-500 mr-2"></ion-icon> ${item.title}</h4>
+              if (d.left_sidebar && d.left_sidebar.length > 0) {
+                // Use chapter-specific left sidebar content
+                console.log(`✓ Rendering chapter-specific left sidebar for Chapter ${key}`);
+                d.left_sidebar.forEach(item => {
+                  if (item.type === 'info_card') {
+                    leftHtml += `<div class="dash-sidebar-card">
+                      <h4 class="mb-3 font-bold text-slate-700">${item.title}</h4>
                       <div class="text-sm text-slate-600">${item.content}</div>
                     </div>`;
-                } else if (item.type === 'action_list') {
-                  const listItems = item.items.map(i => `<li class="flex items-start gap-2"><ion-icon name="checkbox-outline" class="text-green-500 mt-1"></ion-icon> <span>${i}</span></li>`).join('');
-                  rightHtml += `<div class="dash-sidebar-card">
+                  } else if (item.type === 'key_facts') {
+                    const factsHtml = item.facts.map(f =>
+                      `<li class="flex justify-between border-b pb-2"><span>${f.label}</span> <span class="font-bold text-slate-800">${f.value}</span></li>`
+                    ).join('');
+                    leftHtml += `<div class="dash-sidebar-card">
                       <h4 class="mb-3 font-bold text-slate-700">${item.title}</h4>
-                      <ul class="dash-action-list space-y-2 text-sm text-slate-600" style="list-style:none; padding:0;">${listItems}</ul>
+                      <ul class="space-y-3 text-sm text-slate-600" style="list-style:none; padding:0;">${factsHtml}</ul>
                     </div>`;
-                }
-              });
+                  } else if (item.type === 'highlight_card') {
+                    leftHtml += `<div class="dash-sidebar-card gradient-card">
+                      <h4 class="flex items-center gap-2 mb-2 font-bold"><ion-icon name="${item.icon || 'information-circle'}"></ion-icon> ${item.title}</h4>
+                      <div class="text-sm opacity-90">${item.content}</div>
+                    </div>`;
+                  } else if (item.type === 'stat_list') {
+                    const statsHtml = item.stats.map(s =>
+                      `<div class="flex items-center justify-between py-2 border-b">
+                        <div class="flex items-center gap-2">
+                          <ion-icon name="${s.icon}" class="text-blue-500"></ion-icon>
+                          <span class="text-sm">${s.label}</span>
+                        </div>
+                        <span class="font-bold text-slate-800">${s.value}</span>
+                      </div>`
+                    ).join('');
+                    leftHtml += `<div class="dash-sidebar-card">
+                      <h4 class="mb-3 font-bold text-slate-700">${item.title}</h4>
+                      ${statsHtml}
+                    </div>`;
+                  }
+                });
+              } else {
+                // Fallback: Only show if chapter doesn't provide custom content
+                console.warn(`⚠ Using fallback Kerngegevens for Chapter ${key} - no left_sidebar data provided`);
+                leftHtml = `
+                  <div class="dash-sidebar-card">
+                     <h4 class="mb-3 font-bold text-slate-700">Kerngegevens</h4>
+                     <ul class="space-y-2 text-sm text-slate-600" style="list-style:none; padding:0;">
+                        <li class="flex justify-between pb-2"><span>Bouwjaar</span> <span class="font-bold">${core.build_year || '-'}</span></li>
+                        <li class="flex justify-between pb-2"><span>Wonen</span> <span class="font-bold">${core.living_area_m2 || '-'}</span></li>
+                        <li class="flex justify-between pb-2"><span>Label</span> <span class="font-bold">${core.energy_label || '-'}</span></li>
+                     </ul>
+                  </div>
+                `;
+              }
+
+
+              // CENTER COLUMN: New Magazine Layout
+              // 1. Render the Main Content (which contains the full Mag Layout HTML from backend)
+              const mainHtml = `<div class="dash-main-card mega-grid" style="padding: 1.5rem;">
+                  <h3 class="dash-section-title">${d.main.title}</h3>
+                  <div id="mag-content-root">
+                    ${d.main.content} 
+                  </div>
+                </div>`;
 
               tab.innerHTML = `<div class="dash-wrapper">
                   ${heroHtml}
@@ -415,9 +483,46 @@
                   <div class="dash-content-grid">
                     <div class="dash-col-left">${leftHtml}</div>
                     <div class="dash-col-main">${mainHtml}</div>
-                    <div class="dash-col-right">${rightHtml}</div>
                   </div>
                 </div>`;
+
+              // 2. DYNAMICALLY INJECT SIDEBAR WIDGETS INTO THE VISUAL COL
+              // We wait for DOM update then move items
+              setTimeout(() => {
+                const visualCol = document.querySelector('.mag-col-visuals');
+                if (visualCol && d.sidebar && d.sidebar.length > 0) {
+                  d.sidebar.forEach(item => {
+                    let widgetHtml = '';
+                    if (item.type === 'advisor_score') {
+                      widgetHtml = `<div class="mag-widget-card">
+                                <div class="flex justify-between items-center mb-2">
+                                    <div class="mag-widget-title" style="margin:0">${item.title}</div>
+                                    <div class="dash-score-badge">${item.score}%</div>
+                                </div>
+                                <div class="text-sm text-slate-500 mb-2">${item.content}</div>
+                                <div class="dash-progress-bar"><div style="width: ${item.score}%"></div></div>
+                            </div>`;
+                    } else if (item.type === 'advisor_card') {
+                      widgetHtml = `<div class="mag-widget-card" style="border-left: 4px solid #3b82f6;">
+                                <h4 class="mag-widget-title text-blue-600"><ion-icon name="bulb"></ion-icon> ${item.title}</h4>
+                                <div class="text-sm text-slate-600">${item.content}</div>
+                            </div>`;
+                    } else if (item.type === 'action_list') {
+                      const listItems = item.items.map(i => `<div class="mag-feature-item">
+                                <div class="mag-icon-box" style="background:#f1f5f9; color:#64748b"><ion-icon name="checkbox-outline"></ion-icon></div>
+                                <span class="mag-feature-text">${i}</span>
+                            </div>`).join('');
+                      widgetHtml = `<div class="mag-widget-card">
+                                <h4 class="mag-widget-title text-slate-700">${item.title}</h4>
+                                <div class="mag-feature-grid">${listItems}</div>
+                            </div>`;
+                    }
+
+                    // Append to visual col
+                    if (widgetHtml) visualCol.insertAdjacentHTML('beforeend', widgetHtml);
+                  });
+                }
+              }, 0);
             } else {
               // Fallback Legacy Layout
               tab.innerHTML = `<div class="chapter-header"><span class="chapter-kicker">Hoofdstuk ${key}</span><h2 class="chapter-title-large">${ch.title.replace(/^\d+\.\s*/, '')}</h2></div><div class="chapter-body prose"></div>`;

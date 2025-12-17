@@ -80,7 +80,12 @@ class TestFrontendStructure(unittest.TestCase):
             
         self.assertIn("Voorkeuren", soup.title.string)
         self.assertIsNotNone(soup.find(id="btn-save"), "Save button missing")
-        self.assertIsNotNone(soup.find(id="shared-budget"), "Preferences input missing")
+        
+        # Verify Critical Inputs for both Personas
+        self.assertIsNotNone(soup.find("input", {"name": "marcel_custom"}), "Marcel Custom Input missing")
+        self.assertIsNotNone(soup.find("input", {"name": "petra_custom"}), "Petra Custom Input missing")
+        self.assertIsNotNone(soup.find("input", {"name": "marcel_hidden"}), "Marcel Hidden Input missing")
+        self.assertIsNotNone(soup.find("input", {"name": "petra_hidden"}), "Petra Hidden Input missing")
 
 if __name__ == "__main__":
     unittest.main()

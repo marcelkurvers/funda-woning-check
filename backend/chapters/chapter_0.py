@@ -83,48 +83,42 @@ class ExecutiveSummary(BaseChapter):
         # --- 2. BUILD PRO REPORT ---
         
         # Hero
+        # Strip m² and m2 from values to avoid duplication
+        oppervlakte_clean = ctx.get('oppervlakte', '?').replace('m²', '').replace('m2', '').strip()
+        perceel_clean = ctx.get('perceel', '?').replace('m²', '').replace('m2', '').strip()
+        
         hero = {
             "address": ctx.get('adres', 'Adres Onbekend'),
             "price": ctx.get('prijs', 'Prijs op aanvraag'),
             "status": "Te Koop" if price_val > 0 else "Analyse Mode",
-            "labels": ["Woonhuis", f"{ctx.get('oppervlakte', '?').replace('m2','')} m² Wonen", f"{ctx.get('perceel', '?').replace('m2','')} m² Perceel"] 
+            "labels": ["Woonhuis", f"{oppervlakte_clean} m² Wonen", f"{perceel_clean} m² Perceel"] 
         }
 
-        # Metrics
-        market_delta = round(((price_m2 - market_avg_m2) / market_avg_m2) * 100)
-        delta_str = f"{'+' if market_delta > 0 else ''}{market_delta}% vs markt"
         
+        # Determine colors and explanations for metrics
+        energy_color = "green" if label in ["A","B"] else "orange" if label in ["C","D"] else "red"
+        energy_explanation = "Uitstekende energie-efficiëntie" if label in ["A","B"] else "Gemiddeld, verbetering aanbevolen" if label in ["C","D"] else "Slecht, renovatie dringend nodig"
+        
+        investment_color = "green" if reno_cost == 0 else "orange" if reno_cost <= 30000 else "red"
+        investment_explanation = "Geen directe renovatie nodig" if reno_cost == 0 else f"Gemiddelde renovatiekosten (€{reno_cost:,})" if reno_cost <= 30000 else f"Hoge renovatiekosten (€{reno_cost:,})"
+        
+        price_m2_color = "green" if price_m2 < market_avg_m2 * 0.95 else "orange" if price_m2 <= market_avg_m2 * 1.05 else "red"
+        price_m2_explanation = "Onder marktprijs" if price_m2 < market_avg_m2 * 0.95 else "Rond marktprijs" if price_m2 <= market_avg_m2 * 1.05 else "Boven marktprijs"
+        
+        # Calculate market deviation for metrics
+        market_delta = 0
+        delta_str = "0% vs markt"
+        if market_avg_m2:
+            market_delta = round(((price_m2 - market_avg_m2) / market_avg_m2) * 100)
+            delta_str = f"{market_delta:+}% vs markt"
+
         metrics = [
-            {"id": "price_m2", "label": "Vraagprijs per m²", "value": f"€ {price_m2:,}", "icon": "pricetag", "trend": trend, "trend_text": delta_str},
-            {"id": "energy", "label": "Duurzaamheid", "value": f"Label {label}", "icon": "leaf", "color": "green" if label in ["A","B","C"] else "orange"},
-            {"id": "investment", "label": "Verw. Investering", "value": f"€ {reno_cost:,}" if reno_cost > 0 else "Geen direct", "icon": "hammer", "trend": "neutral" if reno_cost == 0 else "down"},
+            {"id": "price_m2", "label": "Vraagprijs per m²", "value": f"€ {price_m2:,}", "icon": "pricetag", "trend": trend, "trend_text": delta_str, "color": price_m2_color, "explanation": price_m2_explanation},
+            {"id": "energy", "label": "Duurzaamheid", "value": f"Label {label}", "icon": "leaf", "color": energy_color, "explanation": energy_explanation},
+            {"id": "investment", "label": "Verw. Investering", "value": f"€ {reno_cost:,}" if reno_cost > 0 else "Geen direct", "icon": "hammer", "trend": "neutral" if reno_cost == 0 else "down", "color": investment_color, "explanation": investment_explanation},
             {"id": "return", "label": "Verhuurpotentie", "value": f"€ {int(size_val * 22.5):,}", "icon": "trending-up", "trend": "up"}
         ]
-        # New metrics (additive)
-        if market_avg_m2:
-            price_dev_pct = round(((price_m2 - market_avg_m2) / market_avg_m2) * 100)
-            metrics.append({"id": "price_deviation", "label": "Prijsafwijking %", "value": f"{price_dev_pct:+,}%" if price_dev_pct != 0 else "0%", "icon": "trend-up" if price_dev_pct > 0 else "trend-down" if price_dev_pct < 0 else "neutral", "trend": "up" if price_dev_pct > 0 else "down" if price_dev_pct < 0 else "neutral", "trend_text": f"{price_dev_pct:+}% vs markt"})
-        future_score = 80 if label in ["A", "A+", "A++", "B"] else 60 if label in ["C", "D"] else 40
-        metrics.append({"id": "energy_future", "label": "Energie Toekomstscore", "value": f"{future_score}", "icon": "leaf", "color": "green" if future_score >= 70 else "orange" if future_score >= 50 else "red", "trend": "neutral"})
-        maintenance = "Hoog" if reno_cost > 30000 else "Middelmatig" if reno_cost > 0 else "Laag"
-        metrics.append({"id": "maintenance_intensity", "label": "Onderhoudsintensiteit", "value": maintenance, "icon": "hammer", "trend": "neutral"})
-        family = "Geschikt voor gezin" if size_val >= 120 and len(pros) > 0 else "Minder geschikt voor groot gezin"
-        metrics.append({"id": "family_suitability", "label": "Gezinsgeschiktheid", "value": family, "icon": "people", "trend": "neutral"})
-        lt_quality = "Hoog" if "jong" in construction_alert.lower() else "Middelmatig" if "aandacht" in construction_alert.lower() else "Laag"
-        metrics.append({"id": "long_term_quality", "label": "Lange-termijn kwaliteit", "value": lt_quality, "icon": "shield", "trend": "neutral"})
-        # New metrics (additive)
-        if market_avg_m2:
-            price_dev_pct = round(((price_m2 - market_avg_m2) / market_avg_m2) * 100)
-            metrics.append({"id": "price_deviation", "label": "Prijsafwijking %", "value": f"{price_dev_pct:+,}%" if price_dev_pct != 0 else "0%", "icon": "trend-up" if price_dev_pct > 0 else "trend-down" if price_dev_pct < 0 else "neutral", "trend": "up" if price_dev_pct > 0 else "down" if price_dev_pct < 0 else "neutral", "trend_text": f"{price_dev_pct:+}% vs markt"})
-        future_score = 80 if label in ["A","A+","A++","B"] else 60 if label in ["C","D"] else 40
-        metrics.append({"id": "energy_future", "label": "Energie Toekomstscore", "value": f"{future_score}", "icon": "leaf", "color": "green" if future_score >= 70 else "orange" if future_score >= 50 else "red", "trend": "neutral"})
-        maintenance = "Hoog" if reno_cost > 30000 else "Middelmatig" if reno_cost > 0 else "Laag"
-        metrics.append({"id": "maintenance_intensity", "label": "Onderhoudsintensiteit", "value": maintenance, "icon": "hammer", "trend": "neutral"})
-        family = "Geschikt voor gezin" if size_val >= 120 and len(pros) > 0 else "Minder geschikt voor groot gezin"
-        metrics.append({"id": "family_suitability", "label": "Gezinsgeschiktheid", "value": family, "icon": "people", "trend": "neutral"})
-        lt_quality = "Hoog" if "jong" in construction_alert.lower() else "Middelmatig" if "aandacht" in construction_alert.lower() else "Laag"
-        metrics.append({"id": "long_term_quality", "label": "Lange-termijn kwaliteit", "value": lt_quality, "icon": "shield", "trend": "neutral"})
-
+        
         # Logic: Pros & Cons
         pros = []
         cons = []
@@ -142,8 +136,69 @@ class ExecutiveSummary(BaseChapter):
         pros_html = "".join([f"<li class='pro'><ion-icon name='checkmark-circle' style='color:#10b981'></ion-icon> {p}</li>" for p in pros])
         cons_html = "".join([f"<li class='con'><ion-icon name='alert-circle' style='color:#ef4444'></ion-icon> {c}</li>" for c in cons])
 
-        # Strategic Main Content
+        # New additive metrics (added after pros/cons to avoid reference errors)
+        if market_avg_m2:
+            price_dev_pct = market_delta
+            price_dev_color = "green" if price_dev_pct < -5 else "orange" if price_dev_pct <= 5 else "red"
+            price_dev_explanation = "Onder marktprijs" if price_dev_pct < -5 else "Rond marktprijs" if price_dev_pct <= 5 else "Boven marktprijs"
+            metrics.append({"id": "price_deviation", "label": "Prijsafwijking %", "value": f"{price_dev_pct:+}%" if price_dev_pct != 0 else "0%", "icon": "analytics", "trend": "up" if price_dev_pct > 0 else "down" if price_dev_pct < 0 else "neutral", "trend_text": f"{price_dev_pct:+}% vs markt", "color": price_dev_color, "explanation": price_dev_explanation})
+        
+        future_score = 80 if label in ["A", "A+", "A++", "B"] else 60 if label in ["C", "D"] else 40
+        future_score_color = "green" if future_score >= 70 else "orange" if future_score >= 50 else "red"
+        future_score_explanation = "Uitstekende toekomstbestendigheid" if future_score >= 70 else "Gemiddelde toekomstbestendigheid" if future_score >= 50 else "Lage toekomstbestendigheid"
+        metrics.append({"id": "energy_future", "label": "Energie Toekomstscore", "value": f"{future_score}/100", "icon": "leaf", "color": future_score_color, "explanation": future_score_explanation, "trend": "neutral"})
+        
+        maintenance = "Hoog" if reno_cost > 30000 else "Middelmatig" if reno_cost > 0 else "Laag"
+        maintenance_color = "red" if reno_cost > 30000 else "orange" if reno_cost > 0 else "green"
+        maintenance_explanation = f"Hoge onderhoudskosten (€{reno_cost:,})" if reno_cost > 30000 else f"Gemiddelde onderhoudskosten (€{reno_cost:,})" if reno_cost > 0 else "Lage onderhoudskosten"
+        metrics.append({"id": "maintenance_intensity", "label": "Onderhoudsintensiteit", "value": maintenance, "icon": "hammer", "trend": "neutral", "color": maintenance_color, "explanation": maintenance_explanation})
+        
+        family = "Geschikt" if size_val >= 120 else "Beperkt geschikt"
+        family_color = "green" if size_val >= 120 else "orange"
+        family_explanation = "Voldoende ruimte voor gezin" if size_val >= 120 else "Beperkte ruimte voor groot gezin"
+        metrics.append({"id": "family_suitability", "label": "Gezinsgeschiktheid", "value": family, "icon": "people", "trend": "neutral", "color": family_color, "explanation": family_explanation})
+        
+        lt_quality = "Hoog" if year_val >= 1990 else "Middelmatig" if year_val >= 1970 else "Laag"
+        lt_quality_color = "green" if year_val >= 1990 else "orange" if year_val >= 1970 else "red"
+        lt_quality_explanation = "Moderne bouw" if year_val >= 1990 else "Oudere bouw, aandacht nodig" if year_val >= 1970 else "Oude bouw, renovatie nodig"
+        metrics.append({"id": "long_term_quality", "label": "Lange-termijn kwaliteit", "value": lt_quality, "icon": "shield", "trend": "neutral", "color": lt_quality_color, "explanation": lt_quality_explanation})
+
+
+
+
+
+        # Strategic Main Content with Color Legend
         summary_html = f"""
+        <div class="color-legend">
+            <div class="color-legend-title">
+                <ion-icon name="information-circle"></ion-icon>
+                Kleurcodering in dit rapport
+            </div>
+            <div class="color-legend-items">
+                <div class="color-legend-item">
+                    <div class="color-legend-dot good"></div>
+                    <div>
+                        <span class="color-legend-label">Groen = Goed</span>
+                        <div class="color-legend-text">Positieve aspecten, gunstige waarden</div>
+                    </div>
+                </div>
+                <div class="color-legend-item">
+                    <div class="color-legend-dot caution"></div>
+                    <div>
+                        <span class="color-legend-label">Oranje = Let op</span>
+                        <div class="color-legend-text">Gemiddeld, aandacht vereist</div>
+                    </div>
+                </div>
+                <div class="color-legend-item">
+                    <div class="color-legend-dot bad"></div>
+                    <div>
+                        <span class="color-legend-label">Rood = Zorgpunt</span>
+                        <div class="color-legend-text">Aandachtspunten, actie nodig</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <p class="lead-text">
             <strong>Strategische Analyse:</strong> Het object aan de {ctx.get('adres')} positioneert zich als een 
             <strong>{valuation_status}</strong> in de huidige markt. Met een vierkantemeterprijs van € {price_m2} ligt het 
@@ -207,16 +262,49 @@ class ExecutiveSummary(BaseChapter):
             }
         ]
 
+        # Left sidebar: Key property highlights
+        left_sidebar = [
+            {
+                "type": "key_facts",
+                "title": "Kerngegevens",
+                "facts": [
+                    {"label": "Vraagprijs", "value": ctx.get('prijs', 'N/A')},
+                    {"label": "Prijs/m²", "value": f"€ {price_m2:,}"},
+                    {"label": "Energielabel", "value": label},
+                    {"label": "Bouwjaar", "value": str(year_val)}
+                ]
+            },
+            {
+                "type": "highlight_card",
+                "icon": "analytics",
+                "title": "AI Score",
+                "content": f"{ai_score}/100 - {valuation_status}"
+            }
+        ]
+        
         layout = {
             "layout_type": "modern_dashboard",
             "hero": hero,
             "metrics": metrics,
             "main": {"title": "Executive Property Assessment", "content": summary_html},
+            "left_sidebar": left_sidebar,
             "sidebar": sidebar
         }
         
+        chapter_data = {
+            "title": "Executive Summary",
+            "intro": f"Strategische Analyse: Het object aan de {ctx.get('adres')} positioneert zich als een {valuation_status} in de huidige markt.",
+            "main_analysis": summary_html,
+            "conclusion": f"AI Score: {ai_score}/100 - {valuation_status}. {'Koopwaardig' if ai_score > 70 else 'Risicovol'}.",
+            "strengths": pros,
+            "advice": cons,
+            "interpretation": f"Waardering: {valuation_status} (Label {label})",
+            "sidebar_items": sidebar
+        }
+
         return ChapterOutput(
             title="0. Executive Summary",
             grid_layout=layout, 
-            blocks=[] 
+            blocks=[],
+            chapter_data=chapter_data
         )

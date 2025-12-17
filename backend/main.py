@@ -355,24 +355,34 @@ def chapter_overview(chapters: Dict[str, Any], sources: List[Any], kpis: Dict[st
 
 def simulate_pipeline(run_id: str):
     row = get_run_row(run_id)
-    if not row: return
+    if not row:
+        return
     
     funda_url = row["funda_url"]
     steps = json.loads(row["steps_json"])
     update_run(run_id, status="running")
     
-    # 1. Scrape
-    steps["scrape_funda"] = "running"; update_run(run_id, steps_json=json.dumps(steps))
-    core = derive_property_core(funda_url)
+    # 1. Scrape (skip if no URL provided)
+    if funda_url:
+        steps["scrape_funda"] = "running"
+        update_run(run_id, steps_json=json.dumps(steps))
+        core = derive_property_core(funda_url)
+    else:
+        # No URL – assume manual paste will follow
+        steps["scrape_funda"] = "skipped"
+        core = {"address": "Onbekend (handmatig te vullen)", "funda_url": None, "scrape_error": "No URL provided; manual paste required."}
+        update_run(run_id, steps_json=json.dumps(steps))
     
-    # Merge pasted
+    # Merge pasted HTML if present
     if row["funda_html"]:
         try:
-             p = Parser().parse_html(row["funda_html"])
-             core.update({k:v for k,v in p.items() if v})
-        except: pass
-        
-    steps["scrape_funda"] = "done"; update_run(run_id, steps_json=json.dumps(steps), property_core_json=json.dumps(core))
+            p = Parser().parse_html(row["funda_html"])
+            core.update({k: v for k, v in p.items() if v})
+        except Exception as e:
+            logger.error(f"Failed to parse pasted HTML: {e}")
+    
+    steps["scrape_funda"] = "done"
+    update_run(run_id, steps_json=json.dumps(steps), property_core_json=json.dumps(core))
     
     # 2. Others (Fast)
     steps["fetch_external_sources"] = "done"
@@ -401,15 +411,31 @@ def simulate_pipeline(run_id: str):
 
 # --- API ROUTES ---
 
+@app.get("/runs")
+def list_runs():
+    con = db()
+    cur = con.cursor()
+    cur.execute("SELECT id, funda_url, status, created_at, updated_at FROM runs ORDER BY created_at DESC")
+    rows = cur.fetchall()
+    con.close()
+    return [{
+        "id": r["id"],
+        "funda_url": r["funda_url"],
+        "status": r["status"],
+        "created_at": r["created_at"]
+    } for r in rows]
+
 @app.post("/runs")
 def create_run(inp: RunInput):
     run_id = str(uuid.uuid4())
     con = db()
     cur = con.cursor()
     created = now()
+    # If the provided URL is a placeholder indicating manual paste, store as NULL to avoid scraping attempts
+    funda_url = None if inp.funda_url and inp.funda_url.lower() in ["manual-paste", ""] else str(inp.funda_url)
     cur.execute(
         "INSERT INTO runs (id,funda_url,funda_html,status,steps_json,property_core_json,chapters_json,kpis_json,sources_json,unknowns_json,artifacts_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        (run_id, str(inp.funda_url), inp.funda_html, "queued", json.dumps(default_steps()), "{}", "{}", "{}", "[]", "[]", "{}", created, created)
+        (run_id, funda_url, inp.funda_html, "queued", json.dumps(default_steps()), "{}", "{}", "{}", "[]", "[]", "{}", created, created)
     )
     con.commit()
     con.close()
@@ -420,6 +446,14 @@ def start_run(run_id: str):
     # Synchronous for local
     simulate_pipeline(run_id)
     return {"ok": True}
+
+@app.delete("/runs/{run_id}/url")
+def delete_run_url(run_id: str):
+    row = get_run_row(run_id)
+    if not row:
+        raise HTTPException(404)
+    update_run(run_id, funda_url=None)
+    return {"ok": True, "message": "Funda URL removed from run."}
 
 @app.get("/runs/{run_id}/report")
 def get_report(run_id: str):

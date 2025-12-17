@@ -30,17 +30,18 @@ class TestAiInterpretation(unittest.TestCase):
         
         narrative = IntelligenceEngine.generate_chapter_narrative(4, ctx) # Sustainability Chapter
         
-        # Check Interpretation
-        self.assertIn('voldoet aan', narrative['interpretation'], "Should interpret as compliant")
-        self.assertIn('raadzaam', narrative['interpretation'], "Should suggest plan is advisable, not necessary")
+        # Check Interpretation (Positive)
+        self.assertIn('waarde-vermeerderaar', narrative['interpretation'], "Should interpret as value adder")
+        # Check Interpretation (Negative - Verification of Logic)
+        self.assertNotIn('investeringspost', narrative['intro'], "Should NOT be described as an investment cost")
         
         # Check Strengths
         strengths = str(narrative['strengths'])
-        self.assertIn('Energielabel A', strengths, "Should highlight Label A as strength")
+        self.assertIn('Uitstekend Label', strengths, "Should highlight Label A as strength")
         
         # Check Advice
         advice = narrative['advice']
-        self.assertNotIn('na-isolatie', advice, "Should NOT suggest isolation for Label A")
+        self.assertNotIn('spouwmuurisolatie', advice, "Should NOT suggest isolation for Label A")
 
     def test_scenario_old_fixer_upper(self):
         """Test an old house with poor energy label."""
@@ -60,8 +61,14 @@ class TestAiInterpretation(unittest.TestCase):
         
         # Chapter 4: Energy
         narrative_ch4 = IntelligenceEngine.generate_chapter_narrative(4, ctx)
-        self.assertIn('noodzakelijk', narrative_ch4['interpretation'], "Energy plan should be necessary")
-        self.assertIn('na-isolatie', narrative_ch4['advice'], "Should suggest isolation")
+        
+        # Positive Checks
+        self.assertIn('kans', narrative_ch4['interpretation'], "Energy plan should be seen as opportunity")
+        self.assertIn('spouwmuurisolatie', narrative_ch4['advice'], "Should suggest isolation")
+        
+        # Negative Checks (Cross-Verification)
+        self.assertNotIn('waarde-vermeerderaar', narrative_ch4['interpretation'], "Old G-label should NOT be a value adder yet")
+        self.assertNotIn('Gasloos', str(narrative_ch4['strengths']), "Old house should not be gasless")
 
     def test_all_chapters_generation(self):
         """
@@ -111,13 +118,13 @@ class TestAiInterpretation(unittest.TestCase):
         narrative = IntelligenceEngine.generate_chapter_narrative(1, ctx)
         
         # Check Interpretation
-        self.assertIn('luxe gezinswoning', narrative['interpretation'])
-        self.assertIn('zeer ruim bemeten', narrative['interpretation'])
+        self.assertIn('levensstijl', narrative['interpretation'])
+        self.assertIn('300 m²', narrative['interpretation'])
         
         # Check Strengths
         strengths = str(narrative['strengths'])
-        self.assertIn('Royaal woonoppervlak', strengths)
-        self.assertIn('Groot perceel', strengths)
+        self.assertIn('Royaal Wonen', strengths)
+        self.assertIn('Vrijheid & Privacy', strengths)
 
     def test_html_structure_consistency(self):
         """Verify that the required HTML keys are present in all chapters."""
