@@ -652,7 +652,7 @@ class IntelligenceEngine:
         advice = "<ul><li>Controleer parkeerbeleid gemeente (kosten/vergunning).</li><li>Test de OV-verbinding in de spits.</li></ul>"
         strengths = ["Centrale ligging"]
 
-        conclusion = "<strong>Conclusie:</strong> Mobiliteitsscore: Voldoende, parkeren vergt aandacht."
+        conclusion = "Mobiliteitsscore: Voldoende, parkeren vergt aandacht."
         
         return {
             "title": "Mobiliteit",

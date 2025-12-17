@@ -23,10 +23,10 @@ class ParkingAccessibility(BaseChapter):
         }
         
         metrics = [
-            {"id": "parking", "label": "Parkeren", "value": parking_status, "icon": "car"},
-            {"id": "ev", "label": "Laadpaal", "value": "Mogelijk", "icon": "flash"},
-            {"id": "highway", "label": "Snelweg", "value": "< 10 min", "icon": "speedometer"},
-            {"id": "public", "label": "OV Halte", "value": "Nabij", "icon": "bus"}
+            {"id": "parking", "label": "Parkeren", "value": parking_status, "icon": "car", "color": "orange" if parking_status == "Openbaar" else "green", "explanation": "Vergunning check" if parking_status == "Openbaar" else "Op eigen terrein"},
+            {"id": "ev", "label": "Laadpaal", "value": "Mogelijk", "icon": "flash", "color": "green", "explanation": "Infra aanwezig"},
+            {"id": "highway", "label": "Snelweg", "value": "< 10 min", "icon": "speedometer", "color": "green", "explanation": "Goede uitvalswegen"},
+            {"id": "public", "label": "OV Halte", "value": "Nabij", "icon": "bus", "color": "blue", "explanation": "Loopafstand"}
         ]
         # New metrics (additive)
         price_val = IntelligenceEngine._parse_int(ctx.get('prijs') or ctx.get('asking_price_eur'))
@@ -42,18 +42,31 @@ class ParkingAccessibility(BaseChapter):
         future_score = 80 if label in ["A","A+","A++","B"] else 60 if label in ["C","D"] else 40
         metrics.append({"id":"energy_future","label":"Energie Toekomstscore","value":f"{future_score}","icon":"leaf","color":"green" if future_score>=70 else "orange" if future_score>=50 else "red","trend":"neutral"})
         maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
-        metrics.append({"id":"maintenance_intensity","label":"Onderhoudsintensiteit","value":maintenance,"icon":"hammer","trend":"neutral"})
+        maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
+        metrics.append({"id":"maintenance_intensity","label":"Onderhoud","value":maintenance,"icon":"hammer","trend":"neutral", "color": "red" if reno_cost > 30000 else "green"})
         family = "Geschikt voor gezin" if (IntelligenceEngine._parse_int(ctx.get('oppervlakte','0')) or 0) >= 120 else "Minder geschikt voor groot gezin"
         metrics.append({"id":"family_suitability","label":"Gezinsgeschiktheid","value":family,"icon":"people","trend":"neutral"})
         lt_quality = "Hoog" if "jong" in construction_alert.lower() else "Middelmatig" if "aandacht" in construction_alert.lower() else "Laag"
         metrics.append({"id":"long_term_quality","label":"Lange-termijn kwaliteit","value":lt_quality,"icon":"shield","trend":"neutral"})
         
         main_content = self._render_rich_narrative(narrative, extra_html=f"""
-        <ul class="check-list">
-            <li>Check parkeervergunning wachttijden bij gemeente.</li>
-            <li>Is er ruimte voor een laadpaal op eigen terrein?</li>
-            <li>Hoe druk is de straat tijdens spitsuur?</li>
-        </ul>
+        <div class="bg-slate-50 border border-slate-200 p-5 rounded-xl">
+            <h4 class="font-bold text-slate-800 mb-3 flex items-center gap-2"><ion-icon name="list"></ion-icon> Aandachtspunten</h4>
+            <ul class="space-y-2">
+                <li class="flex items-start gap-2">
+                    <ion-icon name="alert-circle" class="text-orange-500 mt-1"></ion-icon>
+                    <span class="text-slate-700">Check parkeervergunning wachttijden bij gemeente.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <ion-icon name="help-circle" class="text-blue-500 mt-1"></ion-icon>
+                    <span class="text-slate-700">Is er ruimte voor een laadpaal op eigen terrein?</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <ion-icon name="time" class="text-slate-500 mt-1"></ion-icon>
+                    <span class="text-slate-700">Hoe druk is de straat tijdens spitsuur?</span>
+                </li>
+            </ul>
+        </div>
         """)
         
         # Left sidebar: Parking info
@@ -78,5 +91,6 @@ class ParkingAccessibility(BaseChapter):
         return ChapterOutput(
             title="8. Parkeren & Bereikbaarheid",
             grid_layout=layout, 
-            blocks=[]
+            blocks=[],
+            chapter_data=narrative
         )
