@@ -73,15 +73,6 @@ class TechnicalState(BaseChapter):
         # Left sidebar: Construction timeline
         left_sidebar = [
             {
-                "type": "key_facts",
-                "title": "Bouwgegevens",
-                "facts": [
-                    {"label": "Bouwjaar", "value": f"{build_year}"},
-                    {"label": "Ouderdom", "value": f"{age} jaar"},
-                    {"label": "Risicoprofiel", "value": risk_level}
-                ]
-            },
-            {
                 "type": "highlight_card",
                 "icon": "warning" if risk_level != "Laag" else "shield-checkmark",
                 "title": "Inspectie Advies",

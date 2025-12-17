@@ -150,17 +150,6 @@ class GeneralFeatures(BaseChapter):
         # Left sidebar: Space-focused metrics
         left_sidebar = [
             {
-                "type": "key_facts",
-                "title": "Ruimte Overzicht",
-                "facts": [
-                    {"label": "Woonoppervlak", "value": f"{living_area} m²"},
-                    {"label": "Perceel", "value": f"{plot_area} m²"},
-                    {"label": "Slaapkamers", "value": f"{bedrooms or rooms_count}"},
-                    {"label": "Badkamers", "value": f"{bathrooms}"},
-                    {"label": "Volume (est.)", "value": f"~{volume} m³"}
-                ]
-            },
-            {
                 "type": "highlight_card",
                 "icon": "home",
                 "title": "Woningtype",

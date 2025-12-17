@@ -234,17 +234,7 @@ class ExecutiveSummary(BaseChapter):
 
         # Left sidebar: Key property highlights
         left_sidebar = [
-            {
-                "type": "key_facts",
-                "title": "Kerngegevens",
-                "facts": [
-                    {"label": "Vraagprijs", "value": ctx.get('prijs', 'N/A')},
-                    {"label": "Prijs/m²", "value": f"€ {price_m2:,}"},
-                    {"label": "Energielabel", "value": label},
-                    {"label": "Bouwjaar", "value": str(year_val)}
-                ]
-            },
-            {
+             {
                 "type": "highlight_card",
                 "icon": "analytics",
                 "title": "AI Score",

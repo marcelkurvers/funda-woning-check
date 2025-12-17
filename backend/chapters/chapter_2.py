@@ -73,18 +73,9 @@ class LocationAnalysis(BaseChapter):
         """)
         
         # Left sidebar: Location proximity
+        # Left sidebar: Location proximity
         left_sidebar = [
-            {
-                "type": "stat_list",
-                "title": "Nabijheid",
-                "stats": [
-                    {"label": "Supermarkt", "value": "5 min", "icon": "cart"},
-                    {"label": "Treinstation", "value": "10 min", "icon": "train"},
-                    {"label": "Basisschool", "value": "2 min", "icon": "school"},
-                    {"label": "Centrum", "value": "15 min", "icon": "business"}
-                ]
-            },
-            {
+             {
                 "type": "highlight_card",
                 "icon": "location",
                 "title": "Buurttype",

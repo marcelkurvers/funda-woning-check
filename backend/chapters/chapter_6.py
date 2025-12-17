@@ -62,16 +62,7 @@ class MaintenanceFinish(BaseChapter):
         
         # Left sidebar: Maintenance state
         left_sidebar = [
-            {
-                "type": "key_facts",
-                "title": "Onderhoudsstaat",
-                "facts": [
-                    {"label": "Bouwjaar", "value": str(year)},
-                    {"label": "Algemene staat", "value": state_score},
-                    {"label": "Verwachte kosten", "value": "€ 5.000-15.000"}
-                ]
-            },
-            {
+             {
                 "type": "highlight_card",
                 "icon": "hammer" if state_score == "Aandacht nodig" else "checkmark-circle",
                 "title": "Onderhoud Prioriteit",

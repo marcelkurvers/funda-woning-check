@@ -58,16 +58,7 @@ class LegalAspects(BaseChapter):
         
         # Left sidebar: Legal checklist
         left_sidebar = [
-            {
-                "type": "stat_list",
-                "title": "Juridisch Checklist",
-                "stats": [
-                    {"label": "Eigendom", "value": "Te checken", "icon": "document"},
-                    {"label": "Bestemming", "value": "Wonen", "icon": "home"},
-                    {"label": "Erfpacht", "value": "N.v.t.", "icon": "time"}
-                ]
-            },
-            {
+             {
                 "type": "highlight_card",
                 "icon": "shield-checkmark",
                 "title": "Juridische Status",

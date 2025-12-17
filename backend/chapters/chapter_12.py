@@ -49,16 +49,7 @@ class AdviceConclusion(BaseChapter):
         
         # Left sidebar: Final recommendation
         left_sidebar = [
-            {
-                "type": "key_facts",
-                "title": "Eindoordeel",
-                "facts": [
-                    {"label": "Totaalscore", "value": "7.5/10"},
-                    {"label": "Risico", "value": "Laag"},
-                    {"label": "Advies", "value": "Bezichtigen"}
-                ]
-            },
-            {
+             {
                 "type": "highlight_card",
                 "icon": "checkmark-circle",
                 "title": "Aanbeveling",

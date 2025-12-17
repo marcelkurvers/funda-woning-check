@@ -74,16 +74,7 @@ class MarketPosition(BaseChapter):
         
         # Left sidebar: Market comparison
         left_sidebar = [
-            {
-                "type": "key_facts",
-                "title": "Prijsvergelijking",
-                "facts": [
-                    {"label": "Deze woning", "value": f"€ {price_m2}/m²"},
-                    {"label": "Buurtgemiddelde", "value": f"€ {avg_m2}/m²"},
-                    {"label": "Verschil", "value": f"{diff_pct:+}%"}
-                ]
-            },
-            {
+             {
                 "type": "highlight_card",
                 "icon": "trending-up" if diff_pct > 0 else "trending-down" if diff_pct < 0 else "remove",
                 "title": "Marktpositie",

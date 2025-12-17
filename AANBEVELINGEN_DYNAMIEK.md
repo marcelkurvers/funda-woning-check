@@ -1,6 +1,6 @@
 # Expert Analyse: Dynamisch Vermogen (Per Hoofdstuk)
 
-**Datum:** Wed Dec 17 15:01:48 CET 2025
+**Datum:** Wed Dec 17 15:26:09 CET 2025
 **Score Model:** v3.0 (Granular Chapter Analysis)
 
 ## Strategisch Inzicht
@@ -15,14 +15,14 @@ Dit bevestigt dat de nieuwe aanpak werkt en uitgerold moet worden.
 | 2 | 2. Locatie & Omgeving | **0.1** | 0.0 | 🛑 Static |
 | 3 | 3. Bouwkundige Staat | **1.5** | 0.0 | 🛑 Static |
 | 4 | 4. Energie & Duurzaamheid | **2.2** | 0.0 | 🛑 Static |
-| 5 | 5. Indeling & Ruimtegebruik | **1.1** | 0.0 | 🛑 Static |
+| 5 | 5. Indeling & Ruimtegebruik | **1.0** | 0.0 | 🛑 Static |
 | 6 | 6. Onderhoud & Afwerking | **1.9** | 0.0 | 🛑 Static |
 | 7 | 7. Tuin & Buitenruimte | **1.3** | 0.0 | 🛑 Static |
 | 8 | 8. Parkeren & Bereikbaarheid | **0.3** | 0.0 | 🛑 Static |
 | 9 | 9. Juridische Aspecten | **0.4** | 0.0 | 🛑 Static |
 | 10 | 10. Financiële Analyse | **3.1** | 0.0 | ⚠️ Moderate |
 | 11 | 11. Marktpositie | **0.4** | 0.0 | 🛑 Static |
-| 12 | 12. Advies & Conclusie | **0.4** | 0.0 | 🛑 Static |
+| 12 | 12. Advies & Conclusie | **0.5** | 0.0 | 🛑 Static |
 
 ## Totaalscore
 **Gemiddelde Content Dynamiek:** 1.3 / 10

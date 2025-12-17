@@ -78,12 +78,30 @@ class Parser:
                 return t.split("Te koop:")[1].split("[")[0].strip()
         
         # 3. First valid line fallback (for raw text pastes)
+        # BLOCKLIST for common navigation/UI elements to ignore
+        BLOCKLIST = [
+            "ga naar", "menu", "zoeken", "inloggen", "funda", 
+            "te koop", "te huur", "favorieten", "foto's", 
+            "video's", "360-graden", "kenmerken", "kaart",
+            "verkoper", "contact"
+        ]
+        
         lines = [line.strip() for line in soup.get_text().splitlines() if line.strip()]
-        if lines:
-            first = lines[0]
-            # Heuristic: address usually < 100 chars and starts with something reasonable
-            if len(first) < 100:
-                return first
+        for line in lines:
+            line_lower = line.lower()
+            # Skip if explicitly in blocklist or starts with (e.g. "Ga naar content")
+            if any(line_lower.startswith(b) for b in BLOCKLIST):
+                continue
+            
+            # Additional heuristic: Addresses usually have a number
+            if not any(c.isdigit() for c in line):
+                # If it's a very short word like "Photos", skip it
+                if len(line.split()) < 2:
+                    continue
+            
+            # Heuristic: address usually < 100 chars
+            if len(line) < 100:
+                return line
                 
         return "Adres onbekend"
 
@@ -248,8 +266,8 @@ class Parser:
                     if num <= self.MAX_BEDROOMS:
                         return str(num)
                     else:
-                        logger.warning(f"Suspicious bedroom count: {num}, capping at {self.MAX_BEDROOMS}")
-                        return str(self.MAX_BEDROOMS)
+                        logger.warning(f"Suspicious bedroom count: {num} (max expected: {self.MAX_BEDROOMS})")
+                        return str(num)  # Return raw for validation to handle
         
         # Fallback: check if it's in the rooms field
         rooms_text = self._extract_spec(soup, "rooms")
@@ -260,15 +278,15 @@ class Parser:
                 if num <= self.MAX_BEDROOMS:
                     return str(num)
                 else:
-                    logger.warning(f"Suspicious bedroom count in rooms field: {num}")
-                    return str(self.MAX_BEDROOMS)
+                    logger.warning(f"Suspicious bedroom count in rooms field: {num} (max expected: {self.MAX_BEDROOMS})")
+                    return str(num)
         
         return None
 
     def _extract_bathrooms(self, soup) -> Optional[str]:
         """Extract number of bathrooms"""
         keywords = ["Aantal badkamers"]
-        
+        # First try to find in the structured data
         for kw in keywords:
             val = self._extract_spec_by_keyword(soup, kw)
             if val:
@@ -279,15 +297,18 @@ class Parser:
                     if num <= self.MAX_BATHROOMS:
                         return str(num)
                     else:
-                        logger.warning(f"Suspicious bathroom count: {num}, capping at {self.MAX_BATHROOMS}")
-                        return str(self.MAX_BATHROOMS)
+                        logger.warning(f"Suspicious bathroom count: {num} (max expected: {self.MAX_BATHROOMS})")
+                        return str(num)  # Return raw for validation to handle
         
         # Alternative: look for pattern like "2 badkamers"
         text = soup.get_text()
-        match = re.search(r'(\d+)\s+badkamers?\s+en', text, re.IGNORECASE)
+        match = re.search(r'(\d+)\s+badkamers?(?:\s+en)?', text, re.IGNORECASE)
         if match:
             num = int(match.group(1))
             if num <= self.MAX_BATHROOMS:
+                return str(num)
+            else:
+                logger.warning(f"Suspicious bathroom count in text: {num} (max expected: {self.MAX_BATHROOMS})")
                 return str(num)
         
         return None
@@ -391,18 +412,14 @@ class Parser:
         # Validate bedrooms
         if data.get("bedrooms"):
             try:
-                num = int(re.search(r'\d+', str(data["bedrooms"])).group())
-                # Check if it was capped (equals MAX)
-                if num == self.MAX_BEDROOMS:
-                    # Check rooms field to see if original was higher
-                    rooms_text = str(data.get("rooms", ""))
-                    match = re.search(r'(\d+)\s*slaapkamers?', rooms_text, re.IGNORECASE)
-                    if match and int(match.group(1)) > self.MAX_BEDROOMS:
-                        warnings.append(f"Suspicious bedroom count: {match.group(1)} (max expected: {self.MAX_BEDROOMS}, capped)")
-                
-                if num == 0:
+                num = int(re.search(r'\d+', str(data["bedrooms"])) .group())
+                if num > self.MAX_BEDROOMS:
+                    warnings.append(f"Suspicious bedroom count: {num} (max expected: {self.MAX_BEDROOMS})")
+                    validated["bedrooms"] = str(self.MAX_BEDROOMS)  # Cap it
+                elif num == 0:
                     warnings.append("Zero bedrooms detected, likely parsing error")
                     validated["bedrooms"] = None
+                # If exactly max, keep as is (could be legitimate)
             except (AttributeError, ValueError):
                 pass
         
@@ -410,11 +427,9 @@ class Parser:
         if data.get("bathrooms"):
             try:
                 num = int(re.search(r'\d+', str(data["bathrooms"])).group())
-                if num == self.MAX_BATHROOMS:
-                    warnings.append(f"Bathroom count at maximum threshold: {num} (may have been capped)")
                 if num > self.MAX_BATHROOMS:
                     warnings.append(f"Suspicious bathroom count: {num} (max expected: {self.MAX_BATHROOMS})")
-                    validated["bathrooms"] = str(self.MAX_BATHROOMS)
+                    validated["bathrooms"] = str(self.MAX_BATHROOMS) # Cap it
             except (AttributeError, ValueError):
                 pass
         
@@ -424,6 +439,8 @@ class Parser:
                 num = int(re.search(r'\d+', str(data["rooms"])).group())
                 if num > self.MAX_TOTAL_ROOMS:
                     warnings.append(f"Suspicious total room count: {num} (max expected: {self.MAX_TOTAL_ROOMS})")
+                    # INVALIDATE it. Better to estimate from m2 than to show "54 rooms".
+                    validated["rooms"] = None
             except (AttributeError, ValueError):
                 pass
         
@@ -441,19 +458,28 @@ class Parser:
         # Validate build year
         if data.get("build_year"):
             try:
-                year = int(re.search(r'\d+', str(data["build_year"])).group())
-                if year < self.MIN_BUILD_YEAR or year > self.MAX_BUILD_YEAR:
-                    warnings.append(f"Suspicious build year: {year} (expected between {self.MIN_BUILD_YEAR}-{self.MAX_BUILD_YEAR})")
+                # Basic check for YYYY
+                match = re.search(r'(\d{4})', str(data["build_year"]))
+                if match:
+                    year = int(match.group(1))
+                    if year < self.MIN_BUILD_YEAR or year > self.MAX_BUILD_YEAR:
+                        warnings.append(f"Suspicious build year: {year} (expected between {self.MIN_BUILD_YEAR}-{self.MAX_BUILD_YEAR})")
+                        validated["build_year"] = None
+                else:
+                    validated["build_year"] = None
             except (AttributeError, ValueError):
                 pass
         
         # Cross-validation: bedrooms should be less than total rooms
-        if data.get("bedrooms") and data.get("rooms"):
+        if validated.get("bedrooms") and validated.get("rooms"):
             try:
-                bedrooms = int(re.search(r'\d+', str(data["bedrooms"])).group())
-                total_rooms = int(re.search(r'\d+', str(data["rooms"])).group())
+                bedrooms = int(re.search(r'\d+', str(validated["bedrooms"])).group())
+                total_rooms = int(re.search(r'\d+', str(validated["rooms"])).group())
+                
                 if bedrooms > total_rooms:
                     warnings.append(f"Bedrooms ({bedrooms}) exceeds total rooms ({total_rooms})")
+                    # Trust bedrooms more if rooms is suspiciously small, or rooms more if bedrooms is huge?
+                    # For now just warn.
             except (AttributeError, ValueError):
                 pass
         

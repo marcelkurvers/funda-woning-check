@@ -66,17 +66,7 @@ class FinancialAnalysis(BaseChapter):
 
         # Left sidebar: Cost breakdown
         left_sidebar = [
-            {
-                "type": "key_facts",
-                "title": "Kostenoverzicht",
-                "facts": [
-                    {"label": "Vraagprijs", "value": f"€ {price_val:,}"},
-                    {"label": "K.K. (2%)", "value": f"€ {kk_costs:,}"},
-                    {"label": "Notaris", "value": f"€ {notary:,}"},
-                    {"label": "Makelaar", "value": f"€ {makelaar:,}"}
-                ]
-            },
-            {
+             {
                 "type": "highlight_card",
                 "icon": "cash",
                 "title": "Totaal Benodigd",

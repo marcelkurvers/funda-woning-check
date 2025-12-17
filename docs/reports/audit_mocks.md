@@ -37,5 +37,5 @@ Found **7** potential issues.
 ### 📄 `static/styles.css`
 | Line | Type | Content |
 | :--- | :--- | :--- |
-| 1626 | **Generic Variable Name** | `/* CONCLUSION BAR */` |
+| 1563 | **Generic Variable Name** | `/* CONCLUSION BAR */` |
 

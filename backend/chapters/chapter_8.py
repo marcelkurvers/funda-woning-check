@@ -58,16 +58,7 @@ class ParkingAccessibility(BaseChapter):
         
         # Left sidebar: Parking info
         left_sidebar = [
-            {
-                "type": "key_facts",
-                "title": "Parkeren",
-                "facts": [
-                    {"label": "Type", "value": parking_status},
-                    {"label": "Laadpaal", "value": "Mogelijk"},
-                    {"label": "OV Afstand", "value": "Nabij"}
-                ]
-            },
-            {
+             {
                 "type": "highlight_card",
                 "icon": "car",
                 "title": "Mobiliteit",

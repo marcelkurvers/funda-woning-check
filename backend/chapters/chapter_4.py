@@ -108,15 +108,6 @@ class EnergySustainability(BaseChapter):
             "main": {"title": "Energieprestatie", "content": imp_html},
             "left_sidebar": [
                 {
-                    "type": "key_facts",
-                    "title": "Energielabel",
-                    "facts": [
-                        {"label": "Huidig Label", "value": label},
-                        {"label": "Verbruik", "value": f"{consumption} kWh/jaar"},
-                        {"label": "Kosten (est.)", "value": f"€ {int(consumption * 0.25):,}/jaar"}
-                    ]
-                },
-                {
                     "type": "highlight_card",
                     "icon": "leaf",
                     "title": "Verduurzaming",

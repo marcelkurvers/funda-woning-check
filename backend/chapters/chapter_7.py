@@ -59,16 +59,7 @@ class GardenOutdoor(BaseChapter):
         
         # Left sidebar: Garden details
         left_sidebar = [
-            {
-                "type": "key_facts",
-                "title": "Buitenruimte",
-                "facts": [
-                    {"label": "Tuinoppervlak", "value": f"~{garden_size} m²"},
-                    {"label": "Perceel totaal", "value": f"{plot_area} m²"},
-                    {"label": "Oriëntatie", "value": "Te checken"}
-                ]
-            },
-            {
+             {
                 "type": "highlight_card",
                 "icon": "sunny",
                 "title": "Zonligging",

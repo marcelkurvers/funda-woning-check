@@ -72,16 +72,7 @@ class LayoutAnalysis(BaseChapter):
         
         # Left sidebar: Room breakdown
         left_sidebar = [
-            {
-                "type": "key_facts",
-                "title": "Kamer Verdeling",
-                "facts": [
-                    {"label": "Totaal kamers", "value": str(rooms)},
-                    {"label": "Slaapkamers", "value": str(bedrooms)},
-                    {"label": "Woonoppervlak", "value": f"{living_area} m²"}
-                ]
-            },
-            {
+             {
                 "type": "highlight_card",
                 "icon": "resize",
                 "title": "Ruimte Beoordeling",

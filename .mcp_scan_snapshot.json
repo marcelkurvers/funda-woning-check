@@ -1,5 +1,5 @@
 {
-  "scanned_at": "2025-12-17T14:01:45.822204Z",
+  "scanned_at": "2025-12-17T14:19:04.353172Z",
   "root": "/Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local",
   "excluded_dirs": [
     ".cache",
@@ -25,7 +25,7 @@
     "python": {
       "language": "python",
       "source_files": 31,
-      "test_files": 30,
+      "test_files": 31,
       "test_roots": [
         "backend/tests",
         "backend/tests/e2e",
