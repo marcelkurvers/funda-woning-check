@@ -1,6 +1,8 @@
 from typing import List, Dict, Any
 from chapters.base import BaseChapter
 from domain.models import ChapterOutput, UIComponent
+import re
+import logging
 
 class ExecutiveSummary(BaseChapter):
     def get_title(self) -> str:
@@ -11,12 +13,12 @@ class ExecutiveSummary(BaseChapter):
         
         # --- 1. INTELLIGENCE ENGINE ---
         # Parse inputs
+        # Parse inputs
         try:
-            import re
             # Regex to find the first valid number sequence, ignoring dots but keeping the structure
             # e.g. "€ 1.400.000" -> "1400000"
-            price_raw = ctx.get('prijs', '0')
-            size_raw = ctx.get('oppervlakte', '0')
+            price_raw = str(ctx.get('prijs', '0'))
+            size_raw = str(ctx.get('oppervlakte', '0'))
 
             # Extract digits from price (handle 1.250.000 -> 1250000)
             price_digits = re.sub(r'[^\d]', '', price_raw)
@@ -31,10 +33,9 @@ class ExecutiveSummary(BaseChapter):
             
             price_m2 = round(price_val / size_val)
         except Exception as e:
-            import logging
             logging.error(f"Parsing Error: {e}")
             price_val = 0
-            size_val = 0
+            size_val = 1
             price_m2 = 0
 
         year = ctx.get('bouwjaar', '2000')
@@ -51,44 +52,65 @@ class ExecutiveSummary(BaseChapter):
             valuation_status = "Potentiële Kans"
             trend = "down"
 
-        # Logic: Renovation Risk
-        reno_cost = 0
-        if "F" in label or "G" in label:
-            reno_cost = 45000
+        # Logic: Renovation Risk & Costs
+        energy_reno_cost = 0
+        
+        # Clean label for logic checks (take first letter or normalized)
+        label_clean = label if len(label) <= 3 else "Unknown"
+        
+        if any(x in label_clean for x in ["F", "G"]):
+            energy_reno_cost = 45000
             sustain_advice = "Ingrijpende verduurzaming nodig."
-        elif "D" in label or "E" in label:
-            reno_cost = 25000
+        elif any(x in label_clean for x in ["D", "E"]):
+            energy_reno_cost = 25000
             sustain_advice = "Isolatie-update aanbevolen."
         else:
             sustain_advice = "Voldoet aan moderne standaarden."
 
-        # Logic: Construction
+        # Logic: Construction & Age Risk
+        construction_risk_cost = 0
         try:
             year_val = int(re.sub(r'[^\d]', '', str(year)) or 2000)
             if year_val < 1990:
                 construction_alert = "Aandacht nodig: Dak, Leidingwerk & Asbest."
+                # Add risk buffer to cost consideration
+                construction_risk_cost = 15000 
             else:
                 construction_alert = "Relatief jonge bouw; beperkt risico."
-        except:
+        except Exception as e:
+            print(f"DEBUG EXCEPTION YEAR: {e}")
             construction_alert = "Bouwjaar verificatie vereist."
+            year_val = 2000
+
+        total_expected_invest = energy_reno_cost + construction_risk_cost
 
         # Logic: AI Score
         base_score = 70
         if price_m2 < market_avg_m2: base_score += 10
         if "A" in label or "B" in label: base_score += 10
         if "G" in label: base_score -= 15
+        if construction_risk_cost > 0: base_score -= 5
         
         ai_score = min(max(base_score, 0), 100)
+        
+
 
         # --- 2. BUILD PRO REPORT ---
         
         # Hero
         # Strip m² and m2 from values to avoid duplication
-        oppervlakte_clean = ctx.get('oppervlakte', '?').replace('m²', '').replace('m2', '').strip()
-        perceel_clean = ctx.get('perceel', '?').replace('m²', '').replace('m2', '').strip()
+        oppervlakte_clean = str(ctx.get('oppervlakte', '?')).replace('m²', '').replace('m2', '').strip()
+        perceel_clean = str(ctx.get('perceel', '?')).replace('m²', '').replace('m2', '').strip()
         
+        # Smart Address Display
+        raw_address = str(ctx.get('adres', 'Adres Onbekend'))
+        generic_titles = ['mijn huis', 'te koop', 'woning', 'object', 'huis', 'appartement']
+        is_generic = raw_address.lower().strip() in generic_titles
+        display_address = raw_address if not is_generic else "dit object"
+        intro_address_text = f"aan de {raw_address}" if not is_generic else "op deze locatie"
+
         hero = {
-            "address": ctx.get('adres', 'Adres Onbekend'),
+            "address": raw_address,
             "price": ctx.get('prijs', 'Prijs op aanvraag'),
             "status": "Te Koop" if price_val > 0 else "Analyse Mode",
             "labels": ["Woonhuis", f"{oppervlakte_clean} m² Wonen", f"{perceel_clean} m² Perceel"] 
@@ -99,8 +121,14 @@ class ExecutiveSummary(BaseChapter):
         energy_color = "green" if label in ["A","B"] else "orange" if label in ["C","D"] else "red"
         energy_explanation = "Uitstekende energie-efficiëntie" if label in ["A","B"] else "Gemiddeld, verbetering aanbevolen" if label in ["C","D"] else "Slecht, renovatie dringend nodig"
         
-        investment_color = "green" if reno_cost == 0 else "orange" if reno_cost <= 30000 else "red"
-        investment_explanation = "Geen directe renovatie nodig" if reno_cost == 0 else f"Gemiddelde renovatiekosten (€{reno_cost:,})" if reno_cost <= 30000 else f"Hoge renovatiekosten (€{reno_cost:,})"
+        investment_color = "green" if total_expected_invest == 0 else "orange" if total_expected_invest <= 30000 else "red"
+        
+        if total_expected_invest == 0:
+            inv_text = "Geen directe investering"
+            inv_exp = "Instapklaar"
+        else:
+            inv_text = f"€ {total_expected_invest:,}"
+            inv_exp = f"{'Hoge' if total_expected_invest > 30000 else 'Gemiddelde'} verwachte kosten"
         
         price_m2_color = "green" if price_m2 < market_avg_m2 * 0.95 else "orange" if price_m2 <= market_avg_m2 * 1.05 else "red"
         price_m2_explanation = "Onder marktprijs" if price_m2 < market_avg_m2 * 0.95 else "Rond marktprijs" if price_m2 <= market_avg_m2 * 1.05 else "Boven marktprijs"
@@ -115,7 +143,7 @@ class ExecutiveSummary(BaseChapter):
         metrics = [
             {"id": "price_m2", "label": "Vraagprijs per m²", "value": f"€ {price_m2:,}", "icon": "pricetag", "trend": trend, "trend_text": delta_str, "color": price_m2_color, "explanation": price_m2_explanation},
             {"id": "energy", "label": "Duurzaamheid", "value": f"Label {label}", "icon": "leaf", "color": energy_color, "explanation": energy_explanation},
-            {"id": "investment", "label": "Verw. Investering", "value": f"€ {reno_cost:,}" if reno_cost > 0 else "Geen direct", "icon": "hammer", "trend": "neutral" if reno_cost == 0 else "down", "color": investment_color, "explanation": investment_explanation},
+            {"id": "investment", "label": "Verw. Investering", "value": inv_text, "icon": "hammer", "trend": "neutral" if total_expected_invest == 0 else "down", "color": investment_color, "explanation": inv_exp},
             {"id": "return", "label": "Verhuurpotentie", "value": f"€ {int(size_val * 22.5):,}", "icon": "trending-up", "trend": "up"}
         ]
         
@@ -148,9 +176,11 @@ class ExecutiveSummary(BaseChapter):
         future_score_explanation = "Uitstekende toekomstbestendigheid" if future_score >= 70 else "Gemiddelde toekomstbestendigheid" if future_score >= 50 else "Lage toekomstbestendigheid"
         metrics.append({"id": "energy_future", "label": "Energie Toekomstscore", "value": f"{future_score}/100", "icon": "leaf", "color": future_score_color, "explanation": future_score_explanation, "trend": "neutral"})
         
-        maintenance = "Hoog" if reno_cost > 30000 else "Middelmatig" if reno_cost > 0 else "Laag"
-        maintenance_color = "red" if reno_cost > 30000 else "orange" if reno_cost > 0 else "green"
-        maintenance_explanation = f"Hoge onderhoudskosten (€{reno_cost:,})" if reno_cost > 30000 else f"Gemiddelde onderhoudskosten (€{reno_cost:,})" if reno_cost > 0 else "Lage onderhoudskosten"
+        # Maintenance Intensity Logic - Fixed Consistency
+        # Now uses total_expected_invest which includes construction risks
+        maintenance = "Hoog" if total_expected_invest > 30000 else "Middelmatig" if total_expected_invest > 0 else "Laag"
+        maintenance_color = "red" if total_expected_invest > 30000 else "orange" if total_expected_invest > 0 else "green"
+        maintenance_explanation = f"Hoge kosten (€{total_expected_invest:,})" if total_expected_invest > 30000 else f"Gemiddelde kosten (€{total_expected_invest:,})" if total_expected_invest > 0 else "Lage onderhoudskosten"
         metrics.append({"id": "maintenance_intensity", "label": "Onderhoudsintensiteit", "value": maintenance, "icon": "hammer", "trend": "neutral", "color": maintenance_color, "explanation": maintenance_explanation})
         
         family = "Geschikt" if size_val >= 120 else "Beperkt geschikt"
@@ -168,19 +198,25 @@ class ExecutiveSummary(BaseChapter):
 
 
         # Strategic Main Content with Color Legend
+        # Investment text for main body
+        if total_expected_invest > 0:
+            invest_sentence = f"moet rekening gehouden worden met een investering van circa € {total_expected_invest:,} om het object te optimaliseren."
+        else:
+            invest_sentence = "hoeft u geen directe investeringen te verwachten."
+
         summary_html = f"""
         <p class="lead-text">
-            <strong>Strategische Analyse:</strong> Het object aan de {ctx.get('adres')} positioneert zich als een 
+            <strong>Strategische Analyse:</strong> Het object {intro_address_text} positioneert zich als een 
             <strong>{valuation_status}</strong> in de huidige markt. Met een vierkantemeterprijs van € {price_m2} ligt het 
             {abs(market_delta)}% { "boven" if market_delta > 0 else "onder" } het gemiddelde.
         </p>
 
         <div class="analysis-grid" style="margin-bottom: 2rem;">
             <div class="analysis-item">
-                <div class="analysis-icon {'warning' if reno_cost > 0 else 'valid'}"><ion-icon name="construct"></ion-icon></div>
+                <div class="analysis-icon {'warning' if total_expected_invest > 0 else 'valid'}"><ion-icon name="construct"></ion-icon></div>
                 <div class="analysis-text">
                     <strong>Bouwtechnische Staat & Risico's</strong><br>
-                    {construction_alert} Gezien het energielabel {label} moet rekening gehouden worden met een investering van circa € {reno_cost:,} om het comfort naar niveau 2025 te tillen.
+                    {construction_alert} Gezien het energielabel {label} {invest_sentence}
                 </div>
             </div>
             <div class="analysis-item">
@@ -225,7 +261,7 @@ class ExecutiveSummary(BaseChapter):
                 "type": "action_list",
                 "title": "Noodzakelijke Acties",
                 "items": [
-                    "Bouwkundige keuring inplannen" if reno_cost > 0 else "Onderhoudshistorie opvragen",
+                    "Bouwkundige keuring inplannen" if total_expected_invest > 0 else "Onderhoudshistorie opvragen",
                     "Energielabel checken in register",
                     "Juridische erfdienstbaarheden controleren"
                 ]
@@ -253,7 +289,7 @@ class ExecutiveSummary(BaseChapter):
         
         chapter_data = {
             "title": "Executive Summary",
-            "intro": f"Strategische Analyse: Het object aan de {ctx.get('adres')} positioneert zich als een {valuation_status} in de huidige markt.",
+            "intro": f"Strategische Analyse: Het object {intro_address_text} positioneert zich als een {valuation_status} in de huidige markt.",
             "main_analysis": summary_html,
             "conclusion": f"AI Score: {ai_score}/100 - {valuation_status}. {'Koopwaardig' if ai_score > 70 else 'Risicovol'}.",
             "strengths": pros,
