@@ -713,7 +713,7 @@ class IntelligenceEngine:
         advice = "<ul><li>Bespreek een bouwdepot met uw adviseur.</li><li>Neem ontbindende voorwaarden op voor financiering.</li></ul>"
         strengths = ["Transparante prijsstelling"]
 
-        conclusion = f"<strong>Conclusie:</strong> Totale investering schatten op € {d['price'] + kk + 20000:,}."
+        conclusion = f"Totale investering schatten op € {d['price'] + kk + 20000:,}."
         return {
             "title": "Financiële Analyse",
             "intro": intro, 

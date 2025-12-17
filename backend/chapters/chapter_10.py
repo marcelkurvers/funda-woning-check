@@ -30,10 +30,10 @@ class FinancialAnalysis(BaseChapter):
         }
         
         metrics = [
-            {"id": "price", "label": "Vraagprijs", "value": f"€ {price_val:,}", "icon": "pricetag"},
-            {"id": "kk", "label": "Kosten Koper (est.)", "value": f"€ {(kk_costs+notary+makelaar):,}", "icon": "wallet", "color": "orange"},
-            {"id": "total", "label": "Totaal Benodigd", "value": f"€ {total_acquisition:,}", "icon": "cash"},
-            {"id": "monthly", "label": "Maandlast (ind.)", "value": f"€ {int(total_acquisition * 0.04 / 12):,}", "icon": "calendar"}
+            {"id": "price", "label": "Vraagprijs", "value": f"€ {price_val:,}", "icon": "pricetag", "color": "blue", "explanation": "Kosten Koper excl."},
+            {"id": "kk", "label": "Kosten Koper", "value": f"€ {(kk_costs+notary+makelaar):,}", "icon": "wallet", "color": "orange", "explanation": "Overdracht, Notaris, etc."},
+            {"id": "total", "label": "Totaal Benodigd", "value": f"€ {total_acquisition:,}", "icon": "cash", "color": "blue", "explanation": "Indicatie investering"},
+            {"id": "monthly", "label": "Maandlast", "value": f"€ {int(total_acquisition * 0.04 / 12):,}", "icon": "calendar", "color": "green", "explanation": "Bruto/mnd (indicatie)"}
         ]
         # New metrics (additive)
         price_val = IntelligenceEngine._parse_int(ctx.get('prijs') or ctx.get('asking_price_eur'))
@@ -49,19 +49,32 @@ class FinancialAnalysis(BaseChapter):
         future_score = 80 if label in ["A","A+","A++","B"] else 60 if label in ["C","D"] else 40
         metrics.append({"id":"energy_future","label":"Energie Toekomstscore","value":f"{future_score}","icon":"leaf","color":"green" if future_score>=70 else "orange" if future_score>=50 else "red","trend":"neutral"})
         maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
-        metrics.append({"id":"maintenance_intensity","label":"Onderhoudsintensiteit","value":maintenance,"icon":"hammer","trend":"neutral"})
+        maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
+        metrics.append({"id":"maintenance_intensity","label":"Onderhoud","value":maintenance,"icon":"hammer","trend":"neutral", "color": "red" if reno_cost > 30000 else "green"})
         family = "Geschikt voor gezin" if (IntelligenceEngine._parse_int(ctx.get('oppervlakte','0')) or 0) >= 120 else "Minder geschikt voor groot gezin"
         metrics.append({"id":"family_suitability","label":"Gezinsgeschiktheid","value":family,"icon":"people","trend":"neutral"})
         lt_quality = "Hoog" if "jong" in construction_alert.lower() else "Middelmatig" if "aandacht" in construction_alert.lower() else "Laag"
         metrics.append({"id":"long_term_quality","label":"Lange-termijn kwaliteit","value":lt_quality,"icon":"shield","trend":"neutral"})
         
         breakdown_html = self._render_rich_narrative(narrative, extra_html=f"""
-        <table style="width:100%; text-align: left;">
-            <tr><td>Overdrachtsbelasting:</td><td>€ {kk_costs:,}</td></tr>
-            <tr><td>Notaris:</td><td>€ {notary:,}</td></tr>
-            <tr><td>Makelaar:</td><td>€ {makelaar:,}</td></tr>
-            <tr><td><strong>Totaal K.K.:</strong></td><td><strong>€ {(kk_costs+notary+makelaar):,}</strong></td></tr>
-        </table>
+        <div class="grid grid-cols-1 gap-0 bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
+            <div class="flex justify-between items-center p-4 border-b border-slate-200">
+                <span class="text-slate-600">Overdrachtsbelasting</span>
+                <span class="font-medium text-slate-800">€ {kk_costs:,}</span>
+            </div>
+            <div class="flex justify-between items-center p-4 border-b border-slate-200">
+                <span class="text-slate-600">Notaris (geschat)</span>
+                <span class="font-medium text-slate-800">€ {notary:,}</span>
+            </div>
+            <div class="flex justify-between items-center p-4 border-b border-slate-200">
+                <span class="text-slate-600">Makelaar / Advies</span>
+                <span class="font-medium text-slate-800">€ {makelaar:,}</span>
+            </div>
+            <div class="flex justify-between items-center p-4 bg-slate-100">
+                <span class="font-bold text-slate-800">Totaal K.K.</span>
+                <span class="font-bold text-blue-600">€ {(kk_costs+notary+makelaar):,}</span>
+            </div>
+        </div>
         """)
 
         # Left sidebar: Cost breakdown
@@ -88,5 +101,6 @@ class FinancialAnalysis(BaseChapter):
         return ChapterOutput(
             title="10. Financiële Analyse",
             grid_layout=layout, 
-            blocks=[]
+            blocks=[],
+            chapter_data=narrative
         )
