@@ -34,32 +34,49 @@ class IntelligenceEngine:
             "_preferences": ctx.get('_preferences', {})
         }
 
-        if chapter_id == 1:
-            return IntelligenceEngine._narrative_ch1(data)
+        result = {}
+        if chapter_id == 0:
+            result = IntelligenceEngine._narrative_ch0(data)
+        elif chapter_id == 1:
+            result = IntelligenceEngine._narrative_ch1(data)
         elif chapter_id == 2:
-            return IntelligenceEngine._narrative_ch2(data)
+            result = IntelligenceEngine._narrative_ch2(data)
         elif chapter_id == 3:
-            return IntelligenceEngine._narrative_ch3(data)
+            result = IntelligenceEngine._narrative_ch3(data)
         elif chapter_id == 4:
-            return IntelligenceEngine._narrative_ch4(data)
+            result = IntelligenceEngine._narrative_ch4(data)
         elif chapter_id == 5:
-            return IntelligenceEngine._narrative_ch5(data)
+            result = IntelligenceEngine._narrative_ch5(data)
         elif chapter_id == 6:
-            return IntelligenceEngine._narrative_ch6(data)
+            result = IntelligenceEngine._narrative_ch6(data)
         elif chapter_id == 7:
-            return IntelligenceEngine._narrative_ch7(data)
+            result = IntelligenceEngine._narrative_ch7(data)
         elif chapter_id == 8:
-            return IntelligenceEngine._narrative_ch8(data)
+            result = IntelligenceEngine._narrative_ch8(data)
         elif chapter_id == 9:
-            return IntelligenceEngine._narrative_ch9(data)
+            result = IntelligenceEngine._narrative_ch9(data)
         elif chapter_id == 10:
-            return IntelligenceEngine._narrative_ch10(data)
+            result = IntelligenceEngine._narrative_ch10(data)
         elif chapter_id == 11:
-            return IntelligenceEngine._narrative_ch11(data)
+            result = IntelligenceEngine._narrative_ch11(data)
         elif chapter_id == 12:
-            return IntelligenceEngine._narrative_ch12(data)
+            result = IntelligenceEngine._narrative_ch12(data)
         else:
-            return {"title": "Analyse", "intro": "Generieke analyse.", "main_analysis": "Geen data.", "conclusion": "N.v.t."}
+            result = {"title": "Analyse", "intro": "Generieke analyse.", "main_analysis": "Geen data.", "conclusion": "N.v.t."}
+        
+        # Append missing KPI notice if any critical fields are missing or zero
+        missing_keys = [k for k in ["price", "area", "plot", "year", "label"] if not data.get(k)]
+        if missing_keys:
+            notice = "\n<p>De beschikbare KPI's zijn beperkt; sommige waarden ontbreken of zijn niet ingevuld.</p>"
+            result["main_analysis"] = result.get("main_analysis", "") + notice
+        
+        # Append AI usage disclaimer
+        ai_note = "\n<p>Deze analyse is gegenereerd met behulp van een AI‑engine die de beschikbare data interpreteert.</p>"
+        result["interpretation"] = result.get("interpretation", "") + ai_note
+
+        # Augment the result dictionary
+        result['chapter_id'] = chapter_id
+        return result
 
     @staticmethod
     def _parse_int(val):
@@ -82,13 +99,20 @@ class IntelligenceEngine:
         
         # 1. Intro - Dynamic Builder
         intro_parts = []
+        
+        # Smart Address Logic
+        raw_address = str(d.get('address', ''))
+        generic_titles = ['mijn huis', 'te koop', 'woning', 'object', 'huis', 'appartement']
+        is_generic = raw_address.lower().strip() in generic_titles
+        intro_addr_text = f"aan de {raw_address}" if not is_generic else "op deze locatie"
+        
         if d['area'] < 60:
-            intro_parts.append(f"Dit compacte stadsappartement aan de {d['address']} biedt een efficiënte woonbeleving op {d['area']} m².")
+            intro_parts.append(f"Dit compacte stadsappartement {intro_addr_text} biedt een efficiënte woonbeleving op {d['area']} m².")
         elif d['area'] > 200:
-            intro_parts.append(f"Resideren in weelde aan de {d['address']}. Met een imposant woonoppervlak van {d['area']} m² spreken we van een buitencategorie object.")
+            intro_parts.append(f"Resideren in weelde {intro_addr_text}. Met een imposant woonoppervlak van {d['area']} m² spreken we van een buitencategorie object.")
         else:
-            intro_parts.append(f"Aan de {d['address']} vinden we deze courante woning met een gebruiksoppervlakte van {d['area']} m².")
-            
+            intro_parts.append(f"Aan de {d.get('address', '...')} vinden we deze courante woning met een gebruiksoppervlakte van {d['area']} m²." if not is_generic else f"Op deze locatie vinden we een courante woning met {d['area']} m² woonoppervlak.")
+
         if d['plot'] > 1000:
             intro_parts.append(f"Het landgoed van {d['plot']} m² waarborgt absolute privacy en rust.")
         elif d['plot'] == 0:
@@ -154,11 +178,11 @@ class IntelligenceEngine:
         # 6. Conclusion
         conclusion = ""
         if d['price'] > 1000000 or d['area'] > 200:
-            conclusion = "<strong>Conclusie:</strong> Een uniek, hoogwaardig object voor de liefhebber van luxe."
+            conclusion = "Een uniek, hoogwaardig object voor de liefhebber van luxe."
         elif d['area'] < 60:
-            conclusion = "<strong>Conclusie:</strong> Slimme stadswoning, ideaal voor starters of verhuur."
+            conclusion = "Slimme stadswoning, ideaal voor starters of verhuur."
         else:
-            conclusion = "<strong>Conclusie:</strong> Een courant object met potentie."
+            conclusion = "Een courant object met potentie."
         
         return {
             "title": "Algemene Woningkenmerken",
@@ -646,6 +670,41 @@ class IntelligenceEngine:
         }
 
     @staticmethod
+    def _narrative_ch0(d):
+        """Generate narrative for Chapter 0 (introductory page) handling missing data and AI usage note."""
+        # Helper to safely get values with fallback
+        def get(key, default="onbekend"):
+            val = d.get(key)
+            return val if val not in (None, "", 0) else default
+        address = get('address')
+        price = get('price')
+        area = get('area')
+        label = get('label')
+        # Intro
+        intro_parts = []
+        intro_parts.append(f"Welkom bij de analyse van het object aan {address}.")
+        if price != "onbekend":
+            intro_parts.append(f"De vraagprijs bedraagt €{price:,}.")
+        if area != "onbekend":
+            intro_parts.append(f"Het woonoppervlak is {area} m².")
+        intro_parts.append(f"Energielabel: {label}.")
+        intro = " ".join(intro_parts)
+        # Main analysis – note missing KPI handling
+        analysis = "\n<p>De beschikbare KPI's zijn beperkt; sommige waarden ontbreken of zijn niet ingevuld.</p>"
+        # AI usage note
+        interpretation = "<p>Deze analyse is gegenereerd met behulp van een AI‑engine die de beschikbare data interpreteert.</p>"
+        # Conclusion
+        conclusion = "<strong>Conclusie:</strong> Controleer de ontbrekende gegevens voor een volledige beoordeling."
+        return {
+            "title": "Introductie & Samenvatting",
+            "intro": intro,
+            "main_analysis": analysis,
+            "interpretation": interpretation,
+            "advice": "",
+            "strengths": [],
+            "conclusion": conclusion
+        }
+
     def _narrative_ch12(d):
         intro = "Na deze diepgaande analyse komen we tot de slotsom."
         

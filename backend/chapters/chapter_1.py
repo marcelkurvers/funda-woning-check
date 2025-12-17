@@ -27,7 +27,9 @@ class GeneralFeatures(BaseChapter):
         plot_area = IntelligenceEngine._parse_int(
             ctx.get('plot_area_m2') or ctx.get('perceel', '0')
         )
-        volume = living_area * 3
+        # Volume Calculation (Use actual value or estimate carefully)
+        # Use abs() to ensure positive volume if bad math occurs
+        volume = abs(living_area * 3)
         
         # Use actual parsed bedrooms if available, otherwise estimate
         bedrooms = ctx.get('bedrooms')
@@ -81,8 +83,8 @@ class GeneralFeatures(BaseChapter):
         
         metrics.extend([
             {"id": "bedrooms", "label": "Slaapkamers", "value": f"{bedrooms or rooms_count}", "icon": "bed", "color": bedrooms_color, "explanation": bedrooms_explanation},
-            {"id": "bathrooms", "label": "Badkamers", "value": f"{bathrooms}", "icon": "droplet", "color": "blue"},
-            {"id": "volume", "label": "Inhoud (est.)", "value": f"~{volume} m³", "icon": "cube", "trend": "neutral"},
+            {"id": "bathrooms", "label": "Badkamers", "value": f"{bathrooms}", "icon": "droplet", "color": "blue", "explanation": "Extra comfort" if str(bathrooms) > "1" else "Basisvoorziening"},
+            {"id": "volume", "label": "Inhoud (est.)", "value": f"ca. {volume} m³", "icon": "cube", "trend": "neutral"},
         ])
         # New metrics (additive)
         if market_avg_m2:
@@ -169,5 +171,6 @@ class GeneralFeatures(BaseChapter):
         return ChapterOutput(
             title="1. Algemene Woningkenmerken",
             grid_layout=layout, 
-            blocks=[]
+            blocks=[],
+            chapter_data=narrative # Populate chapter data for tests and reuse
         )
