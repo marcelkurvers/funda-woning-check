@@ -419,7 +419,7 @@ class IntelligenceEngine:
         if is_green: strengths.append(f"Uitstekend Label {d['label']}")
         if d['year'] > 2020: strengths.append("Gasloos")
         
-        conclusion = f"<strong>Conclusie:</strong> {'Groene Modelwoning' if is_green else 'Renovatieproject met Potentie'}."
+        conclusion = f"{'Groene Modelwoning' if is_green else 'Renovatieproject met Potentie'}."
 
         return {
             "title": "Energie & Duurzaamheid",

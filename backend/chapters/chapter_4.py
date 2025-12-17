@@ -37,9 +37,9 @@ class EnergySustainability(BaseChapter):
         
         metrics = [
             {"id": "label", "label": "Energielabel", "value": label, "icon": "leaf", "color": my_color, "explanation": label_explanation},
-            {"id": "solar", "label": "Zonnepanelen", "value": "Geschikt", "icon": "sunny"},
-            {"id": "iso", "label": "Isolatie", "value": "Check", "icon": "thermometer"},
-            {"id": "heat", "label": "Verwarming", "value": "CV-Ketel", "icon": "flame"}
+            {"id": "solar", "label": "Zonnepanelen", "value": "Geschikt" if label in ["A","B","C"] else "Optie", "icon": "sunny", "color": "green" if label in ["A","B"] else "blue", "explanation": "Dakvlak aanwezig"},
+            {"id": "iso", "label": "Isolatie", "value": "Uitstekend" if label in ["A","B"] else "Check", "icon": "thermometer", "color": "green" if label in ["A","B"] else "orange", "explanation": "Conform label" if label in ["A","B"] else "Kan beter"},
+            {"id": "heat", "label": "Verwarming", "value": "CV-Ketel", "icon": "flame", "trend": "neutral", "explanation": "Gasgestookt"}
         ]
         # New metrics (additive)
         price_val = IntelligenceEngine._parse_int(ctx.get('prijs') or ctx.get('asking_price_eur'))
@@ -53,7 +53,9 @@ class EnergySustainability(BaseChapter):
             price_dev_pct = round(((price_m2 - market_avg_m2) / market_avg_m2) * 100)
             price_dev_color = "green" if price_dev_pct < -5 else "orange" if price_dev_pct <= 5 else "red"
             price_dev_explanation = "Onder marktprijs" if price_dev_pct < -5 else "Rond marktprijs" if price_dev_pct <= 5 else "Boven marktprijs"
-            metrics.append({"id":"price_deviation","label":"Prijsafwijking %","value":f"{price_dev_pct:+,}%" if price_dev_pct != 0 else "0%","icon":"trending-down" if price_dev_pct < 0 else "trending-up","color":price_dev_color,"explanation":price_dev_explanation,"trend":"up" if price_dev_pct>0 else "down" if price_dev_pct<0 else "neutral","trend_text":f"{price_dev_pct:+}% vs markt"})
+        if market_avg_m2:
+            price_dev_pct = round(((price_m2 - market_avg_m2) / market_avg_m2) * 100)
+            metrics.append({"id":"price_deviation","label":"Prijsafwijking","value":f"{price_dev_pct:+,}%" if price_dev_pct != 0 else "0%","icon":"analytics","color":"green" if price_dev_pct < 5 else "orange","explanation": "vs markt"})
         future_score = 80 if label in ["A","A+","A++","B"] else 60 if label in ["C","D"] else 40
         future_score_color = "green" if future_score>=70 else "orange" if future_score>=50 else "red"
         future_score_explanation = "Uitstekende toekomstbestendigheid" if future_score>=70 else "Gemiddelde toekomstbestendigheid" if future_score>=50 else "Lage toekomstbestendigheid"
@@ -61,7 +63,8 @@ class EnergySustainability(BaseChapter):
         maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
         maintenance_color = "red" if reno_cost>30000 else "orange" if reno_cost>0 else "green"
         maintenance_explanation = f"Hoge renovatiekosten (€{reno_cost:,})" if reno_cost>30000 else f"Gemiddelde renovatiekosten (€{reno_cost:,})" if reno_cost>0 else "Lage renovatiekosten"
-        metrics.append({"id":"maintenance_intensity","label":"Onderhoudsintensiteit","value":maintenance,"icon":"hammer","color":maintenance_color,"explanation":maintenance_explanation,"trend":"neutral"})
+        maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
+        metrics.append({"id":"maintenance_intensity","label":"Onderhoud","value":maintenance,"icon":"hammer","color":maintenance_color,"explanation":maintenance_explanation,"trend":"neutral"})
         family = "Geschikt voor gezin" if (IntelligenceEngine._parse_int(ctx.get('oppervlakte','0')) or 0) >= 120 else "Minder geschikt voor groot gezin"
         metrics.append({"id":"family_suitability","label":"Gezinsgeschiktheid","value":family,"icon":"people","trend":"neutral"})
         lt_quality = "Hoog" if "jong" in construction_alert.lower() else "Middelmatig" if "aandacht" in construction_alert.lower() else "Laag"
@@ -123,5 +126,6 @@ class EnergySustainability(BaseChapter):
         return ChapterOutput(
             title="4. Energie & Duurzaamheid",
             grid_layout=layout, 
-            blocks=[]
+            blocks=[],
+            chapter_data=narrative
         )
