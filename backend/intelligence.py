@@ -683,7 +683,7 @@ class IntelligenceEngine:
         advice = "<ul><li>Laat de koopakte screenen door een jurist/notaris.</li><li>Controleer erfpachtvoorwaarden (indien van toepassing).</li></ul>"
         strengths = ["Geen complexe constructies bekend"]
 
-        conclusion = "<strong>Conclusie:</strong> Juridisch 'standaard' risico."
+        conclusion = "Juridisch 'standaard' risico."
         return {
             "title": "Juridische Aspecten",
             "intro": intro, 
