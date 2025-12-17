@@ -9,6 +9,6 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-slate-50 text-slate-900 antialiased;
   }
 }

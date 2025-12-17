@@ -15,8 +15,11 @@ class TestDockerSync(unittest.TestCase):
         # 1. Define paths
         # test_docker_sync.py is in backend/tests/
         tests_dir = os.path.dirname(os.path.abspath(__file__))
-        backend_dir = os.path.dirname(tests_dir) # backend/
-        project_root = os.path.dirname(backend_dir) # root of repo
+        # Current: .../backend/tests/integration
+        integration_dir = tests_dir
+        tests_dir = os.path.dirname(integration_dir) # .../backend/tests
+        backend_dir = os.path.dirname(tests_dir) # .../backend
+        project_root = os.path.dirname(backend_dir) # .../ai-woning-rapport-WERKEND-local
         
         docker_compose_file = os.path.join(project_root, "docker-compose.yml")
         
