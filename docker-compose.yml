@@ -5,6 +5,7 @@ services:
       - "8000:8000"
     environment:
       - APP_DB=/data/app.db
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
     volumes:
       - appdata:/data
       - ./backend:/app

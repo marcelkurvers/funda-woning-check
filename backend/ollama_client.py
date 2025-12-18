@@ -1,5 +1,6 @@
 import requests
 import json
+import os
 import logging
 from typing import List, Dict, Any, Optional
 
@@ -10,7 +11,12 @@ class OllamaClient:
     Client for interacting with a local Ollama instance.
     Handles model listing and text generation.
     """
-    def __init__(self, base_url: str = "http://localhost:11434"):
+    def __init__(self, base_url: Optional[str] = None):
+        if base_url is None:
+            # Default to environment variable or standard local address
+            # In Docker on Mac, host.docker.internal is needed to reach host's localhost
+            base_url = os.environ.get("OLLAMA_BASE_URL", "http://host.docker.internal:11434")
+            
         self.base_url = base_url.rstrip('/')
         self.generate_endpoint = f"{self.base_url}/api/generate"
         self.tags_endpoint = f"{self.base_url}/api/tags"
