@@ -8,8 +8,10 @@ export interface ChapterData {
     strengths?: string[];
     advice?: string[] | string;
     sidebar_items?: SidebarItem[];
-    chapter_data?: ChapterData; // Recursive or just Any to handle backend envelope
-    grid_layout?: any; // For legacy backend support
+    metrics?: any[]; // Array of metric objects
+    hero?: any;      // Hero section data
+    chapter_data?: ChapterData;
+    grid_layout?: any;
 }
 
 export type SidebarItem =

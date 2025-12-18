@@ -5,8 +5,7 @@ from domain.models import ChapterOutput
 # Import new refactored chapters
 from chapters.chapter_0 import ExecutiveSummary
 from chapters.chapter_1 import GeneralFeatures
-from chapters.chapter_pref_match import PreferenceMatch
-from chapters.chapter_2 import LocationAnalysis
+from chapters.chapter_2 import PreferenceMatch
 from chapters.chapter_3 import TechnicalState
 from chapters.chapter_4 import EnergySustainability
 from chapters.chapter_5 import LayoutAnalysis

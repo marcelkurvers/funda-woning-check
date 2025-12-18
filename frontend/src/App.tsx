@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BentoGrid, BentoCard } from './components/layout/BentoLayout';
 import { Target, ListChecks, ChevronRight, Loader2, AlertCircle, Sparkles, AlertTriangle, CheckCircle2, TrendingUp, BookOpen } from 'lucide-react';
 import { LandingPage } from './components/LandingPage';
+import { AIStatusIndicator } from './components/AIStatusIndicator';
 import type { ReportData } from './types';
 
 function App() {
@@ -169,9 +170,12 @@ function App() {
             </div>
             <h1 className="text-xl font-bold text-slate-800">{content?.title || currentChapter?.title || "Analyse"}</h1>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <div className="text-sm text-slate-500 font-medium">Live Versie</div>
+          <div className="flex items-center gap-6">
+            <AIStatusIndicator />
+            <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-md border border-slate-200">
+              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
+              <div className="text-[10px] uppercase font-bold text-slate-500 tracking-tighter">Live Versie</div>
+            </div>
           </div>
         </header>
 
