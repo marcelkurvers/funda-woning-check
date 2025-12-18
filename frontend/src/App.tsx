@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BentoGrid, BentoCard } from './components/layout/BentoLayout';
-import { Target, ListChecks, ChevronRight, Loader2, AlertCircle, Sparkles, AlertTriangle, CheckCircle2, TrendingUp, BookOpen, Plus } from 'lucide-react';
+import { Target, ListChecks, ChevronRight, Loader2, AlertCircle, Sparkles, AlertTriangle, CheckCircle2, TrendingUp, BookOpen, Plus, FileText } from 'lucide-react';
 import { LandingPage } from './components/LandingPage';
 import { AIStatusIndicator } from './components/AIStatusIndicator';
 import type { ReportData } from './types';
@@ -25,6 +25,7 @@ function App() {
           const data = await reportRes.json();
 
           setReport({
+            runId: latestRunId,
             address: data.property_core?.address || "Onbekend Adres",
             chapters: data.chapters || {}
           });
@@ -95,6 +96,7 @@ function App() {
       const data = await reportRes.json();
 
       setReport({
+        runId: run_id,
         address: data.property_core?.address || "Onbekend Adres",
         chapters: data.chapters || {}
       });
@@ -107,6 +109,11 @@ function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDownloadPdf = () => {
+    if (!report?.runId) return;
+    window.open(`/runs/${report.runId}/pdf`, '_blank');
   };
 
   if (!report) {
@@ -187,6 +194,13 @@ function App() {
             <h1 className="text-xl font-bold text-slate-800">{content?.title || currentChapter?.title || "Analyse"}</h1>
           </div>
           <div className="flex items-center gap-6">
+            <button
+              onClick={handleDownloadPdf}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all font-bold text-sm shadow-lg shadow-slate-200"
+            >
+              <FileText className="w-4 h-4 text-blue-400" />
+              <span>Exporteren (PDF)</span>
+            </button>
             <AIStatusIndicator />
             <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-md border border-slate-200">
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>

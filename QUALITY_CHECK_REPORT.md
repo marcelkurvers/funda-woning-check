@@ -27,7 +27,7 @@ The codebase for the "AI Woning Rapport" is fully developed, highly integrated, 
 | **Dynamic Metrics** | `Parser._validate_data` & `build_kpis` | Verified |
 | **AI Interpretations** | `IntelligenceEngine._generate_ai_narrative` | Verified |
 | **Manual Paste Support** | `PasteIn` model and `paste_content` endpoint | Verified |
-| **PDF Generation** | `generate_pdf` route using WeasyPrint/Jinja2 | Verified |
+| **PDF Generation** | `generate_pdf` route & `App.tsx` (Export Button) | Verified ✅ |
 | **Data Persistence** | SQLite database (`data/local_app.db`) | Verified |
 | **Preference Matching** | `get_preferences` & `IntelligenceEngine` | Verified |
 

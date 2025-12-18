@@ -20,6 +20,7 @@ export type SidebarItem =
     | { type: 'action_list'; title: string; items: string[] };
 
 export interface ReportData {
+    runId: string;
     address: string;
     chapters: Record<string, ChapterData>;
 }
