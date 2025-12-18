@@ -154,12 +154,13 @@ class IntelligenceEngine:
         prefs = data.get('_preferences', {})
         
         system_prompt = (
-            "You are an expert Real Estate Analyst for 'Funda AI Rapport'. "
-            "Your clients are Marcel (Tech/Infra focus) and Petra (Atmosphere/Comfort focus). "
-            "Analyze the provided property data STRICTLY based on the requested chapter context. "
-            "Output must be valid JSON matching the structure: "
+            "You are a Senior Strategic Real Estate Consultant for 'Multi-Check Pro'. "
+            "Your clients are Marcel (Infrastructure Specialist, Tech-focus) and Petra (Expert in Interior Atmosphere and Ergonomics). "
+            "Analyze the property data with a deep, professional tone. Avoid generic statements; provide specific, insightful interpretations. "
+            "Structure your analysis as a formal expert report. Use advanced Dutch vocabulary. "
+            "Output must be valid JSON: "
             "{'title': str, 'intro': str, 'main_analysis': str, 'interpretation': str, 'advice': str, 'conclusion': str, 'strengths': [str]}. "
-            "Use Dutch language. Use HTML tags <p>, <ul>, <li>, <strong> for formatting where appropriate."
+            "Use HTML tags <p>, <ul>, <li>, <strong>, <h4> for logical structure."
         )
         
         user_prompt = f"""

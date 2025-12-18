@@ -139,19 +139,17 @@ class TestPDFExport(unittest.TestCase):
         html_content = captured_html[0]
         
         # Check Front Page
-        self.assertIn('<div class="cover">', html_content, "Professional Front Page (cover class) not found")
+        self.assertIn('<div class="page cover-page">', html_content, "Magazine Front Page (cover-page class) not found")
         self.assertIn("Teststraat 123", html_content, "Address not found on cover")
         
         # Check Chapters & Page Breaks
-        # We expect 13 chapters, each with .page-break
-        # Actually page-break is wrapper around chapter content.
-        self.assertIn('page-break', html_content)
+        self.assertIn('<div class="page">', html_content)
         count_titles = html_content.count('class="chapter-title"')
         self.assertGreaterEqual(count_titles, 13, "Expected at least 13 chapter titles")
 
         # Check Modern Layout usage
-        self.assertIn('class="metrics-grid"', html_content, "Modern metrics grid not found")
-        self.assertIn('class="sidebar"', html_content, "Sidebar not found")
+        self.assertIn('class="infographic-bar"', html_content, "Infographic bar not found")
+        self.assertIn('class="expert-quote"', html_content, "Expert quote wrapper not found")
 
         print("Test PDF Export Logic Passed (Mocked Engine).")
 
