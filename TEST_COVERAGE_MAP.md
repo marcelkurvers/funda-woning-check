@@ -1,6 +1,6 @@
 # Test Coverage Map
 
-**Generated**: 2025-12-18 08:00:54 UTC
+**Generated**: 2025-12-18 08:32:05 UTC
 **Project**: `/Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local`
 
 ## Executive Summary
