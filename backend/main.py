@@ -160,10 +160,13 @@ class PasteIn(BaseModel):
 
 # --- FASTAPI APP ---
 app = FastAPI(title="AI Woning Rapport (Local) v2")
+# Ensure database tables exist immediately upon import (useful for tests and scripts)
+init_db()
 
-static_dir = os.path.join(os.path.dirname(__file__), "static")
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+static_dir = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+app.mount("/static", StaticFiles(directory=static_dir, html=True), name="static")
 
+# Serve additional assets if needed (e.g., images) from the same dist folder
 assets_dir = os.path.join(static_dir, "assets")
 if os.path.exists(assets_dir):
     app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
