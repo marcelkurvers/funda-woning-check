@@ -1,6 +1,6 @@
 # Expert Analyse: Dynamisch Vermogen (Per Hoofdstuk)
 
-**Datum:** Thu Dec 18 12:54:18 CET 2025
+**Datum:** Thu Dec 18 12:58:02 CET 2025
 **Score Model:** v3.0 (Granular Chapter Analysis)
 
 ## Strategisch Inzicht
