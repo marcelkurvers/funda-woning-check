@@ -3,7 +3,9 @@ from chapters.content_loader import load_and_enrich_template
 from domain.models import ChapterOutput
 
 # Import new refactored chapters
+from chapters.chapter_0 import ExecutiveSummary
 from chapters.chapter_1 import GeneralFeatures
+from chapters.chapter_pref_match import PreferenceMatch
 from chapters.chapter_2 import LocationAnalysis
 from chapters.chapter_3 import TechnicalState
 from chapters.chapter_4 import EnergySustainability
@@ -28,9 +30,10 @@ def standard_generation(chapter: BaseChapter, id: int, title: str):
 
 # --- Mapping ---
 
-# All Chapters Refactored
+# All Chapters Refactored to match IntelligenceEngine order
+Chapter0 = ExecutiveSummary
 Chapter1 = GeneralFeatures
-Chapter2 = LocationAnalysis
+Chapter2 = PreferenceMatch
 Chapter3 = TechnicalState
 Chapter4 = EnergySustainability
 Chapter5 = LayoutAnalysis
@@ -41,3 +44,4 @@ Chapter9 = LegalAspects
 Chapter10 = FinancialAnalysis
 Chapter11 = MarketPosition
 Chapter12 = AdviceConclusion
+

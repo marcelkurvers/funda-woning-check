@@ -76,37 +76,58 @@ class IntelligenceEngine:
             result = IntelligenceEngine._narrative_ch11(data)
         elif chapter_id == 12:
             result = IntelligenceEngine._narrative_ch12(data)
-
         else:
             result = {"title": "Analyse", "intro": "Generieke analyse.", "main_analysis": "Geen data.", "conclusion": "N.v.t."}
         
+        # PRE-AI: Add KPI Explanations (Hardcoded fallback)
+        kpi_expl = (
+            "\n<h3>Begrip van de KPI's</h3>"
+            "<ul>"
+            "<li><strong>Vraagprijs:</strong> De marktwaarde-indicatie.</li>"
+            "<li><strong>Woonoppervlak:</strong> De netto bruikbare ruimte (NEN2580).</li>"
+            "<li><strong>Bouwjaar:</strong> Indicatie voor bouwkwaliteit en isolatienormen.</li>"
+            "<li><strong>Energielabel:</strong> Impact op comfort en maandlasten.</li>"
+            "</ul>"
+        )
+        if "KPI Explanations" not in result.get("main_analysis", ""):
+            result["main_analysis"] = result.get("main_analysis", "") + kpi_expl
+
         # AI OVERRIDE
         if IntelligenceEngine._client:
             try:
                 ai_result = IntelligenceEngine._generate_ai_narrative(chapter_id, data, result)
                 if ai_result:
-                     # Merge or replace. If AI fails or returns partial, we kept the hardcoded one?
-                     # Ideally AI result is comprehensive.
-                     # We force the structure to match.
+                     # Merge or replace.
                      result.update(ai_result)
-                     result["interpretation"] += " (AI Enhanced)"
+                     if "AI Enhanced" not in result.get("interpretation", ""):
+                        result["interpretation"] = result.get("interpretation", "") + " (AI Enhanced)"
             except Exception as e:
                 logger.error(f"AI Generation failed for Chapter {chapter_id}: {e}")
-                # Fallback silently to hardcoded
         
+        # Post-process: Ensure Marcel & Petra mention if missing
+        prefs = data.get('_preferences', {})
+        if prefs and "Marcel" not in result.get("interpretation", ""):
+            match_summary = "\n<p><strong>Match voor Marcel & Petra:</strong> Op basis van jullie profiel sluit dit hoofdstuk "
+            if chapter_id == 2:
+                match_summary += "naadloos aan op de matchanalyse."
+            else:
+                match_summary += "aan op de specifieke kenmerken die jullie belangrijk vinden.</p>"
+            result["interpretation"] = result.get("interpretation", "") + match_summary
+
         # Append missing KPI notice if any critical fields are missing or zero
         missing_keys = [k for k in ["price", "area", "plot", "year", "label"] if not data.get(k)]
         if missing_keys:
-            notice = "\n<p>De beschikbare KPI's zijn beperkt; sommige waarden ontbreken of zijn niet ingevuld.</p>"
+            notice = "\n<p class='text-amber-600 italic'>Let op: Sommige kerngegevens (KPI's) zijn onvolledig voor dit object.</p>"
             result["main_analysis"] = result.get("main_analysis", "") + notice
         
         # Append AI usage disclaimer
-        ai_note = "\n<p>Deze analyse is gegenereerd met behulp van een AI‑engine die de beschikbare data interpreteert.</p>"
+        ai_note = "\n<p class='text-xs text-gray-400 mt-4'>Deze analyse is gegenereerd door de Funda AI-engine.</p>"
         result["interpretation"] = result.get("interpretation", "") + ai_note
 
         # Augment the result dictionary
         result['chapter_id'] = chapter_id
         return result
+
 
     @staticmethod
     def _parse_int(val):
@@ -147,16 +168,20 @@ class IntelligenceEngine:
         **Current Hardcoded Draft (Reference)**: {json.dumps(fallback, default=str)}
         
         **Task**:
-        1. Rewrite the content to be more insightful and personalized for Marcel & Petra.
+        1. Rewrite the content to be more insightful and PERSONALIZED for Marcel & Petra. 
+           ALWAYS mention Marcel and Petra by name in the 'interpretation' and explain how this chapter relates to their specific profile.
         2. Check specific preferences: {json.dumps(prefs.get('marcel', {}))} and {json.dumps(prefs.get('petra', {}))}.
-        3. Keep the same Keys. 'main_analysis' should be detailed.
-        4. If data is missing (0 or null), explicitly mention it in 'advice'.
+        3. Include a 'KPI Begrippenlijst' or explanation of the relevant KPIs (Price, Area, Year, Label) within the 'main_analysis' section.
+        4. Keep the same Keys. 'main_analysis' should be detailed.
+        5. If data is missing (0 or null), explicitly mention it in 'advice'.
         
         Return ONLY the JSON object.
         """
+
         
         try:
-            response_text = cls._client.generate(user_prompt, system=system_prompt, json_mode=True)
+            model = prefs.get('ai_model', 'llama3')
+            response_text = cls._client.generate(user_prompt, system=system_prompt, model=model, json_mode=True)
             # Parse JSON
             # Sometimes local models wrap in ```json ... ```
             clean_text = response_text.strip()

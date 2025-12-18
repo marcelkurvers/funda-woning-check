@@ -136,21 +136,58 @@
 
             </div>
 
+            <!-- AI CONFIGURATION SECTION -->
+            <div id="ai-config-section"
+                class="mt-8 mb-24 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-6 bg-slate-900 text-white flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="p-2 bg-blue-500/20 rounded-lg">
+                            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold">AI Rapport Configuratie</h2>
+                            <p class="text-slate-400 text-sm">Selecteer de leverancier en het gewenste AI-model.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">AI Leverancier</label>
+                        <select name="ai_provider"
+                            class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 bg-white">
+                            <option value="Ollama">Ollama (Lokaal)</option>
+                            <option value="OpenAI" disabled>OpenAI (Cloud) - Binnenkort</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">AI Model</label>
+                        <select id="ai_model_select" name="ai_model"
+                            class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 bg-white">
+                            <option value="">Laden...</option>
+                        </select>
+                        <p class="text-xs text-slate-400 mt-2">Alleen geïnstalleerde Ollama-modellen worden getoond.</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Sticky Action Bar -->
-            <div class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50">
+            <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] w-auto">
                 <div
-                    class="bg-slate-900/90 backdrop-blur-md text-white px-8 py-4 rounded-full shadow-2xl flex items-center gap-6 border border-slate-700/50">
+                    class="bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-4 border border-slate-700/50 backdrop-blur-sm">
                     <p id="status-msg" class="text-sm font-medium text-emerald-400 hidden"></p>
                     <button type="submit" id="btn-save"
-                        class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-10 rounded-full shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-8 rounded-full shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2 text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
                             </path>
                         </svg>
-                        Profielen Opslaan
+                        Opslaan
                     </button>
                     <button type="button" onclick="history.back()"
-                        class="text-slate-400 hover:text-white font-medium text-sm px-4">
+                        class="text-slate-400 hover:text-white font-medium text-xs px-2 border-l border-slate-700">
                         Annuleren
                     </button>
                 </div>
@@ -254,6 +291,37 @@
             return wrapper;
         }
 
+        async function loadModels(currentModel) {
+            const select = document.getElementById('ai_model_select');
+            try {
+                const res = await fetch('/api/ai/models');
+                const data = await res.json();
+
+                if (data.models && data.models.length > 0) {
+                    select.innerHTML = '';
+                    data.models.forEach(model => {
+                        const opt = document.createElement('option');
+                        opt.value = model;
+                        opt.innerText = model;
+                        if (model === currentModel) opt.selected = true;
+                        select.appendChild(opt);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">Geen modellen gevonden</option>';
+                    if (currentModel) {
+                        const opt = document.createElement('option');
+                        opt.value = currentModel;
+                        opt.innerText = currentModel + " (Niet online?)";
+                        opt.selected = true;
+                        select.appendChild(opt);
+                    }
+                }
+            } catch (e) {
+                console.warn("Failed to load models", e);
+                select.innerHTML = '<option value="">Fout bij laden modellen</option>';
+            }
+        }
+
         async function loadPreferences() {
             try {
                 const res = await fetch('/api/preferences');
@@ -263,6 +331,10 @@
                 const p = data.petra || {};
                 const m_all = m.priorities || [];
                 const p_all = p.priorities || [];
+
+                // Load AI Settings
+                document.querySelector('[name="ai_provider"]').value = data.ai_provider || 'Ollama';
+                await loadModels(data.ai_model || 'llama3');
 
                 // Render Marcel
                 const mContainer = document.getElementById('marcel-container');
@@ -321,7 +393,9 @@
                 petra: {
                     priorities: [...new Set([...p_tags, ...p_custom])],
                     hidden_priorities: p_hidden
-                }
+                },
+                ai_provider: formData.get('ai_provider'),
+                ai_model: formData.get('ai_model')
             };
 
             const btn = document.getElementById('btn-save');

@@ -59,7 +59,7 @@ class TestIntelligenceEngine(unittest.TestCase):
         # Missing Data
         ctx_missing = {'adres': 'Test'} # Price/Area missing
         nar_missing = IntelligenceEngine.generate_chapter_narrative(0, ctx_missing)
-        self.assertIn("beperkt", nar_missing['main_analysis'].lower()) # Should warn about missing KPIs
+        self.assertIn("onvolledig", nar_missing['main_analysis'].lower()) # Should warn about missing KPIs
 
 if __name__ == '__main__':
     unittest.main()

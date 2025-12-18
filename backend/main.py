@@ -54,19 +54,20 @@ STEPS = [
 # Explicitly include 0
 CHAPTER_TITLES = {
   0: "Executive Summary",
-  1: "Algemene woningkenmerken",
-  2: "Persoonlijke eisen & matchanalyse",
-  3: "Waarde-inschatting & afwijkingsanalyse",
-  4: "Tijdsduur op de markt & prijsgedrag",
-  5: "Onderhandelingspunten & strategie",
-  6: "Kosten & Total Cost of Ownership (TCO)",
-  7: "Omgevingsanalyse",
-  8: "Eindbeoordeling & advies",
-  9: "Bodstrategie & haalbaarheid",
-  10:"KPI-samenvatting & benchmark",
-  11:"Renovatie- & aanpassingsplan",
-  12:"Marktgevoel & aanvullend perspectief",
+  1: "Woningkenmerken",
+  2: "Voorkeuren Match (Marcel & Petra)",
+  3: "Bouwkundige Staat",
+  4: "Energie & Duurzaamheid",
+  5: "Indeling & Ruimte",
+  6: "Onderhoud & Afwerking",
+  7: "Tuin & Buitenruimte",
+  8: "Mobiliteit & Bereikbaarheid",
+  9: "Juridische Aspecten",
+  10: "Financiële Analyse",
+  11: "Marktpositie & Bieding",
+  12: "Eindoordeel & Advies",
 }
+
 
 # --- DATABASE ---
 def db() -> sqlite3.Connection:
@@ -239,6 +240,27 @@ def list_ai_models():
     except Exception as e:
         return {"models": [], "error": str(e)}
 
+@app.get("/api/ai/status")
+def get_ai_status():
+    prefs = get_kv("preferences", {})
+    provider = prefs.get("ai_provider", "Ollama")
+    model = prefs.get("ai_model", "llama3")
+    
+    status = "offline"
+    if provider == "Ollama" and OllamaClient:
+        try:
+            client = OllamaClient()
+            if client.check_health():
+                status = "online"
+        except:
+            pass
+            
+    return {
+        "provider": provider,
+        "model": model,
+        "status": status
+    }
+
 # --- CORE LOGIC ---
 
 def derive_property_core(funda_url: str) -> Dict[str, Any]:
@@ -354,7 +376,8 @@ def build_kpis(property_core: Dict[str, Any]) -> Dict[str, Any]:
         except: pass
         
     dashboard_cards = [
-        {"id": "fit", "title": "Match Score", "value": f"{int(fit_score*100)}%", "trend": "neutral", "desc": "Gebaseerd op jouw eisenprofiel"},
+        {"id": "fit", "title": "Match Score", "value": f"{int(fit_score*100)}%", "trend": "neutral", "desc": "Match Marcel & Petra"},
+
         {"id": "completeness", "title": "Data Kwaliteit", "value": f"{int(completeness*100)}%", "trend": "up" if completeness > 0.8 else "neutral", "desc": "Beschikbare kerngegevens"},
         {"id": "value", "title": "Waarde Indicatie", "value": value_text, "trend": value_trend, "desc": "Schatting o.b.v. m² prijs"},
         {"id": "energy", "title": "Duurzaamheid", "value": property_core.get("energy_label") or "?", "trend": "up" if "A" in label else "neutral", "desc": "Energielabel"}
