@@ -150,10 +150,13 @@ def run_to_overview(row) -> Dict[str, Any]:
 class RunInput(BaseModel):
     funda_url: str
     funda_html: Optional[str] = None
+    media_urls: Optional[List[str]] = []
+    extra_facts: Optional[str] = None
 
 class PasteIn(BaseModel):
     funda_html: str
     extra_facts: Optional[str] = None
+    media_urls: Optional[List[str]] = []
 
 # --- FASTAPI APP ---
 app = FastAPI(title="AI Woning Rapport (Local) v2")
@@ -373,7 +376,17 @@ def build_kpis(property_core: Dict[str, Any]) -> Dict[str, Any]:
                 if sqm_price < 4500: value_trend = "up"
                 elif sqm_price > 6000: value_trend = "down"
                 value_text = f"€ {int(sqm_price)}/m²"
+                
+                # INJECT STRATEGIC VALUES
+                market_avg = 5200 # Assumed average
+                dev = ((sqm_price - market_avg) / market_avg) * 100
+                property_core["price_deviation_percent"] = dev
         except: pass
+
+    # Energy Future Score
+    label_scores = {"A": 95, "B": 80, "C": 65, "D": 50, "E": 35, "F": 20, "G": 10}
+    clean_label = label[0] if label else "G"
+    property_core["energy_future_score"] = label_scores.get(clean_label, 50)
         
     dashboard_cards = [
         {"id": "fit", "title": "Match Score", "value": f"{int(fit_score*100)}%", "trend": "neutral", "desc": "Match Marcel & Petra"},
@@ -503,9 +516,14 @@ def create_run(inp: RunInput):
     created = now()
     # If the provided URL is a placeholder indicating manual paste, store as NULL to avoid scraping attempts
     funda_url = None if inp.funda_url and inp.funda_url.lower() in ["manual-paste", ""] else str(inp.funda_url)
+    # NEW: Include media_urls and extra_facts in the initial core data
+    core_data = {
+        "media_urls": inp.media_urls or [],
+        "extra_facts": inp.extra_facts or ""
+    }
     cur.execute(
         "INSERT INTO runs (id,funda_url,funda_html,status,steps_json,property_core_json,chapters_json,kpis_json,sources_json,unknowns_json,artifacts_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        (run_id, funda_url, inp.funda_html, "queued", json.dumps(default_steps()), "{}", "{}", "{}", "[]", "[]", "{}", created, created)
+        (run_id, funda_url, inp.funda_html, "queued", json.dumps(default_steps()), json.dumps(core_data), "{}", "{}", "[]", "[]", "{}", created, created)
     )
     con.commit()
     con.close()
@@ -562,6 +580,12 @@ def paste_content(run_id: str, inp: PasteIn):
         try:
              core.update(Parser().parse_html(inp.funda_html))
         except: pass
+    
+    # NEW: Store media_urls and extra_facts
+    if inp.media_urls:
+        core["media_urls"] = inp.media_urls
+    if inp.extra_facts:
+        core["extra_facts"] = inp.extra_facts
     
     # Always regen after paste
     new_chapters = build_chapters(core)

@@ -121,7 +121,7 @@ class IntelligenceEngine:
             result["main_analysis"] = result.get("main_analysis", "") + notice
         
         # Append AI usage disclaimer
-        ai_note = "\n<p class='text-xs text-gray-400 mt-4'>Deze analyse is gegenereerd door de Funda AI-engine.</p>"
+        ai_note = "\n<p class='text-xs text-gray-400 mt-4'>Geanalyseerd door de Kurvers Intelligence Engine.</p>"
         result["interpretation"] = result.get("interpretation", "") + ai_note
 
         # Augment the result dictionary

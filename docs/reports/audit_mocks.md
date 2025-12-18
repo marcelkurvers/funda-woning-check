@@ -8,13 +8,13 @@ Found **24** potential issues.
 | Line | Type | Content |
 | :--- | :--- | :--- |
 | 82 | **Hardcoded Item** | `# PRE-AI: Add KPI Explanations (Hardcoded fallback)` |
-| 168 | **Hardcoded Item** | `**Current Hardcoded Draft (Reference)**: {json.dumps(fallback, default=str)}` |
-| 855 | **Mock Data/Functionality** | `# Final Score Logic (Mock)` |
+| 169 | **Hardcoded Item** | `**Current Hardcoded Draft (Reference)**: {json.dumps(fallback, default=str)}` |
+| 856 | **Mock Data/Functionality** | `# Final Score Logic (Mock)` |
 
 ### 📄 `main.py`
 | Line | Type | Content |
 | :--- | :--- | :--- |
-| 504 | **Placeholder** | `# If the provided URL is a placeholder indicating manual paste, store as NULL to avoid scraping a...` |
+| 517 | **Placeholder** | `# If the provided URL is a placeholder indicating manual paste, store as NULL to avoid scraping a...` |
 
 ### 📄 `chapters/chapter_0.py`
 | Line | Type | Content |
