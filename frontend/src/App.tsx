@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { BentoGrid, BentoCard } from './components/layout/BentoLayout';
 import { Target, ListChecks, ChevronRight, Loader2, AlertCircle, Sparkles, AlertTriangle, CheckCircle2, TrendingUp, BookOpen, Plus, FileText, Home, Settings, Zap, BarChart3, ShieldAlert } from 'lucide-react';
 import { LandingPage } from './components/LandingPage';
-import { AIStatusIndicator } from './components/AIStatusIndicator';
+
 import type { ReportData } from './types';
 
 function App() {
@@ -219,260 +219,265 @@ function App() {
               <span className="text-[10px] uppercase font-bold text-slate-500 tracking-tighter">Instellingen</span>
             </button>
             <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-md border border-slate-200">
-              <div className="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
-              <div className="text-[10px] uppercase font-bold text-slate-500 tracking-tighter">Live Versie</div>
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              alt="Woning Hero"
-                    />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent" />
-              <div className="absolute bottom-8 left-8 right-8">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold uppercase tracking-widest mb-3">
-                  <Sparkles className="w-3 h-3 text-blue-300" />
-                  Premium Object Analyse
-                </div>
-                <h2 className="text-4xl font-black text-white tracking-tight leading-tight">{report.address}</h2>
-              </div>
             </div>
-            <div className="flex flex-col gap-4">
-              <div className="p-8 bg-white rounded-[2rem] border border-slate-200 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden group">
-                <div className="absolute top-[-20%] right-[-10%] w-[150px] h-[150px] bg-blue-500/5 rounded-full blur-[40px] transition-all group-hover:bg-blue-500/10" />
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 relative z-10">Strategische Investering</label>
-                <div className="text-3xl font-black text-slate-900 relative z-10">{(report.chapters["0"] as any)?.property_core?.asking_price_eur || "TBD"}</div>
-                <div className="mt-4 flex items-center gap-2 text-xs font-bold text-emerald-600 relative z-10">
-                  <TrendingUp className="w-4 h-4" />
-                  <span>Marktconform Profiel</span>
+            <div className="flex flex-col gap-4 w-96"> {/* Fixed width for stats column */}
+              {/* Hero Image Card */}
+              <div className="relative h-48 rounded-[2rem] overflow-hidden group shadow-lg">
+                <img
+                  src={(report.chapters["0"] as any)?.property_core?.media_urls?.[0] || "https://images.unsplash.com/photo-1600596542815-27b88e360290?q=80&w=2000&auto=format&fit=crop"}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  alt="Woning Hero"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent" />
+                <div className="absolute bottom-4 left-6 right-6">
+                  <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-blue-500/20 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold uppercase tracking-widest mb-1">
+                    <Sparkles className="w-3 h-3 text-blue-300" />
+                    Premium
+                  </div>
+                  <h2 className="text-xl font-black text-white tracking-tight leading-tight truncate">{report.address}</h2>
                 </div>
               </div>
-              <div className="p-8 bg-slate-900 rounded-[2rem] shadow-xl flex-1 flex items-center gap-6 group hover:bg-slate-800 transition-colors">
-                <div className="p-4 bg-white/10 rounded-2xl group-hover:scale-110 transition-transform">
-                  <Home className="w-8 h-8 text-blue-400" />
+
+              <div className="flex gap-4 h-32">
+                <div className="p-6 bg-white rounded-[2rem] border border-slate-200 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden group">
+                  <div className="absolute top-[-20%] right-[-10%] w-[100px] h-[100px] bg-blue-500/5 rounded-full blur-[30px] transition-all group-hover:bg-blue-500/10" />
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 relative z-10">Vraagprijs</label>
+                  <div className="text-xl font-black text-slate-900 relative z-10 truncate">{(report.chapters["0"] as any)?.property_core?.asking_price_eur || "€ TBD"}</div>
+                  <div className="mt-2 flex items-center gap-2 text-[10px] font-bold text-emerald-600 relative z-10">
+                    <TrendingUp className="w-3 h-3" />
+                    <span>Conform</span>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-white text-3xl font-black tracking-tighter">{(report.chapters["0"] as any)?.property_core?.living_area_m2 || "0"} m²</div>
-                  <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Woonoppervlakte</div>
+                <div className="p-6 bg-slate-900 rounded-[2rem] shadow-xl flex-1 flex flex-col justify-center items-center gap-2 group hover:bg-slate-800 transition-colors">
+                  <Home className="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform" />
+                  <div className="text-center">
+                    <div className="text-white text-xl font-black tracking-tighter">{(report.chapters["0"] as any)?.property_core?.living_area_m2 || "0"}</div>
+                    <div className="text-slate-400 text-[8px] font-bold uppercase tracking-wider">m² Wonen</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+        </header>
+
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+          {content ? (
+            <BentoGrid>
+
+              {/* SPECIALIZED VISUAL CARDS PER CHAPTER */}
+
+              {/* CHAPTER 4: Energy Radar */}
+              {activeChapterId === "4" && (
+                <BentoCard className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1" variant="highlight" title="Duurzaamheids-Potentieel" icon={<Zap className="w-5 h-5 text-amber-600" />}>
+                  <div className="flex flex-col h-full justify-between">
+                    <div className="flex items-end gap-4 h-32 mb-4">
+                      <div className="flex-1 bg-slate-200 rounded-xl relative group">
+                        <div className="absolute bottom-0 w-full bg-emerald-500 rounded-xl transition-all duration-1000" style={{ height: '40%' }}></div>
+                        <span className="absolute -top-6 left-0 right-0 text-center text-[10px] font-bold text-slate-400">HUIDIG</span>
+                      </div>
+                      <div className="flex-1 bg-slate-200 rounded-xl relative border-2 border-dashed border-emerald-500/30">
+                        <div className="absolute bottom-0 w-full bg-emerald-400 opacity-40 rounded-xl animate-pulse" style={{ height: '90%' }}></div>
+                        <span className="absolute -top-6 left-0 right-0 text-center text-[10px] font-bold text-emerald-600">POTENTIEEL</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-500 italic">"Met spouwmuurisolatie en een hybride pomp stijgt de woning direct naar label A."</p>
+                  </div>
+                </BentoCard>
               )}
 
-          {/* THE BENTO GRID */}
-          <BentoGrid>
-
-            {/* SPECIALIZED VISUAL CARDS PER CHAPTER */}
-
-            {/* CHAPTER 4: Energy Radar */}
-            {activeChapterId === "4" && (
-              <BentoCard className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1" variant="highlight" title="Duurzaamheids-Potentieel" icon={<Zap className="w-5 h-5 text-amber-600" />}>
-                <div className="flex flex-col h-full justify-between">
-                  <div className="flex items-end gap-4 h-32 mb-4">
-                    <div className="flex-1 bg-slate-200 rounded-xl relative group">
-                      <div className="absolute bottom-0 w-full bg-emerald-500 rounded-xl transition-all duration-1000" style={{ height: '40%' }}></div>
-                      <span className="absolute -top-6 left-0 right-0 text-center text-[10px] font-bold text-slate-400">HUIDIG</span>
+              {/* CHAPTER 10: Financial Waterfall */}
+              {activeChapterId === "10" && (
+                <BentoCard className="col-span-1 md:col-span-3 lg:col-span-3 row-span-1" title="Investerings Waterfall" icon={<BarChart3 className="w-5 h-5 text-blue-600" />}>
+                  <div className="flex items-end gap-2 h-40 pt-8">
+                    <div className="flex-[3] bg-blue-600 h-3/4 rounded-t-lg relative group">
+                      <span className="absolute -top-6 left-0 text-[10px] font-bold text-slate-400 uppercase">Aankoop</span>
                     </div>
-                    <div className="flex-1 bg-slate-200 rounded-xl relative border-2 border-dashed border-emerald-500/30">
-                      <div className="absolute bottom-0 w-full bg-emerald-400 opacity-40 rounded-xl animate-pulse" style={{ height: '90%' }}></div>
-                      <span className="absolute -top-6 left-0 right-0 text-center text-[10px] font-bold text-emerald-600">POTENTIEEL</span>
+                    <div className="flex-1 bg-rose-500 h-1/6 mb-[45%] rounded-lg relative">
+                      <span className="absolute -top-6 left-0 text-[10px] font-bold text-rose-500 uppercase">K.K.</span>
+                    </div>
+                    <div className="flex-1 bg-amber-500 h-1/5 mb-[55%] rounded-lg relative">
+                      <span className="absolute -top-6 left-0 text-[10px] font-bold text-amber-500 uppercase">Reno</span>
+                    </div>
+                    <div className="flex-[3] bg-slate-900 h-full rounded-t-lg border-2 border-white/10 relative">
+                      <span className="absolute -top-6 left-0 text-[10px] font-bold text-slate-900 uppercase">Totaal</span>
                     </div>
                   </div>
-                  <p className="text-xs text-slate-500 italic">"Met spouwmuurisolatie en een hybride pomp stijgt de woning direct naar label A."</p>
-                </div>
-              </BentoCard>
-            )}
+                </BentoCard>
+              )}
 
-            {/* CHAPTER 10: Financial Waterfall */}
-            {activeChapterId === "10" && (
-              <BentoCard className="col-span-1 md:col-span-3 lg:col-span-3 row-span-1" title="Investerings Waterfall" icon={<BarChart3 className="w-5 h-5 text-blue-600" />}>
-                <div className="flex items-end gap-2 h-40 pt-8">
-                  <div className="flex-[3] bg-blue-600 h-3/4 rounded-t-lg relative group">
-                    <span className="absolute -top-6 left-0 text-[10px] font-bold text-slate-400 uppercase">Aankoop</span>
-                  </div>
-                  <div className="flex-1 bg-rose-500 h-1/6 mb-[45%] rounded-lg relative">
-                    <span className="absolute -top-6 left-0 text-[10px] font-bold text-rose-500 uppercase">K.K.</span>
-                  </div>
-                  <div className="flex-1 bg-amber-500 h-1/5 mb-[55%] rounded-lg relative">
-                    <span className="absolute -top-6 left-0 text-[10px] font-bold text-amber-500 uppercase">Reno</span>
-                  </div>
-                  <div className="flex-[3] bg-slate-900 h-full rounded-t-lg border-2 border-white/10 relative">
-                    <span className="absolute -top-6 left-0 text-[10px] font-bold text-slate-900 uppercase">Totaal</span>
-                  </div>
-                </div>
-              </BentoCard>
-            )}
-
-            {/* CHAPTER 12: Risk Heatmap */}
-            {(activeChapterId === "12" || activeChapterId === "9") && (
-              <BentoCard className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1" variant="alert" title="Risico Matrix" icon={<ShieldAlert className="w-5 h-5 text-rose-600" />}>
-                <div className="grid grid-cols-3 gap-1 h-32 mt-2">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
-                    <div key={i} className={`rounded-md border flex items-center justify-center text-[10px] font-bold
+              {/* CHAPTER 12: Risk Heatmap */}
+              {(activeChapterId === "12" || activeChapterId === "9") && (
+                <BentoCard className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1" variant="alert" title="Risico Matrix" icon={<ShieldAlert className="w-5 h-5 text-rose-600" />}>
+                  <div className="grid grid-cols-3 gap-1 h-32 mt-2">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+                      <div key={i} className={`rounded-md border flex items-center justify-center text-[10px] font-bold
                           ${i === 6 ? 'bg-rose-500 text-white border-rose-600 animate-pulse' : 'bg-white border-slate-100 text-slate-300'}
                         `}>
-                      {i === 6 ? 'DASH' : ''}
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 flex justify-between text-[8px] font-black text-slate-400 uppercase tracking-widest">
-                  <span>Kans →</span>
-                  <span>← Impact</span>
-                </div>
-              </BentoCard>
-            )}
-
-            {/* 1. Intro Box - Wide Top Left */}
-            {content.intro && (
-              <BentoCard className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1" title="Samenvatting" icon={<BookOpen className="w-5 h-5 text-blue-600" />}>
-                <div className="text-lg text-slate-700 leading-relaxed font-medium">
-                  {content.intro}
-                </div>
-              </BentoCard>
-            )}
-
-            {/* 2. AI Insight / Hero - Prominent Top Right / Center */}
-            {content.interpretation && (
-              <BentoCard
-                className="col-span-1 md:col-span-3 lg:col-span-3 row-span-1"
-                variant="primary"
-                title="AI Interpretatie"
-                icon={<Sparkles className="w-5 h-5 text-yellow-300" />}
-              >
-                <div
-                  className="prose prose-invert prose-lg leading-snug !max-w-none"
-                  dangerouslySetInnerHTML={{ __html: content.interpretation }}
-                />
-              </BentoCard>
-            )}
-
-            {/* 3. Metrics & Scores (From Sidebar Items) - 1x1 Tiles */}
-            {content.sidebar_items?.map((item: any, idx: number) => {
-              if (item.type === 'advisor_score') {
-                return (
-                  <BentoCard key={'score-' + idx} className="col-span-1 md:col-span-1" title={item.title} icon={<TrendingUp className="w-5 h-5 text-blue-600" />}>
-                    <div className="flex items-end gap-2 mt-2">
-                      <span className="text-5xl font-black text-blue-600 tracking-tighter">{item.score}</span>
-                      <span className="text-sm font-medium text-slate-500 mb-2">/ 100</span>
-                    </div>
-                    <p className="mt-4 text-sm text-slate-500 line-clamp-3">{item.content}</p>
-                  </BentoCard>
-                );
-              }
-              if (item.type === 'advisor_card' || item.type === 'advisor') {
-                return (
-                  <BentoCard key={'advisor-' + idx} className="col-span-1 md:col-span-1" title={item.title} icon={<Sparkles className="w-5 h-5 text-blue-500" />}>
-                    <div className="text-sm text-slate-600 leading-relaxed" dangerouslySetInnerHTML={{ __html: item.content }} />
-                  </BentoCard>
-                );
-              }
-              return null;
-            })}
-
-            {/* 3.1 Key Property Metrics */}
-            {content.metrics?.filter((m: any) => m.id !== 'default_metric').map((metric: any, idx: number) => (
-              <BentoCard
-                key={'metric-' + idx}
-                className="col-span-1"
-                title={metric.label}
-                variant={metric.color === 'red' ? 'alert' : metric.color === 'orange' ? 'highlight' : 'default'}
-              >
-                <div className="flex flex-col">
-                  <span className="text-2xl font-black text-slate-900">{metric.value}</span>
-                  {metric.explanation && <p className="mt-2 text-xs text-slate-500 font-medium leading-tight">{metric.explanation}</p>}
-                  {metric.trend_text && <span className="mt-1 text-[10px] font-bold uppercase text-blue-600 tracking-wider">{metric.trend_text}</span>}
-                </div>
-              </BentoCard>
-            ))}
-
-
-            {/* 4. Strengths - Vertical or Square */}
-            {content.strengths && content.strengths.length > 0 && (
-              <BentoCard className="col-span-1 md:col-span-1 lg:col-span-1 row-span-2" title="Sterke Punten" icon={<CheckCircle2 className="w-5 h-5 text-emerald-600" />}>
-                <div className="flex flex-col gap-3">
-                  {content.strengths.map((str: string, i: number) => (
-                    <div key={i} className="flex items-start gap-2 p-2 rounded bg-emerald-50 border border-emerald-100/50">
-                      <div className="min-w-[4px] h-4 mt-1.5 rounded-full bg-emerald-500" />
-                      <span className="text-sm font-medium text-emerald-900">{str}</span>
-                    </div>
-                  ))}
-                </div>
-              </BentoCard>
-            )}
-
-            {/* 5. Main Analysis - The 'Meat' - Large Block */}
-            {content.main_analysis && (
-              <BentoCard
-                className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2"
-                title="Diepte Analyse"
-                icon={<TrendingUp className="w-5 h-5 text-blue-600" />}
-              >
-                <div
-                  className="prose prose-slate max-w-none text-sm md:text-base leading-relaxed
-                                   prose-p:mb-4 prose-headings:text-slate-800 prose-headings:font-bold prose-headings:text-sm prose-headings:uppercase prose-headings:tracking-wider"
-                  dangerouslySetInnerHTML={{ __html: content.main_analysis }}
-                />
-              </BentoCard>
-            )}
-
-            {/* 6. Risks / Advice - 1x1 or Vert */}
-            {content.advice && (
-              <BentoCard className="col-span-1 md:col-span-1 lg:col-span-1" title="Aandachtspunten" icon={<AlertTriangle className="w-5 h-5 text-amber-500" />} variant="alert">
-                <div className="prose prose-sm prose-ul:pl-4 prose-li:marker:text-amber-500" dangerouslySetInnerHTML={{ __html: typeof content.advice === 'string' ? content.advice : '' }} />
-                {Array.isArray(content.advice) && (
-                  <div className="flex flex-col gap-2">
-                    {content.advice.map((adv: string, i: number) => (
-                      <div key={i} className="text-sm text-amber-900 bg-amber-50 p-2 rounded border border-amber-100">{adv}</div>
+                        {i === 6 ? 'DASH' : ''}
+                      </div>
                     ))}
                   </div>
-                )}
-              </BentoCard>
-            )}
+                  <div className="mt-4 flex justify-between text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                    <span>Kans →</span>
+                    <span>← Impact</span>
+                  </div>
+                </BentoCard>
+              )}
 
-            {/* 7. Action Items (Sidebar) */}
-            {content.sidebar_items?.map((item: any, idx: number) => {
-              if (item.type === 'action_list') {
-                return (
-                  <BentoCard key={'action-' + idx} className="col-span-1" title={item.title} icon={<ListChecks className="w-5 h-5 text-slate-500" />}>
-                    <ul className="space-y-2 mt-2">
-                      {item.items.map((act: string, i: number) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
-                          <input type="checkbox" className="mt-1 rounded border-slate-300 text-blue-600" />
-                          <span>{act}</span>
-                        </li>
+              {/* 1. Intro Box - Wide Top Left */}
+              {content.intro && (
+                <BentoCard className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1" title="Samenvatting" icon={<BookOpen className="w-5 h-5 text-blue-600" />}>
+                  <div className="text-lg text-slate-700 leading-relaxed font-medium">
+                    {content.intro}
+                  </div>
+                </BentoCard>
+              )}
+
+              {/* 2. AI Insight / Hero - Prominent Top Right / Center */}
+              {content.interpretation && (
+                <BentoCard
+                  className="col-span-1 md:col-span-3 lg:col-span-3 row-span-1"
+                  variant="primary"
+                  title="AI Interpretatie"
+                  icon={<Sparkles className="w-5 h-5 text-yellow-300" />}
+                >
+                  <div
+                    className="prose prose-invert prose-lg leading-snug !max-w-none"
+                    dangerouslySetInnerHTML={{ __html: content.interpretation }}
+                  />
+                </BentoCard>
+              )}
+
+              {/* 3. Metrics & Scores (From Sidebar Items) - 1x1 Tiles */}
+              {content.sidebar_items?.map((item: any, idx: number) => {
+                if (item.type === 'advisor_score') {
+                  return (
+                    <BentoCard key={'score-' + idx} className="col-span-1 md:col-span-1" title={item.title} icon={<TrendingUp className="w-5 h-5 text-blue-600" />}>
+                      <div className="flex items-end gap-2 mt-2">
+                        <span className="text-5xl font-black text-blue-600 tracking-tighter">{item.score}</span>
+                        <span className="text-sm font-medium text-slate-500 mb-2">/ 100</span>
+                      </div>
+                      <p className="mt-4 text-sm text-slate-500 line-clamp-3">{item.content}</p>
+                    </BentoCard>
+                  );
+                }
+                if (item.type === 'advisor_card' || item.type === 'advisor') {
+                  return (
+                    <BentoCard key={'advisor-' + idx} className="col-span-1 md:col-span-1" title={item.title} icon={<Sparkles className="w-5 h-5 text-blue-500" />}>
+                      <div className="text-sm text-slate-600 leading-relaxed" dangerouslySetInnerHTML={{ __html: item.content }} />
+                    </BentoCard>
+                  );
+                }
+                return null;
+              })}
+
+              {/* 3.1 Key Property Metrics */}
+              {content.metrics?.filter((m: any) => m.id !== 'default_metric').map((metric: any, idx: number) => (
+                <BentoCard
+                  key={'metric-' + idx}
+                  className="col-span-1"
+                  title={metric.label}
+                  variant={metric.color === 'red' ? 'alert' : metric.color === 'orange' ? 'highlight' : 'default'}
+                >
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-black text-slate-900">{metric.value}</span>
+                    {metric.explanation && <p className="mt-2 text-xs text-slate-500 font-medium leading-tight">{metric.explanation}</p>}
+                    {metric.trend_text && <span className="mt-1 text-[10px] font-bold uppercase text-blue-600 tracking-wider">{metric.trend_text}</span>}
+                  </div>
+                </BentoCard>
+              ))}
+
+
+              {/* 4. Strengths - Vertical or Square */}
+              {content.strengths && content.strengths.length > 0 && (
+                <BentoCard className="col-span-1 md:col-span-1 lg:col-span-1 row-span-2" title="Sterke Punten" icon={<CheckCircle2 className="w-5 h-5 text-emerald-600" />}>
+                  <div className="flex flex-col gap-3">
+                    {content.strengths.map((str: string, i: number) => (
+                      <div key={i} className="flex items-start gap-2 p-2 rounded bg-emerald-50 border border-emerald-100/50">
+                        <div className="min-w-[4px] h-4 mt-1.5 rounded-full bg-emerald-500" />
+                        <span className="text-sm font-medium text-emerald-900">{str}</span>
+                      </div>
+                    ))}
+                  </div>
+                </BentoCard>
+              )}
+
+              {/* 5. Main Analysis - The 'Meat' - Large Block */}
+              {content.main_analysis && (
+                <BentoCard
+                  className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2"
+                  title="Diepte Analyse"
+                  icon={<TrendingUp className="w-5 h-5 text-blue-600" />}
+                >
+                  <div
+                    className="prose prose-slate max-w-none text-sm md:text-base leading-relaxed
+                                   prose-p:mb-4 prose-headings:text-slate-800 prose-headings:font-bold prose-headings:text-sm prose-headings:uppercase prose-headings:tracking-wider"
+                    dangerouslySetInnerHTML={{ __html: content.main_analysis }}
+                  />
+                </BentoCard>
+              )}
+
+              {/* 6. Risks / Advice - 1x1 or Vert */}
+              {content.advice && (
+                <BentoCard className="col-span-1 md:col-span-1 lg:col-span-1" title="Aandachtspunten" icon={<AlertTriangle className="w-5 h-5 text-amber-500" />} variant="alert">
+                  <div className="prose prose-sm prose-ul:pl-4 prose-li:marker:text-amber-500" dangerouslySetInnerHTML={{ __html: typeof content.advice === 'string' ? content.advice : '' }} />
+                  {Array.isArray(content.advice) && (
+                    <div className="flex flex-col gap-2">
+                      {content.advice.map((adv: string, i: number) => (
+                        <div key={i} className="text-sm text-amber-900 bg-amber-50 p-2 rounded border border-amber-100">{adv}</div>
                       ))}
-                    </ul>
-                  </BentoCard>
-                )
-              }
-              return null;
-            })}
+                    </div>
+                  )}
+                </BentoCard>
+              )}
 
-            {/* 8. Conclusion - Full Width Bottom Banner style */}
-            {content.conclusion && (
-              <BentoCard
-                className="col-span-1 md:col-span-3 lg:col-span-5 !bg-slate-900 !border-slate-800"
-                variant="default" // Overridden by class
-              >
-                <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left h-full justify-center">
-                  <div className="p-3 bg-white/10 rounded-full">
-                    <Target className="w-8 h-8 text-yellow-400" />
+              {/* 7. Action Items (Sidebar) */}
+              {content.sidebar_items?.map((item: any, idx: number) => {
+                if (item.type === 'action_list') {
+                  return (
+                    <BentoCard key={'action-' + idx} className="col-span-1" title={item.title} icon={<ListChecks className="w-5 h-5 text-slate-500" />}>
+                      <ul className="space-y-2 mt-2">
+                        {item.items.map((act: string, i: number) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
+                            <input type="checkbox" className="mt-1 rounded border-slate-300 text-blue-600" />
+                            <span>{act}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </BentoCard>
+                  )
+                }
+                return null;
+              })}
+
+              {/* 8. Conclusion - Full Width Bottom Banner style */}
+              {content.conclusion && (
+                <BentoCard
+                  className="col-span-1 md:col-span-3 lg:col-span-5 !bg-slate-900 !border-slate-800"
+                  variant="default" // Overridden by class
+                >
+                  <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left h-full justify-center">
+                    <div className="p-3 bg-white/10 rounded-full">
+                      <Target className="w-8 h-8 text-yellow-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-yellow-500 uppercase tracking-widest mb-2">Conclusie van de Expert</h4>
+                      <p className="text-xl md:text-2xl font-serif italic text-white leading-relaxed">"{content.conclusion}"</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-yellow-500 uppercase tracking-widest mb-2">Conclusie van de Expert</h4>
-                    <p className="text-xl md:text-2xl font-serif italic text-white leading-relaxed">"{content.conclusion}"</p>
-                  </div>
-                </div>
-              </BentoCard>
-            )}
+                </BentoCard>
+              )}
 
-          </BentoGrid>
-
+            </BentoGrid>
+          ) : (
+            <div className="flex items-center justify-center flex-1 h-full text-slate-400">
+              <div className="text-center">
+                <p className="text-lg font-medium">Selecteer een hoofdstuk</p>
+              </div>
+            </div>
+          )}
         </div>
-        ) : (
-        <div className="flex items-center justify-center flex-1 h-full text-slate-400">
-          <div className="text-center">
-            <p className="text-lg font-medium">Selecteer een hoofdstuk</p>
-          </div>
-        </div>
-      )}
       </main>
     </div >
   );

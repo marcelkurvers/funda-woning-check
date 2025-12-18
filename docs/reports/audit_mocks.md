@@ -14,7 +14,7 @@ Found **24** potential issues.
 ### 📄 `main.py`
 | Line | Type | Content |
 | :--- | :--- | :--- |
-| 517 | **Placeholder** | `# If the provided URL is a placeholder indicating manual paste, store as NULL to avoid scraping a...` |
+| 537 | **Placeholder** | `# If the provided URL is a placeholder indicating manual paste, store as NULL to avoid scraping a...` |
 
 ### 📄 `chapters/chapter_0.py`
 | Line | Type | Content |

@@ -163,13 +163,30 @@ app = FastAPI(title="AI Woning Rapport (Local) v2")
 # Ensure database tables exist immediately upon import (useful for tests and scripts)
 init_db()
 
-static_dir = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+# Determine static directory (works for both Local and Docker)
+curr_dir = os.path.dirname(os.path.abspath(__file__))
+potential_paths = [
+    os.path.join(curr_dir, "frontend", "dist"),               # Docker: /app/frontend/dist
+    os.path.join(os.path.dirname(curr_dir), "frontend", "dist") # Local: .../backend/../frontend/dist
+]
+
+static_dir = potential_paths[0] # Default
+for p in potential_paths:
+    if os.path.exists(p):
+        static_dir = p
+        break
+
 app.mount("/static", StaticFiles(directory=static_dir, html=True), name="static")
 
 # Serve additional assets if needed (e.g., images) from the same dist folder
 assets_dir = os.path.join(static_dir, "assets")
 if os.path.exists(assets_dir):
     app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+@app.get("/", response_class=HTMLResponse)
+def root():
+    with open(os.path.join(static_dir, "index.html"), "r", encoding="utf-8") as f:
+        return f.read()
 
 @app.on_event("startup")
 def _startup():
