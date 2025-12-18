@@ -210,7 +210,7 @@ function App() {
             </button>
             <AIStatusIndicator />
             <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-md border border-slate-200">
-              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
+              <div className="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
               <div className="text-[10px] uppercase font-bold text-slate-500 tracking-tighter">Live Versie</div>
             </div>
           </div>

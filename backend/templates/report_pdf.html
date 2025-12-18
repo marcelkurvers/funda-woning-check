@@ -396,7 +396,7 @@
                     {% elif item.type == 'action_list' %}
                     <h4>✅ {{ item.title }}</h4>
                     <ul class="check-list">
-                        {% for i in item.items %}
+                        {% for i in item['items'] %}
                         <li>{{ i }}</li>
                         {% endfor %}
                     </ul>
