@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BentoGrid, BentoCard } from './components/layout/BentoLayout';
-import { Target, ListChecks, ChevronRight, Loader2, AlertCircle, Sparkles, AlertTriangle, CheckCircle2, TrendingUp, BookOpen, Plus, FileText } from 'lucide-react';
+import { Target, ListChecks, ChevronRight, Loader2, AlertCircle, Sparkles, AlertTriangle, CheckCircle2, TrendingUp, BookOpen, Plus, FileText, Home } from 'lucide-react';
 import { LandingPage } from './components/LandingPage';
 import { AIStatusIndicator } from './components/AIStatusIndicator';
 import type { ReportData } from './types';
@@ -188,6 +188,13 @@ function App() {
         {/* Header */}
         <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm shrink-0 z-40">
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setReport(null)}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-400 hover:text-blue-600"
+              title="Terug naar Startpagina"
+            >
+              <Home className="w-5 h-5" />
+            </button>
             <div className="bg-blue-100 text-blue-700 font-bold px-3 py-1 rounded-md text-sm border border-blue-200 shadow-sm">
               Hfdst {currentChapter?.id || 0}
             </div>
