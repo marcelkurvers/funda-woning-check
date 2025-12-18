@@ -146,7 +146,8 @@ function App() {
                 {chapter.id}
               </span>
               <span className="truncate text-left">{chapter.title || `Hoofdstuk ${chapter.id}`}</span>
-              {activeChapterId === chapter.id && <ChevronRight className="w-4 h-4 ml-auto opacity-75" />}
+              {activeChapterId === String(chapter.id) && <ChevronRight className="w-4 h-4 ml-auto opacity-75" />}
+
             </button>
           ))}
         </nav>
@@ -212,14 +213,38 @@ function App() {
                     <BentoCard key={'score-' + idx} className="col-span-1 md:col-span-1" title={item.title} icon={<TrendingUp className="w-5 h-5 text-blue-600" />}>
                       <div className="flex items-end gap-2 mt-2">
                         <span className="text-5xl font-black text-blue-600 tracking-tighter">{item.score}</span>
-                        <span className="text-sm font-medium text-slate-400 mb-2">/ 100</span>
+                        <span className="text-sm font-medium text-slate-500 mb-2">/ 100</span>
                       </div>
                       <p className="mt-4 text-sm text-slate-500 line-clamp-3">{item.content}</p>
                     </BentoCard>
                   );
                 }
+                if (item.type === 'advisor_card' || item.type === 'advisor') {
+                  return (
+                    <BentoCard key={'advisor-' + idx} className="col-span-1 md:col-span-1" title={item.title} icon={<Sparkles className="w-5 h-5 text-blue-500" />}>
+                      <div className="text-sm text-slate-600 leading-relaxed" dangerouslySetInnerHTML={{ __html: item.content }} />
+                    </BentoCard>
+                  );
+                }
                 return null;
               })}
+
+              {/* 3.1 Key Property Metrics */}
+              {content.metrics?.filter((m: any) => m.id !== 'default_metric').map((metric: any, idx: number) => (
+                <BentoCard
+                  key={'metric-' + idx}
+                  className="col-span-1"
+                  title={metric.label}
+                  variant={metric.color === 'red' ? 'alert' : metric.color === 'orange' ? 'highlight' : 'default'}
+                >
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-black text-slate-900">{metric.value}</span>
+                    {metric.explanation && <p className="mt-2 text-xs text-slate-500 font-medium leading-tight">{metric.explanation}</p>}
+                    {metric.trend_text && <span className="mt-1 text-[10px] font-bold uppercase text-blue-600 tracking-wider">{metric.trend_text}</span>}
+                  </div>
+                </BentoCard>
+              ))}
+
 
               {/* 4. Strengths - Vertical or Square */}
               {content.strengths && content.strengths.length > 0 && (

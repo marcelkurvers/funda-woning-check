@@ -34,6 +34,7 @@ class ChapterLayout(BaseModel):
     right: List[UIComponent] = []
 
 class ChapterOutput(BaseModel):
+    id: Optional[str] = None
     title: str
     grid_layout: Any # Was ChapterLayout, relaxed to Any to support Modern Dashboard dicts
     # Legacy blocks for PDF if needed

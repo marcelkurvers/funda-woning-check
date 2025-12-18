@@ -1,2 +1,14 @@
 data/*.db
 data/*.json
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.DS_Store
+node_modules/
+build/
+dist/
+.env
+.mcp_scan_snapshot.json
+.mcp_test_report.json
+backend/.docker_build_hash

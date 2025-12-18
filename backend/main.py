@@ -272,6 +272,7 @@ def build_chapters(property_core: Dict[str, Any]) -> Dict[str, Any]:
             try:
                 instance = cls(property_core)
                 output = instance.generate()
+                output.id = str(i)
                 # Ensure modern layout compliance for each chapter
                 if isinstance(output.grid_layout, dict):
                     layout = output.grid_layout
@@ -280,11 +281,27 @@ def build_chapters(property_core: Dict[str, Any]) -> Dict[str, Any]:
                     layout.setdefault("main", {"title": "Overview", "content": "No detailed content provided."})
                     layout.setdefault("sidebar", [{"type": "advisor_card", "title": "Tip", "content": "No advice available."}])
                     output.grid_layout = layout
+                
+                # BRIDGE: Ensure chapter_data contains all layout items for the frontend BentoGrid
+                if output.chapter_data is None:
+                    output.chapter_data = {}
+                
+                # Merge sidebar and metrics into chapter_data if not already there
+                if "sidebar_items" not in output.chapter_data:
+                    output.chapter_data["sidebar_items"] = layout.get("sidebar", [])
+                if "metrics" not in output.chapter_data:
+                    output.chapter_data["metrics"] = layout.get("metrics", [])
+                if "hero" not in output.chapter_data:
+                    output.chapter_data["hero"] = layout.get("hero", {})
+                if "title" not in output.chapter_data:
+                    output.chapter_data["title"] = output.title
+
                 chapters[str(i)] = output.dict()
                 logger.debug(f" - Generated Chapter {i}: {output.title}")
             except Exception as e:
                 logger.error(f"Error generating chapter {i}: {e}")
                 chapters[str(i)] = {
+                    "id": str(i),
                     "title": CHAPTER_TITLES.get(i, f"Hoofdstuk {i}"),
                     "blocks": [{
                         "type": "compliance",
@@ -296,6 +313,7 @@ def build_chapters(property_core: Dict[str, Any]) -> Dict[str, Any]:
         else:
             logger.warning(f"Warning: No class found for Chapter {i}")
             chapters[str(i)] = {
+                "id": str(i),
                 "title": CHAPTER_TITLES.get(i, f"Hoofdstuk {i}"),
                 "blocks": [{
                     "type": "compliance",
