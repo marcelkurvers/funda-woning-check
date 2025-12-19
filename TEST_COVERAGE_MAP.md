@@ -1,15 +1,15 @@
 # Test Coverage Map
 
-**Generated**: 2025-12-18 11:58:04 UTC
+**Generated**: 2025-12-19 13:22:42 UTC
 **Project**: `/Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local`
 
 ## Executive Summary
 
-**Status**: ✅ All tests passing
-**Success Rate**: 100.0% (1/1 test suites)
+**Status**: ❌ All tests failing
+**Success Rate**: 0.0% (0/1 test suites)
 
-- ✅ **Passed**: 1
-- ❌ **Failed**: 0
+- ✅ **Passed**: 0
+- ❌ **Failed**: 1
 - ⏭️ **Skipped**: 5
 - 📊 **Total**: 6
 
@@ -18,12 +18,12 @@
 **Detected Languages**: 2/6
 
 ### ✓ Python
-- **Source files**: 34
-- **Test files**: 37
-- **Test ratio**: 109% (37 test files per 34 source files)
+- **Source files**: 35
+- **Test files**: 38
+- **Test ratio**: 109% (38 test files per 35 source files)
 
 ### ✓ Javascript/Typescript
-- **Source files**: 18
+- **Source files**: 19
 - **Test files**: 0
 
 ### ○ Go
@@ -48,18 +48,22 @@
 
 ## Test Execution Results
 
-### ✅ Successful Test Suites
+### ❌ Failed Test Suites
 
-| Framework | Tests | Duration | Details |
-|-----------|-------|----------|---------|
-| pytest | N/A | N/A | ✓ All tests passed |
+| Framework | Tests | Duration | Failed Tests |
+|-----------|-------|----------|--------------|
+| pytest | N/A | N/A | Exit code: 1 |
 
 ### ⏭️ Skipped Test Suites
 
 | Framework | Reason |
 |-----------|--------|
-| jest | Detected 18 JS/TS source files but no test files to execute. |
+| jest | Detected 19 JS/TS source files but no test files to execute. |
 | go test | No Go source files detected in repository. |
 | cargo test | No Rust source files detected in repository. |
 | maven/gradle | No Java source files detected in repository. |
 | rspec/minitest | No Ruby source files detected in repository. |
+
+## Recommendations
+
+- **Fix failing tests**: Review the failed test details above and fix the issues

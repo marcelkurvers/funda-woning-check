@@ -46,6 +46,11 @@ class Parser:
             "roof_type": self._extract_roof_type(soup),
             "heating": self._extract_heating(soup),
             "insulation": self._extract_insulation(soup),
+            "volume_m3": self._extract_spec(soup, "volume_m3"),
+            "service_costs": self._extract_service_costs(soup),
+            "acceptance": self._extract_acceptance(soup),
+            "ownership": self._extract_ownership(soup),
+            "listed_since": self._extract_spec(soup, "listed_since"),
         }
         
         # Validate and clean the data
@@ -54,15 +59,36 @@ class Parser:
         return validated_data
 
     def _extract_price(self, soup) -> Optional[str]:
+        # 1. Structured CSS Selector (Most reliable if HTML is intact)
         price_el = soup.select_one(".object-header__price")
-        if not price_el:
-            price_el = soup.find(string=re.compile(r"€\s*\d"))
-        
         if price_el:
             text = price_el.get_text(strip=True)
             match = re.search(r"€\s*[\d\.]+", text)
             if match:
                 return match.group(0)
+
+        # 2. Robust Full Text Scan (Primary for Pasted/Unstructured Content)
+        # This is moved UP because it handles commas (1,400,000) better than the simple text node search below.
+        full_text = soup.get_text(separator="\n")
+        
+        # Regex: Matches € followed by digits, supporting both . and , as separators.
+        # e.g. € 1.400.000 or € 1,400,000
+        match = re.search(r"€\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?)", full_text)
+        if match:
+             val = match.group(0).rstrip('.,')
+             # Filter out tiny partial matches like "€1" only if they seem incomplete
+             if len(val) > 4 or re.search(r'\d{3}', val):
+                 return val
+
+        # 3. Simple Text Node Search (Legacy/Backup)
+        price_el = soup.find(string=re.compile(r"€\s*\d"))
+        if price_el:
+            text = price_el.get_text(strip=True)
+            # This legacy regex only supported dots, which is why it failed for 1,400,000
+            match = re.search(r"€\s*[\d\.]+", text)
+            if match:
+                return match.group(0)
+            
         return None
 
     def _extract_address(self, soup) -> str:
@@ -104,6 +130,61 @@ class Parser:
                 return line
                 
         return "Adres onbekend"
+        
+    def _extract_address(self, soup) -> str:
+        # 1. Standard Title
+        title_el = soup.select_one(".object-header__title")
+        if title_el:
+            return title_el.get_text(strip=True)
+        
+        # 2. Page Title tag
+        if soup.title:
+            t = soup.title.text
+            if "Te koop:" in t:
+                return t.split("Te koop:")[1].split("[")[0].strip()
+
+        # 3. Aggressive Regex Search for Address Patterns (Postcode + City)
+        # e.g. "1012 AB Amsterdam"
+        text = soup.get_text(separator="\n")
+        # Regex for Dutch Postcode: 4 digits, space, 2 letters
+        postcode_regex = re.compile(r'(\b\d{4}\s?[A-Z]{2}\b)', re.IGNORECASE)
+        
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        for i, line in enumerate(lines):
+             match = postcode_regex.search(line)
+             if match:
+                 # Found a postcode. The address is likely this line or previous one.
+                 # If this line starts with postcode, previous line might be street.
+                 if line.startswith(match.group(0)) and i > 0:
+                     potential_street = lines[i-1]
+                     # Heuristic: Street address often ends with a number
+                     if any(c.isdigit() for c in potential_street):
+                         return f"{potential_street}, {line}"
+                 
+                 # If postcode is at end, return whole line
+                 return line
+
+        # 4. Fallback to existing heuristic
+        # BLOCKLIST for common navigation/UI elements to ignore
+        BLOCKLIST = [
+            "ga naar", "menu", "zoeken", "inloggen", "funda", 
+            "te koop", "te huur", "favorieten", "foto's", 
+            "video's", "360-graden", "kenmerken", "kaart",
+            "verkoper", "contact"
+        ]
+        
+        for line in lines:
+            line_lower = line.lower()
+            if any(line_lower.startswith(b) for b in BLOCKLIST): continue
+            
+            # Heuristic: Addresses usually have a number
+            if not any(c.isdigit() for c in line):
+                if len(line.split()) < 2: continue
+            
+            if len(line) < 100:
+                return line
+                
+        return "Adres onbekend"
 
     def _extract_spec(self, soup, keyword):
         # Map logical keys to multiple Dutch keywords
@@ -112,7 +193,9 @@ class Parser:
             "plot_area_m2": ["Perceel", "Perceeloppervlakte"],
             "build_year": ["Bouwjaar"],
             "energy_label": ["Energielabel"],
-            "rooms": ["Aantal kamers", "kamers"]
+            "rooms": ["Aantal kamers", "kamers"],
+            "volume_m3": ["Inhoud", "Bruto inhoud"],
+            "listed_since": ["Aangeboden sinds"]
         }
         
         keywords = kw_map.get(keyword, [keyword])
@@ -139,13 +222,21 @@ class Parser:
                     pass
                 
                 text = cand.strip()
-                # 1. "Label: Value" or "Label Value" on same line?
-                match = re.search(f"{keyword_long}[:\\s]+(.*)", text, flags)
-                if match:
-                    val = match.group(1).strip()
+                # 1. Strict Colon Match first "Label: Value"
+                match_colon = re.search(f"{keyword_long}:\s*(.*)", text, flags)
+                if match_colon:
+                    val = match_colon.group(1).strip()
                     if self._validate_value(keyword_long, val): return val
-                
-                # 2. Value in next sibling
+                    
+                # 2. Loose match (no colon) - ONLY if line is short (likely a list item)
+                # This prevents matching "Garage" in "Mooie woning met garage en tuin..."
+                if len(text) < 50:
+                    match_loose = re.search(f"{keyword_long}\s+(.*)", text, flags)
+                    if match_loose:
+                        val = match_loose.group(1).strip()
+                        if self._validate_value(keyword_long, val): return val
+
+                # 3. Value in next sibling (remains same)
                 parent = cand.parent
                 if parent:
                     for sib in parent.next_siblings:
@@ -171,45 +262,50 @@ class Parser:
         # 3. Fallback: Raw Text Scan (for copy-pastes where structure is lost)
         return self._scan_raw_text(soup, keyword_long)
 
+        return None
+
+        return None
+
     def _scan_raw_text(self, soup, keyword):
         """
-        Scans the full text content line-by-line.
-        Useful when HTML structure is lost (e.g. plain text paste).
-        Look for:
-        - "Keyword: Value"
-        - "Keyword \n Value"
-        - "Value \n Keyword" (sometimes happens with copy selection)
+        Scans the full text content using robust regex patterns.
         """
         text = soup.get_text(separator="\n")
-        lines = [line.strip() for line in text.splitlines() if line.strip()]
         
-        # Find index of keyword
-        for i, line in enumerate(lines):
-            # Check if line IS the keyword (approx) or Starts with keyword
-            # e.g. "Woonoppervlakte" or "Woonoppervlakte: 120m2"
-            
-            # Case A: Line starts with keyword
-            if line.lower().startswith(keyword.lower()):
-                # 1. Check rest of line
-                remainder = line[len(keyword):].strip(": ").strip()
-                if remainder and self._validate_value(keyword, remainder):
-                    return remainder
-                
-                # 2. Check NEXT line (Key \n Value)
-                if i + 1 < len(lines):
-                    next_line = lines[i+1]
-                    if self._validate_value(keyword, next_line):
-                        return next_line
-            
-            # Case B: Line IS the value, and NEXT line is keyword (Value \n Key - rare but possible in some layouts)
-            # e.g. "120 m2 \n Wonen"
-            if line.lower() == keyword.lower() or (keyword.lower() in line.lower() and len(line) < len(keyword)+5):
-                # Check PREVIOUS line
-                if i > 0:
-                    prev_line = lines[i-1]
-                    if self._validate_value(keyword, prev_line):
-                        return prev_line
-                        
+        # KEYWORD MAPPING for "Paste Mode"
+        # Map internal keys back to their Dutch display labels found in raw text
+        
+        # Construct a flexible regex for the keyword
+        # allow optional colon, allow spaces
+        # Pattern: (Keyword)[:\s]+(Value)
+        
+        # Improved Regex: Prefer a colon, otherwise strict. 
+        # Stop at newline.
+        # Anchor to start of line to avoid matching words in sentences (e.g. "met garage")
+        pattern = re.compile(f"(?:^|\\n)\\s*({keyword})[:\\s]+(.*?)(?=\\n|$)", re.IGNORECASE)
+        
+        match = pattern.search(text)
+        if match:
+             val = match.group(2).strip()
+             # Cleanup value (stop at first newline or unreasonable length)
+             if len(val) < 100 and self._validate_value(keyword, val):
+                 return val
+                 
+        # Fallback: Look for "Value keyword" pattern (e.g. "124 m² wonen" or "400 m³ inhoud")
+        # specialized for areas/volumes
+        if "m2" in keyword.lower() or "wonen" in keyword.lower() or "m3" in keyword.lower() or "inhoud" in keyword.lower():
+             # Look for digits followed by m², m2, m³ or m3
+             # Adjust regex based on keyword
+             unit = "m[²2]"
+             if "m3" in keyword.lower() or "inhoud" in keyword.lower():
+                 unit = "m[³3]"
+                 
+             p2 = re.compile(r'(\d+(?:[\.,]\d+)?)\s*' + unit, re.IGNORECASE)
+             match = p2.search(text)
+             
+             if match and ("wonen" in keyword.lower() or "inhoud" in keyword.lower()):
+                 return match.group(0)
+                 
         return None
 
     def _validate_value(self, keyword, value):
@@ -399,6 +495,30 @@ class Parser:
             if val:
                 return val
         
+        return None
+
+    def _extract_service_costs(self, soup) -> Optional[str]:
+        """Extract service costs"""
+        keywords = ["Servicekosten", "Bijdrage VvE"]
+        for kw in keywords:
+            val = self._extract_spec_by_keyword(soup, kw)
+            if val: return val
+        return None
+
+    def _extract_acceptance(self, soup) -> Optional[str]:
+        """Extract acceptance (e.g. In overleg)"""
+        keywords = ["Aanvaarding"]
+        for kw in keywords:
+            val = self._extract_spec_by_keyword(soup, kw)
+            if val: return val
+        return None
+
+    def _extract_ownership(self, soup) -> Optional[str]:
+        """Extract ownership situation"""
+        keywords = ["Eigendomssituatie"]
+        for kw in keywords:
+            val = self._extract_spec_by_keyword(soup, kw)
+            if val: return val
         return None
 
     def _validate_data(self, data: Dict[str, Any]) -> Dict[str, Any]:

@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { UploadCloud, ArrowRight, Loader2, ClipboardType, Plus } from 'lucide-react';
+import { UploadCloud, ArrowRight, Loader2, ClipboardType, Plus, AlertCircle } from 'lucide-react';
 
 interface LandingPageProps {
     onStartAnalysis: (type: 'url' | 'paste', content: string, mediaUrls?: string[], extraFacts?: string) => Promise<void>;
@@ -22,69 +22,86 @@ export function LandingPage({ onStartAnalysis, isLoading, error }: LandingPagePr
     };
 
     return (
-        <div className="min-h-screen bg-slate-900 relative overflow-hidden font-sans selection:bg-blue-500/30">
+        <div className="min-h-screen bg-slate-50 relative overflow-hidden font-sans selection:bg-blue-100">
 
-            {/* Background Ambience */}
+            {/* Background Ambience - Light Mode */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/20 rounded-full blur-[120px] mix-blend-screen animate-pulse-slow" />
-                <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[60%] bg-emerald-500/10 rounded-full blur-[100px] mix-blend-screen" />
+                <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-100/50 rounded-full blur-[120px] mix-blend-multiply animate-pulse-slow" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[60%] bg-emerald-100/50 rounded-full blur-[100px] mix-blend-multiply" />
             </div>
 
             <div className="relative z-10 container mx-auto px-6 h-screen flex flex-col items-center justify-center">
 
                 {/* Header */}
-                <div className="text-center mb-8 space-y-4 max-w-2xl">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/50 border border-slate-700/50 text-blue-400 text-xs font-bold uppercase tracking-widest backdrop-blur-md">
+                <div className="text-center mb-10 space-y-6 max-w-2xl">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-blue-100 text-blue-600 text-xs font-bold uppercase tracking-widest shadow-sm">
                         <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
                         Kurvers Property Consulting
                     </div>
-                    <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 tracking-tight leading-tight">
+                    <h1 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-[1.1]">
                         Vastgoed Intelligentie <br />
-                        <span className="text-blue-500">Gedecodeerd.</span>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Gedecodeerd.</span>
                     </h1>
+                    <p className="text-lg text-slate-600 font-medium max-w-lg mx-auto leading-relaxed">
+                        Genereer direct een premium analyse rapport door simpelweg de broncode te plakken.
+                    </p>
                 </div>
 
-                {/* Card Component */}
-                <div className="w-full max-w-2xl bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 hover:shadow-blue-900/10 hover:border-slate-600/50 group flex flex-col max-h-[85vh]">
+                {/* Card Component - White Glass */}
+                <div className="w-full max-w-2xl bg-white/80 backdrop-blur-xl border border-white/50 rounded-3xl shadow-2xl shadow-blue-900/5 overflow-hidden ring-1 ring-slate-900/5 flex flex-col max-h-[85vh]">
 
                     {/* Header Strip */}
-                    <div className="border-b border-slate-700/50 bg-slate-800/30 px-6 py-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-500/10 rounded-lg">
-                                <ClipboardType className="w-5 h-5 text-blue-400" />
+                    <div className="border-b border-slate-100 bg-white/50 px-8 py-5 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="p-2.5 bg-blue-600 rounded-xl shadow-lg shadow-blue-600/20">
+                                <ClipboardType className="w-5 h-5 text-white" />
                             </div>
-                            <span className="text-xs font-bold text-slate-200 uppercase tracking-widest">
-                                Directe Analyse Module
-                            </span>
+                            <div className="flex flex-col">
+                                <span className="text-sm font-bold text-slate-900">
+                                    Directe Analyse
+                                </span>
+                                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                                    Plak & Go
+                                </span>
+                            </div>
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => setShowAdvanced(!showAdvanced)}
-                            className="text-[10px] font-bold text-slate-400 hover:text-blue-400 uppercase tracking-widest transition-colors flex items-center gap-2"
-                        >
-                            {showAdvanced ? "Simpele Modus" : "Extra Context Toevoegen (Foto's)"}
-                            <Plus className={`w-3 h-3 transition-transform ${showAdvanced ? 'rotate-45' : ''}`} />
-                        </button>
+                        <div className="flex gap-2">
+                            <a
+                                href="/preferences"
+                                className="text-xs font-bold text-slate-500 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 border border-slate-200 hover:border-blue-200"
+                            >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                Instellingen
+                            </a>
+                            <button
+                                type="button"
+                                onClick={() => setShowAdvanced(!showAdvanced)}
+                                className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-all flex items-center gap-2"
+                            >
+                                {showAdvanced ? "Simpele Modus" : "Extra Opties"}
+                                <Plus className={`w-3 h-3 transition-transform ${showAdvanced ? 'rotate-45' : ''}`} />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Form Area */}
-                    <div className="p-6 overflow-y-auto custom-scrollbar">
+                    <div className="p-8 overflow-y-auto custom-scrollbar">
                         <form onSubmit={handleSubmit} className="space-y-6">
 
                             <div className="space-y-2">
-                                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">
-                                    Broncode / Tekst (Funda)
+                                <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
+                                    Plak hier HTML / Broncode
                                 </label>
 
                                 <div className="relative group/input">
                                     <textarea
                                         value={content}
                                         onChange={(e) => setContent(e.target.value)}
-                                        placeholder="Selecteer alles (Cmd+A), kopieer en plak hier..."
-                                        className="w-full h-40 bg-slate-900/50 border-2 border-slate-700 rounded-xl p-4 text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all resize-none text-xs font-mono leading-relaxed"
+                                        placeholder="Ga naar Funda -> Rechtermuisknop 'Bron weergeven' -> Selecteer alles (Cmd+A) -> Kopiëren -> Hier plakken..."
+                                        className="w-full h-48 bg-slate-50 border-2 border-slate-200 hover:border-blue-200 focus:border-blue-500 rounded-2xl p-5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all resize-none text-xs font-mono leading-relaxed shadow-inner"
                                     />
-                                    <div className="absolute bottom-3 right-3 pointer-events-none">
-                                        <UploadCloud className="w-5 h-5 text-slate-600 group-focus-within/input:text-blue-500 transition-colors" />
+                                    <div className="absolute bottom-4 right-4 pointer-events-none">
+                                        <UploadCloud className="w-6 h-6 text-slate-300 group-focus-within/input:text-blue-500 transition-colors" />
                                     </div>
                                 </div>
                             </div>
@@ -99,7 +116,7 @@ export function LandingPage({ onStartAnalysis, isLoading, error }: LandingPagePr
                                             value={mediaUrls}
                                             onChange={(e) => setMediaUrls(e.target.value)}
                                             placeholder="https://..."
-                                            className="w-full h-24 bg-slate-900/50 border-2 border-slate-700 rounded-xl p-3 text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 text-xs font-mono"
+                                            className="w-full h-24 bg-slate-50 border-2 border-slate-200 rounded-xl p-3 text-slate-700 text-xs font-mono focus:border-blue-500 focus:outline-none"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -110,7 +127,7 @@ export function LandingPage({ onStartAnalysis, isLoading, error }: LandingPagePr
                                             value={extraFacts}
                                             onChange={(e) => setExtraFacts(e.target.value)}
                                             placeholder="Bijv: Nieuwe CV ketel 2023..."
-                                            className="w-full h-24 bg-slate-900/50 border-2 border-slate-700 rounded-xl p-3 text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 text-xs"
+                                            className="w-full h-24 bg-slate-50 border-2 border-slate-200 rounded-xl p-3 text-slate-700 text-xs focus:border-blue-500 focus:outline-none"
                                         />
                                     </div>
                                 </div>
@@ -121,28 +138,29 @@ export function LandingPage({ onStartAnalysis, isLoading, error }: LandingPagePr
                                 type="submit"
                                 disabled={isLoading || !content}
                                 className={`
-                                    w-full py-4 px-6 rounded-xl font-bold flex items-center justify-center gap-3 transition-all transform
+                                    w-full py-5 px-6 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all transform shadow-xl
                                     ${isLoading || !content
-                                        ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-900/20 hover:scale-[1.01] active:scale-[0.99]'
+                                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
+                                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-blue-600/30 hover:shadow-blue-600/40 hover:scale-[1.01] active:scale-[0.99]'
                                     }
                                 `}
                             >
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="w-5 h-5 animate-spin" />
-                                        Intelligentie Verwerken...
+                                        <span>Analyseren...</span>
                                     </>
                                 ) : (
                                     <>
-                                        Start Analyse
-                                        <ArrowRight className="w-5 h-5" />
+                                        <span>Start Analyse</span>
+                                        <ArrowRight className="w-5 h-5 opacity-80" />
                                     </>
                                 )}
                             </button>
 
                             {error && (
-                                <div className="text-center text-red-100 bg-red-900/20 p-3 rounded-lg border border-red-500/20 text-xs font-medium animate-pulse">
+                                <div className="flex items-center gap-3 text-rose-600 bg-rose-50 p-4 rounded-xl border border-rose-100 text-sm font-medium animate-in fade-in slide-in-from-top-1">
+                                    <AlertCircle className="w-5 h-5 shrink-0" />
                                     {error}
                                 </div>
                             )}
@@ -152,12 +170,12 @@ export function LandingPage({ onStartAnalysis, isLoading, error }: LandingPagePr
                 </div>
 
                 {/* Footer */}
-                <div className="mt-8 flex gap-8 text-slate-600 text-[10px] font-mono opacity-60 hover:opacity-100 transition-opacity">
-                    <span>v2.6.0-Premium</span>
+                <div className="mt-8 flex gap-8 text-slate-400 text-[10px] font-bold uppercase tracking-widest opacity-80">
+                    <span>v2.7.0 Premium</span>
                     <span>•</span>
-                    <span>Kurvers Property Consulting</span>
+                    <span>Kurvers Consulting</span>
                     <span>•</span>
-                    <span>Private & Secure</span>
+                    <span>Secure</span>
                 </div>
 
             </div>

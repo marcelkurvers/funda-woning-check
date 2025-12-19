@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { BentoGrid, BentoCard } from './components/layout/BentoLayout';
-import { Target, ListChecks, ChevronRight, Loader2, AlertCircle, Sparkles, AlertTriangle, CheckCircle2, TrendingUp, BookOpen, Plus, FileText, Home, Settings, Zap, BarChart3, ShieldAlert } from 'lucide-react';
+import { Target, ListChecks, ChevronRight, Loader2, AlertCircle, Sparkles, AlertTriangle, CheckCircle2, TrendingUp, BookOpen, Plus, FileText, Home, Settings, Zap, BarChart3, ShieldAlert, Bug } from 'lucide-react';
 import { LandingPage } from './components/LandingPage';
+import { DataVerifier } from './components/common/DataVerifier';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ScatterChart, Scatter, ZAxis } from 'recharts';
 
 import type { ReportData } from './types';
 
@@ -10,37 +12,13 @@ function App() {
   const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [debugMode, setDebugMode] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
-    async function fetchLatestRun() {
-      try {
-        const runsRes = await fetch('/runs');
-        if (!runsRes.ok) throw new Error('Failed to fetch runs');
-        const runs = await runsRes.json();
-
-        if (runs && runs.length > 0) {
-          const latestRunId = runs[0].id;
-          const reportRes = await fetch(`/runs/${latestRunId}/report`);
-          if (!reportRes.ok) throw new Error('Failed to fetch report');
-          const data = await reportRes.json();
-
-          setReport({
-            runId: latestRunId,
-            address: data.property_core?.address || "Onbekend Adres",
-            chapters: data.chapters || {}
-          });
-        } else {
-          setReport(null);
-        }
-      } catch (err: any) {
-        console.error(err);
-        setError(err.message || 'Er is een fout opgetreden bij het laden van de gegevens.');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchLatestRun();
+    // We intentionally do NOT auto-load the latest run anymore.
+    // This ensures the user always sees the Landing Page first.
+    setLoading(false);
   }, []);
 
   if (loading) {
@@ -134,23 +112,29 @@ function App() {
     <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
 
       {/* Sidebar Navigation - Fixed Width */}
-      <aside className="w-64 bg-slate-900 text-slate-300 flex-shrink-0 h-full flex flex-col z-50 shadow-xl">
-        <div className="p-6 border-b border-slate-800">
+      {/* Sidebar Navigation - Light Premium Theme */}
+      <aside className="w-64 bg-white border-r border-slate-200 flex-shrink-0 h-full flex flex-col z-50 shadow-sm relative">
+        <div className="p-6 border-b border-slate-100">
           <button
             onClick={() => setReport(null)}
             className="text-left group w-full"
           >
-            <div className="text-white font-bold text-lg mb-1 tracking-tight group-hover:text-blue-400 transition-colors">AI Woning Rapport</div>
-            <div className="text-xs text-slate-500 font-mono truncate" title={report.address}>{report.address}</div>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="p-1.5 bg-blue-600 rounded-lg">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <div className="text-slate-900 font-bold text-lg tracking-tight group-hover:text-blue-600 transition-colors">AI Woning</div>
+            </div>
+            <div className="text-xs text-slate-500 font-medium truncate pl-9" title={report.address}>{report.address}</div>
           </button>
         </div>
 
         <div className="px-4 py-4">
           <button
             onClick={() => setReport(null)}
-            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400 hover:bg-blue-600 hover:text-white transition-all duration-200 group font-bold shadow-lg shadow-blue-900/20"
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 group font-bold shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:-translate-y-0.5"
           >
-            <Plus className="w-5 h-5 text-blue-400 group-hover:text-white" />
+            <Plus className="w-5 h-5 text-white/90" />
             <span>Nieuwe Analyse</span>
           </button>
         </div>
@@ -161,24 +145,25 @@ function App() {
               key={chapter.id}
               onClick={() => setActiveChapterId(chapter.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group ${activeChapterId === chapter.id
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
-                : 'hover:bg-slate-800 hover:text-white'
+                ? 'bg-blue-50 text-blue-700 border border-blue-100'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
             >
-              <span className={`flex-shrink-0 w-6 h-6 flex items-center justify-center rounded text-xs font-bold transition-colors ${activeChapterId === chapter.id ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300'
+              <span className={`flex-shrink-0 w-6 h-6 flex items-center justify-center rounded text-xs font-bold transition-colors ${activeChapterId === chapter.id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-700'
                 }`}>
                 {chapter.id}
               </span>
               <span className="truncate text-left">{chapter.title || `Hoofdstuk ${chapter.id}`}</span>
-              {activeChapterId === String(chapter.id) && <ChevronRight className="w-4 h-4 ml-auto opacity-75" />}
+              {activeChapterId === String(chapter.id) && <ChevronRight className="w-4 h-4 ml-auto text-blue-400" />}
 
             </button>
           ))}
         </nav>
-        <div className="p-4 border-t border-slate-800">
-          <a href="/preferences" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
+        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+          <button onClick={() => setSettingsOpen(!settingsOpen)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-white border border-transparent hover:border-slate-200 hover:shadow-sm transition-all">
+            <Settings className="w-4 h-4" />
             <span>Instellingen</span>
-          </a>
+          </button>
         </div>
       </aside>
 
@@ -186,7 +171,7 @@ function App() {
       <main className="flex-1 min-w-0 flex flex-col h-full overflow-hidden bg-slate-100/50">
 
         {/* Header */}
-        <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm shrink-0 z-40">
+        <header className="bg-white border-b border-slate-200 px-8 h-16 flex items-center justify-between shadow-sm shrink-0 z-40">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setReport(null)}
@@ -195,73 +180,181 @@ function App() {
             >
               <Home className="w-5 h-5" />
             </button>
-            <div className="bg-blue-100 text-blue-700 font-bold px-3 py-1 rounded-md text-sm border border-blue-200 shadow-sm">
-              Hfdst {currentChapter?.id || 0}
+            <div className="h-6 w-px bg-slate-200 mx-2" />
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-600 text-white font-bold px-2.5 py-1 rounded-md text-xs shadow-sm shadow-blue-200">
+                Hfdst {currentChapter?.id || 0}
+              </div>
+              <h1 className="text-lg font-bold text-slate-800 tracking-tight">
+                {content?.title || currentChapter?.title || "Analyse"}
+              </h1>
             </div>
-            <h1 className="text-xl font-bold text-slate-800">
-              {content?.title || currentChapter?.title || "Analyse"}
-            </h1>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 relative">
             <button
-              onClick={handleDownloadPdf}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all font-bold text-sm shadow-lg shadow-slate-200"
-            >
-              <FileText className="w-4 h-4 text-blue-400" />
-              <span>Exporteren (PDF)</span>
-            </button>
-            <button
-              onClick={() => alert('Instellingen nog niet geïmplementeerd')}
-              className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-md border border-slate-200 hover:bg-slate-200 transition-colors"
+              onClick={() => setSettingsOpen(!settingsOpen)}
+              className={`p-2 rounded-lg transition-all ${settingsOpen || debugMode ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
               title="Instellingen"
             >
-              <Settings className="w-4 h-4 text-slate-500" />
-              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-tighter">Instellingen</span>
+              {debugMode ? <Bug className="w-5 h-5" /> : <Settings className="w-5 h-5" />}
             </button>
-            <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-md border border-slate-200">
-            </div>
-            <div className="flex flex-col gap-4 w-96"> {/* Fixed width for stats column */}
-              {/* Hero Image Card */}
-              <div className="relative h-48 rounded-[2rem] overflow-hidden group shadow-lg">
-                <img
-                  src={(report.chapters["0"] as any)?.property_core?.media_urls?.[0] || "https://images.unsplash.com/photo-1600596542815-27b88e360290?q=80&w=2000&auto=format&fit=crop"}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  alt="Woning Hero"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent" />
-                <div className="absolute bottom-4 left-6 right-6">
-                  <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-blue-500/20 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold uppercase tracking-widest mb-1">
-                    <Sparkles className="w-3 h-3 text-blue-300" />
-                    Premium
-                  </div>
-                  <h2 className="text-xl font-black text-white tracking-tight leading-tight truncate">{report.address}</h2>
-                </div>
-              </div>
 
-              <div className="flex gap-4 h-32">
-                <div className="p-6 bg-white rounded-[2rem] border border-slate-200 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden group">
-                  <div className="absolute top-[-20%] right-[-10%] w-[100px] h-[100px] bg-blue-500/5 rounded-full blur-[30px] transition-all group-hover:bg-blue-500/10" />
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 relative z-10">Vraagprijs</label>
-                  <div className="text-xl font-black text-slate-900 relative z-10 truncate">{(report.chapters["0"] as any)?.property_core?.asking_price_eur || "€ TBD"}</div>
-                  <div className="mt-2 flex items-center gap-2 text-[10px] font-bold text-emerald-600 relative z-10">
-                    <TrendingUp className="w-3 h-3" />
-                    <span>Conform</span>
+            {/* Settings Popover */}
+            {settingsOpen && (
+              <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-100 p-4 z-50 animate-in slide-in-from-top-2">
+                <h3 className="font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2">Instellingen</h3>
+
+                {/* Debug Toggle */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-slate-700">Debug Modus</span>
+                    <span className="text-xs text-slate-400 leading-tight">Toon data inconsistenties</span>
                   </div>
+                  <button
+                    onClick={() => setDebugMode(!debugMode)}
+                    className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${debugMode ? 'bg-blue-600 justify-end' : 'bg-slate-200 justify-start'}`}
+                  >
+                    <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
+                  </button>
                 </div>
-                <div className="p-6 bg-slate-900 rounded-[2rem] shadow-xl flex-1 flex flex-col justify-center items-center gap-2 group hover:bg-slate-800 transition-colors">
-                  <Home className="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform" />
-                  <div className="text-center">
-                    <div className="text-white text-xl font-black tracking-tighter">{(report.chapters["0"] as any)?.property_core?.living_area_m2 || "0"}</div>
-                    <div className="text-slate-400 text-[8px] font-bold uppercase tracking-wider">m² Wonen</div>
+
+                {/* Preference Navigation */}
+                <a href="/preferences" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors group">
+                  <div className="p-1.5 bg-slate-100 text-slate-500 rounded group-hover:bg-white group-hover:text-blue-600 shadow-sm transition-all">
+                    <Settings className="w-4 h-4" />
                   </div>
-                </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-slate-700 group-hover:text-blue-700">Persoonlijke Voorkeuren</span>
+                    <span className="text-[10px] text-slate-400">Marcel & Petra profiel beheren</span>
+                  </div>
+                </a>
               </div>
-            </div>
+            )}
+
+            <button
+              onClick={handleDownloadPdf}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all font-bold text-xs shadow-lg shadow-slate-200"
+            >
+              <FileText className="w-4 h-4 text-blue-400" />
+              <span>PDF Rapport</span>
+            </button>
           </div>
         </header>
 
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+
+          {/* Property Header - Compact & Premium */}
+          <div className="mb-6 bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col md:flex-row items-center gap-6 animate-in slide-in-from-top-2">
+
+            {/* Thumbnail */}
+            <div className="relative shrink-0 w-full md:w-48 h-32 rounded-xl overflow-hidden shadow-inner ring-1 ring-slate-100 group">
+              <img
+                src={(report.chapters["0"] as any)?.property_core?.media_urls?.[0] || "https://images.unsplash.com/photo-1600596542815-27b88e360290?q=80&w=2000&auto=format&fit=crop"}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                alt=""
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1600596542815-27b88e360290?q=80&w=2000&auto=format&fit=crop";
+                }}
+              />
+              <div className="absolute inset-0 bg-blue-900/0 group-hover:bg-blue-900/10 transition-colors" />
+            </div>
+
+            {/* Info & Stats */}
+            <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+
+              {/* Address & Status */}
+              <div className="md:col-span-1 flex flex-col justify-center">
+                <div className="inline-flex items-center gap-2 mb-2">
+                  <div className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[10px] font-bold uppercase tracking-wider border border-blue-100">
+                    Te Koop
+                  </div>
+                  <div className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider border border-emerald-100">
+                    Beschikbaar
+                  </div>
+                </div>
+                <h1 className="text-xl font-black text-slate-900 tracking-tight leading-snug truncate" title={report.address}>{report.address}</h1>
+                <div className="text-xs text-slate-500 font-medium mt-1 truncate">
+                  Funda Analyse Rapport • 100% AI Generated
+                </div>
+              </div>
+
+              {/* Key Stats Row */}
+              <div className="md:col-span-2 flex items-center justify-between md:justify-end gap-2 md:gap-8 bg-slate-50/50 rounded-xl p-3 border border-slate-100">
+
+                {/* Logic: Rescue Data from AI Summary if Backend failed */}
+                {(() => {
+                  const core = (report.chapters["0"] as any)?.property_core || {};
+                  const summary = (report.chapters["0"] as any)?.chapter_data?.summary || "";
+
+                  // 1. Price
+                  let price = core.asking_price_eur;
+                  if (!price || price === "€ N/B" || price === "€ TBD") {
+                    const m = summary.match(/€\s?([\d.,]+)/);
+                    if (m) price = `€ ${m[1]}`;
+                    else price = "€ N/B";
+                  }
+
+                  // 2. Area
+                  let area = core.living_area_m2;
+                  if (!area || area === "0" || area === "N/B") {
+                    const m = summary.match(/(\d+)\s?m[²2]/);
+                    if (m) area = m[1];
+                    else area = "N/B";
+                  }
+
+                  // 3. Label
+                  let label = core.energy_label;
+                  if (!label || label === "?" || label === "N/B") {
+                    const m = summary.match(/Label:?\s?([A-G][\+]*)/i);
+                    if (m) label = m[1].toUpperCase();
+                    else label = "?";
+                  }
+
+                  return (
+                    <>
+                      {/* Price Display */}
+                      <DataVerifier field="asking_price_eur" consistency={report.consistency} debugMode={debugMode}>
+                        <div className="flex flex-col items-center md:items-start min-w-[80px]">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Vraagprijs</span>
+                          <div className="text-lg font-black text-slate-900 tracking-tight">{price}</div>
+                        </div>
+                      </DataVerifier>
+
+                      <div className="w-px h-8 bg-slate-200" />
+
+                      {/* Area Display */}
+                      <DataVerifier field="living_area_m2" consistency={report.consistency} debugMode={debugMode}>
+                        <div className="flex flex-col items-center md:items-start min-w-[80px]">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Woonopp.</span>
+                          <div className="flex items-center gap-1.5">
+                            <Home className="w-4 h-4 text-blue-500" />
+                            <span className="text-lg font-black text-slate-900 tracking-tight">{area}</span>
+                          </div>
+                        </div>
+                      </DataVerifier>
+
+                      <div className="w-px h-8 bg-slate-200" />
+
+                      {/* Label Display */}
+                      <DataVerifier field="energy_label" consistency={report.consistency} debugMode={debugMode}>
+                        <div className="flex flex-col items-center md:items-start min-w-[60px]">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Label</span>
+                          <div className="flex items-center gap-1.5">
+                            <Target className="w-4 h-4 text-emerald-500" />
+                            <span className="text-lg font-black text-slate-900 tracking-tight">{label}</span>
+                          </div>
+                        </div>
+                      </DataVerifier>
+                    </>
+                  );
+                })()}
+
+              </div>
+
+            </div>
+          </div>
+
           {content ? (
             <BentoGrid>
 
@@ -286,41 +379,67 @@ function App() {
                 </BentoCard>
               )}
 
-              {/* CHAPTER 10: Financial Waterfall */}
+              {/* CHAPTER 10: Financial Waterfall (Recharts) */}
               {activeChapterId === "10" && (
-                <BentoCard className="col-span-1 md:col-span-3 lg:col-span-3 row-span-1" title="Investerings Waterfall" icon={<BarChart3 className="w-5 h-5 text-blue-600" />}>
-                  <div className="flex items-end gap-2 h-40 pt-8">
-                    <div className="flex-[3] bg-blue-600 h-3/4 rounded-t-lg relative group">
-                      <span className="absolute -top-6 left-0 text-[10px] font-bold text-slate-400 uppercase">Aankoop</span>
-                    </div>
-                    <div className="flex-1 bg-rose-500 h-1/6 mb-[45%] rounded-lg relative">
-                      <span className="absolute -top-6 left-0 text-[10px] font-bold text-rose-500 uppercase">K.K.</span>
-                    </div>
-                    <div className="flex-1 bg-amber-500 h-1/5 mb-[55%] rounded-lg relative">
-                      <span className="absolute -top-6 left-0 text-[10px] font-bold text-amber-500 uppercase">Reno</span>
-                    </div>
-                    <div className="flex-[3] bg-slate-900 h-full rounded-t-lg border-2 border-white/10 relative">
-                      <span className="absolute -top-6 left-0 text-[10px] font-bold text-slate-900 uppercase">Totaal</span>
-                    </div>
+                <BentoCard className="col-span-1 md:col-span-3 lg:col-span-3 min-h-[250px]" title="Investerings Overzicht" icon={<BarChart3 className="w-5 h-5 text-blue-600" />}>
+                  <div className="h-56 w-full mt-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={[
+                          { name: 'Aankoop', value: parseInt((report.chapters["0"] as any)?.property_core?.asking_price_eur?.replace(/\D/g, '') || "400000"), fill: '#2563eb' },
+                          { name: 'K.K.', value: parseInt((report.chapters["0"] as any)?.property_core?.asking_price_eur?.replace(/\D/g, '') || "400000") * 0.02, fill: '#f43f5e' },
+                          { name: 'Verbouwing', value: 45000, fill: '#f59e0b' },
+                          { name: 'Totaal', value: parseInt((report.chapters["0"] as any)?.property_core?.asking_price_eur?.replace(/\D/g, '') || "400000") * 1.02 + 45000, fill: '#0f172a' },
+                        ]}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: 600 }} stroke="#94a3b8" />
+                        <YAxis hide />
+                        <Tooltip
+                          cursor={{ fill: 'transparent' }}
+                          contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                        />
+                        <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                          {[{ name: 'Aankoop', color: '#2563eb' }, { name: 'K.K.', color: '#f43f5e' }, { name: 'Verbouwing', color: '#f59e0b' }, { name: 'Totaal', color: '#0f172a' }].map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
                 </BentoCard>
               )}
 
-              {/* CHAPTER 12: Risk Heatmap */}
+              {/* CHAPTER 12: Risk Matrix (Recharts Scatter) */}
               {(activeChapterId === "12" || activeChapterId === "9") && (
                 <BentoCard className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1" variant="alert" title="Risico Matrix" icon={<ShieldAlert className="w-5 h-5 text-rose-600" />}>
-                  <div className="grid grid-cols-3 gap-1 h-32 mt-2">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
-                      <div key={i} className={`rounded-md border flex items-center justify-center text-[10px] font-bold
-                          ${i === 6 ? 'bg-rose-500 text-white border-rose-600 animate-pulse' : 'bg-white border-slate-100 text-slate-300'}
-                        `}>
-                        {i === 6 ? 'DASH' : ''}
+                  <div className="h-48 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ScatterChart
+                        margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                      >
+                        <XAxis type="number" dataKey="x" name="Impact" unit="" domain={[0, 4]} hide />
+                        <YAxis type="number" dataKey="y" name="Kans" unit="" domain={[0, 4]} hide />
+                        <ZAxis type="number" dataKey="z" range={[100, 400]} />
+                        <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                        <Scatter name="Risicos" data={[
+                          { x: 1, y: 1, z: 100, label: 'Laag', fill: '#22c55e' },
+                          { x: 3, y: 3, z: 300, label: 'Kritiek', fill: '#f43f5e' },
+                          { x: 2, y: 3, z: 200, label: 'Let op', fill: '#f59e0b' },
+                        ]} fill="#8884d8">
+                          {
+                            [{ fill: '#22c55e' }, { fill: '#f43f5e' }, { fill: '#f59e0b' }].map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))
+                          }
+                        </Scatter>
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10">
+                      <div className="w-full h-full grid grid-cols-3 grid-rows-3 gap-1">
+                        {[...Array(9)].map((_, i) => <div key={i} className="border border-slate-300 rounded" />)}
                       </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 flex justify-between text-[8px] font-black text-slate-400 uppercase tracking-widest">
-                    <span>Kans →</span>
-                    <span>← Impact</span>
+                    </div>
                   </div>
                 </BentoCard>
               )}

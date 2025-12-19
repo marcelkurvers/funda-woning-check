@@ -9,6 +9,7 @@ services:
       - OLLAMA_BASE_URL=http://ollama:11434
     volumes:
       - appdata:/data
+      - ./frontend/dist:/app/frontend/dist
   ollama:
     image: ollama/ollama:latest
     container_name: ollama

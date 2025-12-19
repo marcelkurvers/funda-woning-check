@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from scraper import Scraper
 from parser import Parser
+from consistency import ConsistencyChecker
 from chapters.registry import get_chapter_class
 from intelligence import IntelligenceEngine
 try:
@@ -207,8 +208,16 @@ def root():
 
 @app.get("/preferences", response_class=HTMLResponse)
 def preferences_page():
-    with open(os.path.join(static_dir, "preferences.html"), "r", encoding="utf-8") as f:
-        return f.read()
+    # Priority 1: Check if it's in the main static dir (e.g. built by frontend)
+    path = os.path.join(static_dir, "preferences.html")
+    if not os.path.exists(path):
+         # Priority 2: Check backend/static specific override
+         path = os.path.join(curr_dir, "static", "preferences.html")
+    
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+    raise HTTPException(404, "Preferences page not found")
 
 @app.get("/health")
 def health_check():
@@ -582,12 +591,22 @@ def get_report(run_id: str):
     
     overview = chapter_overview(chapters, [], kpis, unknowns)
     
+    # Run Consistency Check
+    consistency_report = []
+    if row["funda_html"]:
+        try:
+             checker = ConsistencyChecker()
+             consistency_report = checker.check(row["funda_html"], core)
+        except Exception as e:
+             logger.error(f"Consistency check failed: {e}")
+
     return {
         "run_id": run_id,
         "property_core": core,
         "chapters": chapters,
         "kpis": kpis,
-        "overview": overview
+        "overview": overview,
+        "consistency": consistency_report
     }
 
 @app.post("/runs/{run_id}/paste")
@@ -599,6 +618,8 @@ def paste_content(run_id: str, inp: PasteIn):
     if inp.funda_html:
         try:
              core.update(Parser().parse_html(inp.funda_html))
+             # Update the stored HTML so consistency check can run later
+             update_run(run_id, funda_html=inp.funda_html)
         except: pass
     
     # NEW: Store media_urls and extra_facts
@@ -609,6 +630,37 @@ def paste_content(run_id: str, inp: PasteIn):
     
     # Always regen after paste
     new_chapters = build_chapters(core)
+    
+    # INTELLIGENT BACKFILL: If core data is missing key stats (Price, M2, Label), 
+    # try to extract them from the AI-generated Chapter 0 summary text!
+    # The AI often correctly reads the text even if regex fails.
+    try:
+        if "0" in new_chapters and "chapter_data" in new_chapters["0"]:
+            summary_text = new_chapters["0"]["chapter_data"].get("summary", "")
+            
+            # Extract Price (e.g. €1.400.000)
+            if not core.get("asking_price_eur"):
+                price_match = re.search(r'€\s?([\d.,]+)', summary_text)
+                if price_match:
+                    core["asking_price_eur"] = f"€ {price_match.group(1)}"
+            
+            # Extract Area (e.g. 453 m2)
+            if not core.get("living_area_m2") or core.get("living_area_m2") == "0":
+                area_match = re.search(r'(\d+)\s?m[²2]', summary_text)
+                if area_match:
+                    core["living_area_m2"] = area_match.group(1)
+            
+            # Extract Label (e.g. Energielabel: B)
+            if not core.get("energy_label"):
+                label_match = re.search(r'Label:?\s?([A-G][\+]*)\b', summary_text, re.IGNORECASE)
+                if label_match:
+                    core["energy_label"] = label_match.group(1).upper()
+                    
+            # Re-update JSON with backfilled data
+            update_run(run_id, property_core_json=json.dumps(core))
+    except Exception as e:
+        logger.error(f"Backfill failed: {e}")
+
     new_kpis = build_kpis(core)
     unknowns = build_unknowns(core)
     
@@ -617,13 +669,23 @@ def paste_content(run_id: str, inp: PasteIn):
     # Return structure matching get_report() because frontend expects it immediately
     overview = chapter_overview(new_chapters, [], new_kpis, unknowns)
     
+    # Run Consistency Check immediately
+    consistency_report = []
+    if inp.funda_html:
+         try:
+             checker = ConsistencyChecker()
+             consistency_report = checker.check(inp.funda_html, core)
+         except Exception as e:
+             logger.error(f"Consistency check failed: {e}")
+
     return {
         "ok": True,
         "run_id": run_id,
         "property_core": core,
         "chapters": new_chapters,
         "kpis": new_kpis,
-        "overview": overview
+        "overview": overview,
+        "consistency": consistency_report
     }
 
 # --- PDF Generation (Advanced) ---

@@ -19,8 +19,17 @@ export type SidebarItem =
     | { type: 'advisor_card'; title: string; content: string; icon?: string }
     | { type: 'action_list'; title: string; items: string[] };
 
+export interface ConsistencyItem {
+    field: string;
+    status: 'ok' | 'mismatch' | 'missing_source';
+    source?: string;
+    parsed?: string;
+    message?: string;
+}
+
 export interface ReportData {
     runId: string;
     address: string;
     chapters: Record<string, ChapterData>;
+    consistency?: ConsistencyItem[];
 }
