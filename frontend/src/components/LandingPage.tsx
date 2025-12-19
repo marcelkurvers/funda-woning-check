@@ -13,6 +13,47 @@ export function LandingPage({ onStartAnalysis, isLoading, error }: LandingPagePr
     const [mediaUrls, setMediaUrls] = useState('');
     const [extraFacts, setExtraFacts] = useState('');
     const [showAdvanced, setShowAdvanced] = useState(false);
+    const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+
+    const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+        const items = e.clipboardData.items;
+
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                const blob = items[i].getAsFile();
+                if (!blob) continue;
+
+                // Prevent default paste behavior for images
+                e.preventDefault();
+
+                try {
+                    // Upload to backend
+                    const formData = new FormData();
+                    formData.append('file', blob, `paste-${Date.now()}.png`);
+
+                    const response = await fetch('/api/upload/image', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Upload failed');
+                    }
+
+                    const { url } = await response.json();
+
+                    // Add to media URLs
+                    setMediaUrls(prev => prev ? `${prev}\n${url}` : url);
+                    setUploadedImages(prev => [...prev, url]);
+                    setUploadError(null);
+
+                } catch (err: any) {
+                    setUploadError(`Failed to upload image: ${err.message}`);
+                }
+            }
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -97,7 +138,8 @@ export function LandingPage({ onStartAnalysis, isLoading, error }: LandingPagePr
                                     <textarea
                                         value={content}
                                         onChange={(e) => setContent(e.target.value)}
-                                        placeholder="Ga naar Funda -> Rechtermuisknop 'Bron weergeven' -> Selecteer alles (Cmd+A) -> Kopiëren -> Hier plakken..."
+                                        onPaste={handlePaste}
+                                        placeholder="Ga naar Funda -> Rechtermuisknop 'Bron weergeven' -> Selecteer alles (Cmd+A) -> Kopiëren -> Hier plakken. Je kunt ook afbeeldingen plakken (Cmd+V)..."
                                         className="w-full h-48 bg-slate-50 border-2 border-slate-200 hover:border-blue-200 focus:border-blue-500 rounded-2xl p-5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all resize-none text-xs font-mono leading-relaxed shadow-inner"
                                     />
                                     <div className="absolute bottom-4 right-4 pointer-events-none">
@@ -105,6 +147,42 @@ export function LandingPage({ onStartAnalysis, isLoading, error }: LandingPagePr
                                     </div>
                                 </div>
                             </div>
+
+                            {uploadedImages.length > 0 && (
+                                <div className="space-y-2">
+                                    <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
+                                        Geüploade Afbeeldingen ({uploadedImages.length})
+                                    </label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {uploadedImages.map((url, idx) => (
+                                            <div key={idx} className="relative group">
+                                                <img
+                                                    src={url}
+                                                    className="w-full h-24 object-cover rounded-lg border-2 border-slate-200"
+                                                    alt={`Upload ${idx + 1}`}
+                                                />
+                                                <button
+                                                    onClick={() => {
+                                                        setUploadedImages(prev => prev.filter((_, i) => i !== idx));
+                                                        setMediaUrls(prev => prev.split('\n').filter(u => u !== url).join('\n'));
+                                                    }}
+                                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold"
+                                                    type="button"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {uploadError && (
+                                <div className="flex items-center gap-3 text-amber-600 bg-amber-50 p-3 rounded-xl border border-amber-100 text-xs font-medium">
+                                    <AlertCircle className="w-4 h-4 shrink-0" />
+                                    {uploadError}
+                                </div>
+                            )}
 
                             {showAdvanced && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">

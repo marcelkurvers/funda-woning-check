@@ -13,10 +13,25 @@ class OllamaClient:
     """
     def __init__(self, base_url: Optional[str] = None):
         if base_url is None:
-            # Default to environment variable or standard local address
-            # In Docker on Mac, host.docker.internal is needed to reach host's localhost
-            base_url = os.environ.get("OLLAMA_BASE_URL", "http://host.docker.internal:11434")
-            
+            # Priority order:
+            # 1. Explicit environment variable
+            # 2. Detect Docker environment
+            # 3. Fallback to localhost
+
+            if os.environ.get("OLLAMA_BASE_URL"):
+                base_url = os.environ.get("OLLAMA_BASE_URL")
+                logger.info(f"Using OLLAMA_BASE_URL from environment: {base_url}")
+            elif os.path.exists("/.dockerenv"):
+                # Running inside Docker container
+                base_url = "http://ollama:11434"  # Docker Compose service name
+                logger.info("Detected Docker environment, using service name: ollama")
+            else:
+                # Local development
+                base_url = "http://localhost:11434"
+                logger.info("Local development mode, using localhost")
+        else:
+            logger.info(f"Using provided base_url: {base_url}")
+
         self.base_url = base_url.rstrip('/')
         self.generate_endpoint = f"{self.base_url}/api/generate"
         self.tags_endpoint = f"{self.base_url}/api/tags"
@@ -74,12 +89,12 @@ class OllamaClient:
 
         try:
             logger.info(f"Sending request to Ollama ({model})...")
-            response = requests.post(self.generate_endpoint, json=payload, timeout=120) # 2 min timeout for long gens
+            response = requests.post(self.generate_endpoint, json=payload, timeout=30) # 30s timeout (reduced from 120s)
             response.raise_for_status()
             data = response.json()
             return data.get("response", "")
         except requests.exceptions.Timeout:
-            logger.error("Ollama request timed out.")
+            logger.error("Ollama request timed out after 30 seconds.")
             return "Error: AI generation timed out."
         except requests.exceptions.RequestException as e:
             logger.error(f"Ollama request failed: {e}")

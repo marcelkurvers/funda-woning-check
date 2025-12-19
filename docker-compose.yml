@@ -4,21 +4,34 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
     volumes:
       - appdata:/data
+      - uploads:/app/data/uploads
       - ./frontend/dist:/app/frontend/dist
+    networks:
+      - funda-network
+    depends_on:
+      - ollama
+
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
     ports:
-      - "11434:11434"
+      - "11435:11434"
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
+    networks:
+      - funda-network
 
 volumes:
   appdata:
   ollama_data:
+  uploads:
+
+networks:
+  funda-network:
+    driver: bridge

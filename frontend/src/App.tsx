@@ -53,6 +53,7 @@ function App() {
     setLoading(true);
     setError(null);
     try {
+      // 1. Create run
       const runBody = type === 'paste'
         ? { funda_url: "manual-paste", funda_html: content, media_urls: mediaUrls, extra_facts: extraFacts }
         : { funda_url: content, funda_html: null };
@@ -66,25 +67,49 @@ function App() {
       if (!createRes.ok) throw new Error('Kon geen nieuwe analyse starten');
       const { run_id } = await createRes.json();
 
+      // 2. Start processing (non-blocking)
       const startRes = await fetch(`/runs/${run_id}/start`, { method: 'POST' });
       if (!startRes.ok) throw new Error('Kon de analyse niet uitvoeren');
 
-      const reportRes = await fetch(`/runs/${run_id}/report`);
-      if (!reportRes.ok) throw new Error('Kon het rapport niet ophalen');
-      const data = await reportRes.json();
+      // 3. Poll for completion
+      const pollStatus = async () => {
+        const statusRes = await fetch(`/runs/${run_id}/status`);
+        if (!statusRes.ok) throw new Error('Status ophalen mislukt');
 
-      setReport({
-        runId: run_id,
-        address: data.property_core?.address || "Onbekend Adres",
-        chapters: data.chapters || {}
-      });
+        const { status } = await statusRes.json();
 
-      setActiveChapterId("0");
+        // Update UI with progress (optional)
+        // const { progress } = statusData;
+        // console.log(`Progress: ${progress.percent}%`);
+
+        if (status === 'done') {
+          // Fetch final report
+          const reportRes = await fetch(`/runs/${run_id}/report`);
+          if (!reportRes.ok) throw new Error('Rapport ophalen mislukt');
+          const data = await reportRes.json();
+
+          setReport({
+            runId: run_id,
+            address: data.property_core?.address || "Onbekend Adres",
+            chapters: data.chapters || {}
+          });
+          setActiveChapterId("0");
+          setLoading(false);
+
+        } else if (status === 'failed') {
+          throw new Error('Analyse is mislukt');
+        } else {
+          // Still processing, poll again after 2 seconds
+          setTimeout(pollStatus, 2000);
+        }
+      };
+
+      // Start polling
+      pollStatus();
 
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Er ging iets mis bij het starten.');
-    } finally {
       setLoading(false);
     }
   };

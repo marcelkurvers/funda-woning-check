@@ -12,3 +12,9 @@ dist/
 .mcp_scan_snapshot.json
 .mcp_test_report.json
 backend/.docker_build_hash
+
+# Temporary and backup directories
+ai-woning-rapport-WERKEND-local/
+ai-woning-rapport-HANDOVER-PACKAGE/
+backup_untracked/
+data/uploads/

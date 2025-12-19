@@ -6,12 +6,16 @@ import os
 import sqlite3
 import time
 import uuid
+import re
 from typing import Any, Dict, List, Literal, Optional
+from concurrent.futures import ThreadPoolExecutor
+import threading
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from pathlib import Path
 
 from scraper import Scraper
 from parser import Parser
@@ -40,7 +44,15 @@ db_dir = os.path.dirname(DB_PATH)
 if db_dir and not os.path.exists(db_dir):
     try:
         os.makedirs(db_dir, exist_ok=True)
-    except: pass
+        logger.info(f"✓ Created database directory: {db_dir}")
+    except Exception as e:
+        logger.error(f"✗ Failed to create database directory {db_dir}: {e}")
+        raise RuntimeError(f"Cannot initialize database: {e}")
+
+# Create uploads directory for images
+UPLOAD_DIR = Path(os.path.join(BASE_DIR, "data", "uploads"))
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+logger.info(f"✓ Uploads directory: {UPLOAD_DIR}")
 
 StepState = Literal["queued","running","done","failed"]
 
@@ -164,30 +176,35 @@ app = FastAPI(title="AI Woning Rapport (Local) v2")
 # Ensure database tables exist immediately upon import (useful for tests and scripts)
 init_db()
 
-# Determine static directory (works for both Local and Docker)
-curr_dir = os.path.dirname(os.path.abspath(__file__))
-potential_paths = [
-    os.path.join(curr_dir, "frontend", "dist"),               # Docker: /app/frontend/dist
-    os.path.join(os.path.dirname(curr_dir), "frontend", "dist") # Local: .../backend/../frontend/dist
-]
+# Background task executor for async pipeline processing
+executor = ThreadPoolExecutor(max_workers=2)
 
-static_dir = potential_paths[0] # Default
-for p in potential_paths:
-    if os.path.exists(p):
-        static_dir = p
-        break
+# Determine static directory (Docker environment)
+static_dir = "/app/frontend/dist"
 
-app.mount("/static", StaticFiles(directory=static_dir, html=True), name="static")
+# Mount static files only if directory exists (not in test mode)
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir, html=True), name="static")
 
-# Serve additional assets if needed (e.g., images) from the same dist folder
-assets_dir = os.path.join(static_dir, "assets")
-if os.path.exists(assets_dir):
-    app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+    # Serve the main page
+    @app.get("/", response_class=HTMLResponse)
+    def root():
+        with open(os.path.join(static_dir, "index.html"), "r", encoding="utf-8") as f:
+            return f.read()
 
-@app.get("/", response_class=HTMLResponse)
-def root():
-    with open(os.path.join(static_dir, "index.html"), "r", encoding="utf-8") as f:
-        return f.read()
+    # Serve additional assets if needed (e.g., images) from the same dist folder
+    assets_dir = os.path.join(static_dir, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+else:
+    # Test mode - provide simple root endpoint
+    @app.get("/", response_class=HTMLResponse)
+    def root():
+        return "<html><body>Test Mode</body></html>"
+
+# Mount uploads directory for user-uploaded images
+if UPLOAD_DIR.exists():
+    app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 @app.on_event("startup")
 def _startup():
@@ -195,16 +212,18 @@ def _startup():
     # Initialize Ollama Client
     if OllamaClient:
         try:
-             client = OllamaClient()
-             IntelligenceEngine.set_client(client)
-             logger.info("Ollama Client initialized and attached to IntelligenceEngine.")
+            client = OllamaClient()
+            if client.check_health():
+                IntelligenceEngine.set_client(client)
+                logger.info(f"✓ Ollama Client initialized: {client.base_url}")
+            else:
+                logger.warning(f"✗ Ollama server not responding at {client.base_url}")
+                logger.warning("  App will use fallback content generation without AI enhancement")
         except Exception as e:
-             logger.warning(f"Failed to initialize Ollama Client: {e}")
+            logger.error(f"✗ Failed to initialize Ollama Client: {e}", exc_info=True)
+            logger.warning("  App will continue without AI - using fallback content")
 
-@app.get("/", response_class=HTMLResponse)
-def root():
-    with open(os.path.join(static_dir, "index.html"), "r", encoding="utf-8") as f:
-        return f.read()
+
 
 @app.get("/preferences", response_class=HTMLResponse)
 def preferences_page():
@@ -233,6 +252,46 @@ def health_check():
         status["db"] = "error"
         status["db_error"] = str(e)
     return status
+
+@app.post("/api/upload/image")
+async def upload_image(file: UploadFile = File(...)):
+    """
+    Upload an image file and return its accessible URL.
+    Supports clipboard paste images.
+    """
+    try:
+        # Validate content type
+        if not file.content_type or not file.content_type.startswith("image/"):
+            raise HTTPException(400, "File must be an image")
+
+        # Validate file size (max 10MB)
+        content = await file.read()
+        if len(content) > 10 * 1024 * 1024:
+            raise HTTPException(400, "Image too large (max 10MB)")
+
+        # Generate unique filename
+        ext = file.filename.split('.')[-1] if file.filename and '.' in file.filename else 'png'
+        filename = f"{uuid.uuid4()}.{ext}"
+        filepath = UPLOAD_DIR / filename
+
+        # Save file
+        with open(filepath, "wb") as f:
+            f.write(content)
+
+        logger.info(f"Uploaded image: {filename} ({len(content)} bytes)")
+
+        # Return URL (will be served as static file)
+        return {
+            "ok": True,
+            "url": f"/uploads/{filename}",
+            "size": len(content)
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Image upload failed: {e}", exc_info=True)
+        raise HTTPException(500, f"Upload failed: {str(e)}")
 
 # --- PREFERENCES ---
 def get_kv(key: str, default: Any = None) -> Any:
@@ -560,9 +619,34 @@ def create_run(inp: RunInput):
 
 @app.post("/runs/{run_id}/start")
 def start_run(run_id: str):
-    # Synchronous for local
-    simulate_pipeline(run_id)
-    return {"ok": True}
+    # Run pipeline in background thread to avoid blocking
+    executor.submit(simulate_pipeline, run_id)
+    return {"ok": True, "status": "processing"}
+
+@app.get("/runs/{run_id}/status")
+def get_run_status(run_id: str):
+    """Get the current status and progress of a run"""
+    row = get_run_row(run_id)
+    if not row:
+        raise HTTPException(404, "Run not found")
+
+    steps = json.loads(row["steps_json"])
+    status = row["status"]
+
+    # Calculate progress
+    total_steps = len(steps)
+    completed_steps = sum(1 for step_status in steps.values() if step_status == "done")
+
+    return {
+        "run_id": run_id,
+        "status": status,
+        "steps": steps,
+        "progress": {
+            "current": completed_steps,
+            "total": total_steps,
+            "percent": int((completed_steps / total_steps * 100)) if total_steps > 0 else 0
+        }
+    }
 
 @app.delete("/runs/{run_id}/url")
 def delete_run_url(run_id: str):
