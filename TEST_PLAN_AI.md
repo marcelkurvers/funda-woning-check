@@ -1,12 +1,12 @@
 # AI Test Plan (Phase 2)
 
-- Generated at: 2025-12-19T13:22:37.207957Z
+- Generated at: 2025-12-19T13:27:20.226564Z
 - Project root: `/Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local`
 
 ## Python Tests
 
 - Status: **detected**
-- Source files detected: **35**
+- Source files detected: **36**
 - Test files detected: **38**
 - Test roots:
   - `backend/tests`

@@ -63,7 +63,9 @@ class TestComprehensive(unittest.TestCase):
         Test that logic blocks like [IF Label matches A] working correctly.
         """
         # Label A
-        chapters_A = build_chapters(self.core_data)
+        data_A = self.core_data.copy()
+        data_A["energy_label"] = "A"
+        chapters_A = build_chapters(data_A)
         text_A = chapters_A["4"]["grid_layout"]["main"]["content"] # Checking Ch 4 (Energy)
         
         # Label G

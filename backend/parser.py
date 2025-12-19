@@ -567,11 +567,15 @@ class Parser:
         # Validate living area
         if data.get("living_area_m2"):
             try:
-                num = int(re.search(r'\d+', str(data["living_area_m2"])).group())
-                if num < self.MIN_LIVING_AREA:
-                    warnings.append(f"Suspicious living area: {num} m² (min expected: {self.MIN_LIVING_AREA} m²)")
-                elif num > self.MAX_LIVING_AREA:
-                    warnings.append(f"Suspicious living area: {num} m² (max expected: {self.MAX_LIVING_AREA} m²)")
+                # Extract digits including dots/commas
+                match = re.search(r'[\d\.,]+', str(data["living_area_m2"]))
+                if match:
+                    raw_num = match.group().replace('.', '').replace(',', '')
+                    num = int(raw_num)
+                    if num < self.MIN_LIVING_AREA:
+                        warnings.append(f"Suspicious living area: {num} m² (min expected: {self.MIN_LIVING_AREA} m²)")
+                    elif num > self.MAX_LIVING_AREA:
+                        warnings.append(f"Suspicious living area: {num} m² (max expected: {self.MAX_LIVING_AREA} m²)")
             except (AttributeError, ValueError):
                 pass
         

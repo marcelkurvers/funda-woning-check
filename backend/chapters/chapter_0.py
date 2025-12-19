@@ -29,10 +29,11 @@ class ExecutiveSummary(BaseChapter):
             price_digits = re.sub(r'[^\d]', '', price_raw)
             price_val = int(price_digits) if price_digits else 0
             
-            # Extract digits from size (handle 120 m2 -> 120)
-            # We take the first group of digits found
-            size_match = re.search(r'(\d+)', size_raw)
-            size_val = int(size_match.group(1)) if size_match else 1
+            # Extract digits from size (handle 1.016 m2 -> 1016)
+            # Remove decimals (after comma) and then strip non-digits
+            base_size = size_raw.split(',')[0] 
+            size_digits = re.sub(r'[^\d]', '', base_size)
+            size_val = int(size_digits) if size_digits else 1
             
             if size_val == 0: size_val = 1
             

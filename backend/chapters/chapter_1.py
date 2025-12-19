@@ -43,14 +43,14 @@ class GeneralFeatures(BaseChapter):
         
         # Additional calculations for new metrics
         price_val = IntelligenceEngine._parse_int(
-            ctx.get('asking_price_eur') or ctx.get('prijs', '0')
+            ctx.get('asking_price_eur') or ctx.get('prijs') or '0'
         )
         price_m2 = round(price_val / living_area) if living_area else 0
         market_avg_m2 = ctx.get('avg_m2_price', 4800)
-        label = ctx.get('energy_label') or ctx.get('label', '?')
+        label = ctx.get('energy_label') or ctx.get('label') or '?'
         reno_cost = 45000 if "F" in label or "G" in label else 25000 if "D" in label or "E" in label else 0
         construction_year = IntelligenceEngine._parse_int(
-            ctx.get('build_year') or ctx.get('bouwjaar', '0')
+            ctx.get('build_year') or ctx.get('bouwjaar') or '0'
         )
         construction_alert = "Aandacht nodig" if construction_year < 1990 else "Relatief jong"
         

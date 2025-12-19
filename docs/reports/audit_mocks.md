@@ -24,8 +24,8 @@ Found **25** potential issues.
 ### 📄 `chapters/chapter_0.py`
 | Line | Type | Content |
 | :--- | :--- | :--- |
-| 86 | **Leftover Print Debugging** | `print(f"DEBUG EXCEPTION YEAR: {e}")` |
-| 210 | **Hardcoded Item** | `# We preserve the detailed hardcoded structure as a "Strategic Dashboard"` |
+| 87 | **Leftover Print Debugging** | `print(f"DEBUG EXCEPTION YEAR: {e}")` |
+| 211 | **Hardcoded Item** | `# We preserve the detailed hardcoded structure as a "Strategic Dashboard"` |
 
 ### 📄 `chapters/chapter_4.py`
 | Line | Type | Content |
