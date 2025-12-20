@@ -33,10 +33,17 @@ WORKDIR /app
 # Install Python dependencies
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-# Copy backend source code
-COPY backend/ .
-# Copy the built frontend assets from the builder stage
-COPY --from=frontend-builder /src/dist ./frontend/dist
+
+# Copy everything from backend/ into /app/backend
+COPY backend/ ./backend/
+
+# Copy the built frontend assets into the appropriate location in the backend
+COPY --from=frontend-builder /src/dist ./backend/frontend/dist
+
+# Set PYTHONPATH to /app so that 'from backend.xxx import' works
+ENV PYTHONPATH=/app
+
+WORKDIR /app/backend
 
 EXPOSE 8000
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
