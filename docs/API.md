@@ -130,6 +130,8 @@ GET /runs/{run_id}/pdf
 
 ### 2.1 Get All Configuration
 
+Returns the current application configuration.
+
 ```http
 GET /api/config
 ```
@@ -141,38 +143,26 @@ GET /api/config
     "provider": "ollama",
     "model": "llama3",
     "timeout": 30,
-    "fallback_enabled": true
+    "fallback_enabled": true,
+    ...
   },
   "market": {
     "avg_price_m2": 5200,
-    "energy_label_scores": {
-      "A": 95, "B": 80, "C": 65, "D": 50, "E": 35, "F": 20, "G": 10
-    }
+    "energy_label_scores": {...}
   },
-  "parser": {
-    "max_bedrooms": 15,
-    "max_bathrooms": 10,
-    "max_total_rooms": 30,
-    "min_living_area": 10,
-    "max_living_area": 2000,
-    "min_build_year": 1500,
-    "max_build_year": 2030
-  },
-  "pipeline": {
-    "max_workers": 2,
-    "poll_interval_ms": 2000
-  },
-  "preferences": {
-    "marcel": {...},
-    "petra": {...}
-  }
+  "preferences": {...},
+  "validation": {...},
+  "pipeline": {...},
+  "database_url": "data/local_app.db"
 }
 ```
 
-### 2.2 Update Configuration
+### 2.2 Bulk Update Configuration
+
+Partially update one or more configuration sections. Changes are persisted to the database.
 
 ```http
-PUT /api/config
+POST /api/config
 Content-Type: application/json
 
 {
@@ -190,21 +180,42 @@ Content-Type: application/json
 ```json
 {
   "status": "updated",
-  "config": {...}
+  "sections": ["ai", "market"]
 }
 ```
 
-### 2.3 Reset to Defaults
+### 2.3 Get Configuration Section
 
 ```http
-POST /api/config/reset
+GET /api/config/{section}
+```
+
+**Example:** `GET /api/config/ai`
+
+### 2.4 Get Specific Configuration Value
+
+```http
+GET /api/config/{section}/{key}
+```
+
+**Example:** `GET /api/config/ai/provider` -> `{"provider": "ollama"}`
+
+### 2.5 Update Specific Configuration Value
+
+```http
+PUT /api/config/{section}/{key}
+Content-Type: application/json
+
+50
 ```
 
 **Response:**
 ```json
 {
-  "status": "reset",
-  "config": {...}
+  "status": "updated",
+  "section": "ai",
+  "key": "timeout",
+  "new_value": 50
 }
 ```
 

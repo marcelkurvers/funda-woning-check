@@ -1,13 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import App from '../App';
 
 // Mock fetch
-global.fetch = vi.fn();
+vi.stubGlobal('fetch', vi.fn());
 
 describe('App Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('renders landing page initially', () => {
@@ -16,7 +21,7 @@ describe('App Component', () => {
   });
 
   it('shows loading state during analysis', async () => {
-    const mockFetch = global.fetch as any;
+    const mockFetch = globalThis.fetch as any;
 
     // Mock create run
     mockFetch.mockResolvedValueOnce({
@@ -38,12 +43,18 @@ describe('App Component', () => {
 
     render(<App />);
 
-    // Verify component renders
-    expect(screen.getByText(/Vastgoed Intelligentie/i)).toBeInTheDocument();
+    // Trigger analysis
+    const textarea = screen.getByPlaceholderText(/Ga naar Funda/i);
+    fireEvent.change(textarea, { target: { value: '<html>Test HTML</html>' } });
+    const button = screen.getByText(/Start Analyse/i);
+    fireEvent.click(button);
+
+    // Check for loading state
+    expect(screen.getByText(/Rapport laden.../i)).toBeInTheDocument();
   });
 
   it('handles polling loop correctly', async () => {
-    const mockFetch = global.fetch as any;
+    const mockFetch = globalThis.fetch as any;
 
     // Mock create run
     mockFetch.mockResolvedValueOnce({
@@ -79,12 +90,21 @@ describe('App Component', () => {
 
     render(<App />);
 
+    // Trigger analysis
+    const textarea = screen.getByPlaceholderText(/Ga naar Funda/i);
+    fireEvent.change(textarea, { target: { value: '<html>Test HTML</html>' } });
+    const button = screen.getByText(/Start Analyse/i);
+    fireEvent.click(button);
+
+    // Fast-forward through timers for polling
+    await vi.runAllTimersAsync();
+
     // The polling mechanism should work
     expect(mockFetch).toHaveBeenCalled();
   });
 
   it('displays error message on failed analysis', async () => {
-    const mockFetch = global.fetch as any;
+    const mockFetch = globalThis.fetch as any;
 
     // Mock failed create run
     mockFetch.mockResolvedValueOnce({
@@ -93,6 +113,12 @@ describe('App Component', () => {
     });
 
     render(<App />);
+
+    // Trigger analysis
+    const textarea = screen.getByPlaceholderText(/Ga naar Funda/i);
+    fireEvent.change(textarea, { target: { value: '<html>Test HTML</html>' } });
+    const button = screen.getByText(/Start Analyse/i);
+    fireEvent.click(button);
 
     // Error handling is in place
     expect(mockFetch).toBeDefined();
@@ -105,7 +131,7 @@ describe('App Polling Logic', () => {
   });
 
   it('polls status endpoint every 2 seconds', async () => {
-    const mockFetch = global.fetch as any;
+    const mockFetch = globalThis.fetch as any;
 
     mockFetch.mockResolvedValue({
       ok: true,

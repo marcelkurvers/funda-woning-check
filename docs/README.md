@@ -14,6 +14,7 @@ Welcome to the official documentation for AI Woning Rapport. This index provides
 | [**ARCHITECTURE.md**](ARCHITECTURE.md) | System design, data flow, component architecture | 2025-12-20 |
 | [**API.md**](API.md) | Complete REST API specification | 2025-12-20 |
 | [**CONFIGURATION.md**](CONFIGURATION.md) | All configurable values and settings | 2025-12-20 |
+| [**PARSER.md**](PARSER.md) | Field mapping, validation, and extraction logic | 2025-12-20 |
 | [**AI_PROVIDERS.md**](AI_PROVIDERS.md) | Multi-provider AI integration guide | 2025-12-20 |
 | [**DESIGN.md**](DESIGN.md) | Color system, layout patterns, design tokens | 2025-12-20 |
 | [**MIGRATION.md**](MIGRATION.md) | Step-by-step migration guide | 2025-12-20 |
@@ -25,7 +26,6 @@ Welcome to the official documentation for AI Woning Rapport. This index provides
 | Document | Description |
 |----------|-------------|
 | [**PRODUCT_REQUIREMENTS_DOCUMENT.md**](PRODUCT_REQUIREMENTS_DOCUMENT.md) | Features, chapter logic, business goals |
-| [**../CLAUDE.md**](../CLAUDE.md) | Claude Code assistant instructions |
 | [**../GUIDELINES_MANDATORY.md**](../GUIDELINES_MANDATORY.md) | Enforced coding and design standards |
 
 ---

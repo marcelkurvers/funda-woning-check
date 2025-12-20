@@ -315,23 +315,12 @@ except ProviderAuthError:
 
 ### Unit Tests
 
-```python
-# backend/tests/unit/test_ai_providers.py
+Comprehensive tests for all providers are located in:
+`backend/tests/unit/test_providers.py`
 
-import pytest
-from ai.providers.ollama_provider import OllamaProvider
-
-@pytest.mark.requires_ollama
-async def test_ollama_generate():
-    provider = OllamaProvider()
-    if not provider.check_health():
-        pytest.skip("Ollama not available")
-
-    response = await provider.generate(
-        prompt="Say hello",
-        system="Be brief"
-    )
-    assert len(response) > 0
+Run with:
+```bash
+pytest backend/tests/unit/test_providers.py
 ```
 
 ### Mock Provider for Testing

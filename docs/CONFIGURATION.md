@@ -179,30 +179,36 @@ APP_DB=data/local_app.db
 When a setting is requested, the system checks sources in this order:
 
 1. **Environment variable** (highest priority)
-2. **SQLite `app_config` table** (runtime changes)
+2. **SQLite `kv_store` table** (runtime changes)
 3. **`.env` file** (development defaults)
 4. **`AppSettings` class default** (code fallback)
 
 ---
 
-## 11. Migrating from Hardcoded Values
+---
 
-To migrate existing hardcoded values:
+## 12. Configuration API
 
-1. Identify the value in the codebase
-2. Add to `AppSettings` class in `backend/config/settings.py`
-3. Replace hardcoded usage with `settings.value_name`
-4. Add to Settings UI if user-configurable
-5. Update this documentation
+The application provides a comprehensive API for managing configuration at runtime. Changes made via the API are persisted to the SQLite `kv_store` table and are reloaded automatically.
 
-**Example migration:**
+### Endpoints
 
-```python
-# Before (hardcoded)
-market_avg = 5200
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/config` | Retrieve the full current configuration |
+| `GET` | `/api/config/{section}` | Retrieve a specific section (e.g., `ai`, `market`) |
+| `GET` | `/api/config/{section}/{key}` | Retrieve a specific value |
+| `POST` | `/api/config` | Bulk update one or more sections |
+| `PUT` | `/api/config/{section}/{key}` | Update a specific value |
 
-# After (configurable)
-from config.settings import get_settings
-settings = get_settings()
-market_avg = settings.market_avg_price_m2
-```
+### Persistence Mechanism
+
+Configuration is persisted in the `kv_store` table using the following key format: `config.{section_name}`. The value is stored as a JSON-serialized dictionary of the section's settings.
+
+**Example Database Entry:**
+- **Key**: `config.ai`
+- **Value**: `{"provider": "openai", "model": "gpt-4o", "timeout": 30, ...}`
+
+### Refreshing Settings
+
+After any update via the API, the application calls `reset_settings()`, which clears the in-memory singleton. Upon the next access, the settings are reloaded according to the precedence rules.

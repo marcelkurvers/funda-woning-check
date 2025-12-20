@@ -141,7 +141,9 @@ class TestImageUpload:
         for filename, mime_type, expected_ext in extensions:
             img = Image.new('RGB', (10, 10), color='white')
             img_bytes = io.BytesIO()
-            img.save(img_bytes, format=expected_ext.upper().strip('.'))
+            fmt = expected_ext.upper().strip('.')
+            if fmt == 'JPG': fmt = 'JPEG'
+            img.save(img_bytes, format=fmt)
             img_bytes.seek(0)
 
             files = {'file': (filename, img_bytes, mime_type)}

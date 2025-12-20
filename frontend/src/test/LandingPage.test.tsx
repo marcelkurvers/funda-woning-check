@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { LandingPage } from '../components/LandingPage';
 
 // Mock fetch
-global.fetch = vi.fn();
+vi.stubGlobal('fetch', vi.fn());
 
 describe('LandingPage Component', () => {
   const mockOnStartAnalysis = vi.fn();
@@ -106,11 +106,11 @@ describe('LandingPage - Image Upload', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn();
+    vi.stubGlobal('fetch', vi.fn());
   });
 
   it('handles image paste from clipboard', async () => {
-    const mockFetch = global.fetch as any;
+    const mockFetch = globalThis.fetch as any;
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ url: '/uploads/test-image.png', size: 1024 })
@@ -136,11 +136,9 @@ describe('LandingPage - Image Upload', () => {
       }]
     };
 
-    const pasteEvent = new ClipboardEvent('paste', {
-      clipboardData: clipboardData as any
+    fireEvent.paste(textarea, {
+      clipboardData: clipboardData
     });
-
-    fireEvent(textarea, pasteEvent);
 
     // Wait for upload
     await waitFor(() => {
@@ -154,7 +152,7 @@ describe('LandingPage - Image Upload', () => {
   });
 
   it('displays uploaded image preview', async () => {
-    const mockFetch = global.fetch as any;
+    const mockFetch = globalThis.fetch as any;
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ url: '/uploads/test-image.png', size: 1024 })
@@ -180,11 +178,9 @@ describe('LandingPage - Image Upload', () => {
       }]
     };
 
-    const pasteEvent = new ClipboardEvent('paste', {
-      clipboardData: clipboardData as any
+    fireEvent.paste(textarea, {
+      clipboardData: clipboardData
     });
-
-    fireEvent(textarea, pasteEvent);
 
     // Wait for image to be processed and displayed
     await waitFor(() => {
@@ -193,7 +189,7 @@ describe('LandingPage - Image Upload', () => {
   });
 
   it('shows error message on upload failure', async () => {
-    const mockFetch = global.fetch as any;
+    const mockFetch = globalThis.fetch as any;
     mockFetch.mockRejectedValueOnce(new Error('Upload failed'));
 
     render(
@@ -216,11 +212,9 @@ describe('LandingPage - Image Upload', () => {
       }]
     };
 
-    const pasteEvent = new ClipboardEvent('paste', {
-      clipboardData: clipboardData as any
+    fireEvent.paste(textarea, {
+      clipboardData: clipboardData
     });
-
-    fireEvent(textarea, pasteEvent);
 
     // Wait for error to be displayed
     await waitFor(() => {
@@ -235,7 +229,7 @@ describe('LandingPage - Image Upload', () => {
   });
 
   it('includes uploaded image URLs in submission', async () => {
-    const mockFetch = global.fetch as any;
+    const mockFetch = globalThis.fetch as any;
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ url: '/uploads/test-image.png', size: 1024 })
@@ -271,7 +265,7 @@ describe('LandingPage - Advanced Options', () => {
     );
 
     // Find and click advanced options toggle
-    const advancedButton = screen.getByRole('button', { name: /Geavanceerd/i });
+    const advancedButton = screen.getByRole('button', { name: /Extra Opties/i });
     await user.click(advancedButton);
 
     // Advanced fields should be visible
@@ -292,7 +286,7 @@ describe('LandingPage - Advanced Options', () => {
     await user.type(textarea, '<html>Test property</html>');
 
     // Open advanced options
-    const advancedButton = screen.getByRole('button', { name: /Geavanceerd/i });
+    const advancedButton = screen.getByRole('button', { name: /Extra Opties/i });
     await user.click(advancedButton);
 
     // Add media URL

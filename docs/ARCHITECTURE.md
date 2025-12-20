@@ -48,7 +48,7 @@ AI Woning Rapport is a full-stack real estate analysis platform that transforms 
 │                                                                              │
 │  ┌─────────────────────────────────────────────────────────────────────────┐│
 │  │                      Configuration System                                ││
-│  │  AppSettings (Pydantic) ← .env + SQLite app_config table                ││
+│  │  AppSettings (Pydantic) ← .env + SQLite kv_store table                  ││
 │  └─────────────────────────────────────────────────────────────────────────┘│
 └──────────────────────────────────────────────────────────────────────────────┘
                                      │
@@ -253,9 +253,9 @@ class AIProvider(ABC):
 
 ### 5.1 Configuration Sources (Priority Order)
 
-1. **Environment Variables** (highest priority)
-2. **SQLite `app_config` table** (runtime changes via Settings UI)
-3. **`.env` file** (development defaults)
+1. Environment Variables (highest priority)
+2. SQLite kv_store table (runtime changes via Settings UI)
+3. .env file (development defaults)
 4. **`AppSettings` defaults** (hardcoded fallbacks)
 
 ### 5.2 Configuration Categories
@@ -290,13 +290,8 @@ CREATE TABLE runs (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Persistent Configuration
 CREATE TABLE kv_store (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL
-);
-
--- New
-CREATE TABLE app_config (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

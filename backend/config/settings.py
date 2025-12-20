@@ -7,8 +7,57 @@ hardcoded values with environment-variable-driven configuration.
 See docs/CONFIGURATION.md for complete documentation.
 """
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional, Dict
+from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
+from typing import Optional, Dict, Any, Type, Tuple
+import json
+import sqlite3
+import os
+
+class SQLiteSettingsSource(PydanticBaseSettingsSource):
+    """
+    A custom settings source that loads configuration from a SQLite kv_store table.
+    """
+    def get_field_value(self, field_name: str, field_class_name: str) -> Tuple[Any, str, bool]:
+        # This source is designed to return the whole nested dict for each section
+        return None, field_name, False
+
+    def __call__(self) -> Dict[str, Any]:
+        d: Dict[str, Any] = {}
+        
+        # Get database path from environment or default
+        # We can't use get_settings() here as we are building the settings
+        db_path = os.environ.get("APP_DB", "data/local_app.db")
+        
+        if not os.path.exists(db_path) and db_path != ":memory:":
+            return d
+
+        try:
+            conn = sqlite3.connect(db_path)
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            
+            # Check if kv_store table exists
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='kv_store'")
+            if not cur.fetchone():
+                conn.close()
+                return d
+            
+            # Load all keys starting with 'config.'
+            cur.execute("SELECT key, value FROM kv_store WHERE key LIKE 'config.%'")
+            rows = cur.fetchall()
+            for row in rows:
+                section_name = row['key'].replace("config.", "")
+                try:
+                    d[section_name] = json.loads(row['value'])
+                except json.JSONDecodeError:
+                    continue
+            
+            conn.close()
+        except Exception:
+            # Silently ignore DB errors during settings load (e.g. table not yet initialized)
+            pass
+            
+        return d
 
 
 class AISettings(BaseSettings):
@@ -170,7 +219,7 @@ class AppSettings(BaseSettings):
 
     Configuration precedence (highest to lowest):
     1. Environment variables
-    2. SQLite `app_config` table (runtime changes)
+    2. SQLite `kv_store` table (runtime changes)
     3. .env file (development defaults)
     4. Class defaults (code fallback)
     """
@@ -193,6 +242,23 @@ class AppSettings(BaseSettings):
         env_nested_delimiter="__",  # Allows AI__TIMEOUT env var syntax
         case_sensitive=False,
     )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: Type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> Tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            init_settings,
+            env_settings,
+            SQLiteSettingsSource(settings_cls),
+            dotenv_settings,
+            file_secret_settings,
+        )
 
 
 # Singleton instance for application-wide configuration access

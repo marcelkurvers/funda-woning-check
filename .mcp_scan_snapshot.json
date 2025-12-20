@@ -1,6 +1,6 @@
 {
-  "scanned_at": "2025-12-19T13:28:48.004499Z",
-  "root": "/Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local",
+  "scanned_at": "2025-12-20T21:26:13.920159Z",
+  "root": "/Users/marcelkurvers/Development/funda-app",
   "excluded_dirs": [
     ".cache",
     ".git",
@@ -24,9 +24,14 @@
   "languages": {
     "python": {
       "language": "python",
-      "source_files": 35,
-      "test_files": 38,
+      "source_files": 81,
+      "test_files": 80,
       "test_roots": [
+        "ai-woning-rapport-WERKEND-local/backend/tests",
+        "ai-woning-rapport-WERKEND-local/backend/tests/e2e",
+        "ai-woning-rapport-WERKEND-local/backend/tests/integration",
+        "ai-woning-rapport-WERKEND-local/backend/tests/quality",
+        "ai-woning-rapport-WERKEND-local/backend/tests/unit",
         "backend/tests",
         "backend/tests/e2e",
         "backend/tests/integration",
@@ -38,9 +43,11 @@
     },
     "js_ts": {
       "language": "javascript_typescript",
-      "source_files": 19,
-      "test_files": 0,
-      "test_roots": [],
+      "source_files": 39,
+      "test_files": 2,
+      "test_roots": [
+        "frontend/src/test"
+      ],
       "status": "detected",
       "note": null
     },

@@ -283,23 +283,33 @@ class Parser:
         # allow optional colon, allow spaces
         # Pattern: (Keyword)[:\s]+(Value)
         
-        # Improved Regex: Prefer a colon, otherwise strict. 
-        # Stop at newline.
-        # Anchor to start of line to avoid matching words in sentences (e.g. "met garage")
-        pattern = re.compile(f"(?:^|\\n)\\s*({keyword})[:\\s]+(.*?)(?=\\n|$)", re.IGNORECASE)
-        
-        match = pattern.search(text)
-        if match:
-             val = match.group(2).strip()
-             # Cleanup value (stop at first newline or unreasonable length)
+        # 1. Look for "Label: Value" or "Label \n Value" (Forward Search)
+        pattern_forward = re.compile(f"(?:^|\\n)\\s*({keyword})[:\\s]+(.+?)(?=\\n|$)", re.IGNORECASE)
+        match_f = pattern_forward.search(text)
+        if match_f:
+             val = match_f.group(2).strip()
+             if not val:
+                 # Look for the very next non-empty line
+                 next_lines = text[match_f.end():].splitlines()
+                 for line in next_lines:
+                     if line.strip():
+                         val = line.strip()
+                         break
+             
              if len(val) < 100 and self._validate_value(keyword, val):
                  return val
-                 
-        # Fallback: Look for "Value keyword" pattern (e.g. "124 m² wonen" or "400 m³ inhoud")
-        # specialized for areas/volumes
+
+        # 2. Look for "Value \n Label" (Backward Search - common in Funda lists)
+        # Regex: find the keyword, then look at the line above it.
+        pattern_backward = re.compile(f"(?:^|\\n)(.*?)\\n\\s*({keyword})\\s*(?:\\n|$)", re.IGNORECASE)
+        match_b = pattern_backward.search(text)
+        if match_b:
+            val = match_b.group(1).strip()
+            if len(val) < 100 and self._validate_value(keyword, val):
+                return val
+                
+        # 3. Fallback: Specialized searches for specific units
         if "m2" in keyword.lower() or "wonen" in keyword.lower() or "m3" in keyword.lower() or "inhoud" in keyword.lower():
-             # Look for digits followed by m², m2, m³ or m3
-             # Adjust regex based on keyword
              unit = "m[²2]"
              if "m3" in keyword.lower() or "inhoud" in keyword.lower():
                  unit = "m[³3]"

@@ -367,62 +367,6 @@ def get_ai_status():
 
 # --- CONFIGURATION MANAGEMENT ENDPOINTS ---
 
-@app.get("/api/config")
-async def get_config():
-    """
-    Get current application configuration
-
-    Returns all configurable settings including AI provider,
-    market parameters, user preferences, validation rules, etc.
-    """
-    settings = get_settings()
-    return {
-        "ai": settings.ai.model_dump(),
-        "market": settings.market.model_dump(),
-        "preferences": settings.preferences.model_dump(),
-        "validation": settings.validation.model_dump(),
-        "pipeline": settings.pipeline.model_dump(),
-        "database_url": settings.database_url
-    }
-
-@app.post("/api/config")
-async def update_config(config: ConfigUpdateRequest):
-    """
-    Update application configuration
-
-    Accepts partial updates to any configuration domain.
-    Changes are applied to the running instance but not persisted.
-    """
-    settings = get_settings()
-
-    # Update each section if provided
-    if config.ai:
-        for key, value in config.ai.items():
-            if hasattr(settings.ai, key):
-                setattr(settings.ai, key, value)
-
-    if config.market:
-        for key, value in config.market.items():
-            if hasattr(settings.market, key):
-                setattr(settings.market, key, value)
-
-    if config.preferences:
-        for key, value in config.preferences.items():
-            if hasattr(settings.preferences, key):
-                setattr(settings.preferences, key, value)
-
-    if config.validation:
-        for key, value in config.validation.items():
-            if hasattr(settings.validation, key):
-                setattr(settings.validation, key, value)
-
-    if config.pipeline:
-        for key, value in config.pipeline.items():
-            if hasattr(settings.pipeline, key):
-                setattr(settings.pipeline, key, value)
-
-    return {"status": "updated", "config": await get_config()}
-
 @app.get("/api/ai/providers")
 async def list_ai_providers():
     """
@@ -498,16 +442,16 @@ async def check_ai_health():
 
         # Check health
         healthy = await provider.check_health()
-        return {
-            "healthy": healthy,
-            "provider": settings.ai.provider,
-            "model": settings.ai.model or "default"
-        }
+        return {"healthy": healthy, "provider": settings.ai.provider, "model": settings.ai.model or "default"}
     except Exception as e:
         logger.error(f"AI health check failed: {e}", exc_info=True)
         return {"healthy": False, "error": str(e)}
 
 # --- CORE LOGIC ---
+
+# Include configuration router
+from backend.api import config as config_router
+app.include_router(config_router.router)
 
 def derive_property_core(funda_url: str) -> Dict[str, Any]:
     try:
@@ -688,15 +632,22 @@ def simulate_pipeline(run_id: str):
     steps = json.loads(row["steps_json"])
     update_run(run_id, status="running")
     
+    # Load existing core data (which may contain media_urls or extra_facts)
+    core = json.loads(row["property_core_json"] or "{}")
+    
     # 1. Scrape (skip if no URL provided)
     if funda_url:
         steps["scrape_funda"] = "running"
         update_run(run_id, steps_json=json.dumps(steps))
-        core = derive_property_core(funda_url)
+        core.update(derive_property_core(funda_url))
     else:
         # No URL – assume manual paste will follow
         steps["scrape_funda"] = "skipped"
-        core = {"address": "Onbekend (handmatig te vullen)", "funda_url": None, "scrape_error": "No URL provided; manual paste required."}
+        core.update({
+            "address": core.get("address") or "Adres onbekend",
+            "funda_url": None,
+            "scrape_error": "No URL provided; manual paste required."
+        })
         update_run(run_id, steps_json=json.dumps(steps))
     
     # Merge pasted HTML if present

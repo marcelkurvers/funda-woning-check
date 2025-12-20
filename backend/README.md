@@ -58,5 +58,6 @@ pytest --cov=. tests/
 **Note**: Ensure `backend/tests/integration/test_docker_sync.py` passes to verify that the environment matches the production container.
 
 ## 📄 Documentation Links
-- [Parser Specifications](PARSER_FIELDS.md)
-- [Improvement Summary](IMPROVEMENT_DOCUMENT.md)
+- [Parser Specifications](../docs/PARSER.md)
+- [API Specification](../docs/API.md)
+- [System Architecture](../docs/ARCHITECTURE.md)

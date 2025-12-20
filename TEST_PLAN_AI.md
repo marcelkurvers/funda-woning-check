@@ -1,14 +1,19 @@
 # AI Test Plan (Phase 2)
 
-- Generated at: 2025-12-19T13:28:48.004910Z
-- Project root: `/Users/marcelkurvers/Development/funda-app/ai-woning-rapport-WERKEND-local`
+- Generated at: 2025-12-20T21:26:13.920385Z
+- Project root: `/Users/marcelkurvers/Development/funda-app`
 
 ## Python Tests
 
 - Status: **detected**
-- Source files detected: **35**
-- Test files detected: **38**
+- Source files detected: **81**
+- Test files detected: **80**
 - Test roots:
+  - `ai-woning-rapport-WERKEND-local/backend/tests`
+  - `ai-woning-rapport-WERKEND-local/backend/tests/e2e`
+  - `ai-woning-rapport-WERKEND-local/backend/tests/integration`
+  - `ai-woning-rapport-WERKEND-local/backend/tests/quality`
+  - `ai-woning-rapport-WERKEND-local/backend/tests/unit`
   - `backend/tests`
   - `backend/tests/e2e`
   - `backend/tests/integration`
@@ -23,13 +28,15 @@
 ## Javascript_typescript Tests
 
 - Status: **detected**
-- Source files detected: **19**
-- Test files detected: **0**
-- Test roots: *(none detected)*
+- Source files detected: **39**
+- Test files detected: **2**
+- Test roots:
+  - `frontend/src/test`
 
 ### Suggested AI Test Tasks
-- Create an initial minimal test suite.
-- Start with smoke tests for critical entrypoints.
+- Review existing tests and identify coverage gaps.
+- Generate tests for new or recently changed modules.
+- Prioritize critical paths and pure functions first.
 
 ## Go Tests
 

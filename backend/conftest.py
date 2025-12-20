@@ -58,3 +58,6 @@ def sample_property_core():
         "media_urls": [],
         "extra_facts": ""
     }
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"

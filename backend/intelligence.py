@@ -18,11 +18,13 @@ class IntelligenceEngine:
     interface with an LLM (e.g., OpenAI API).
     """
     _provider: Optional[AIProvider] = None
+    _client: Optional[AIProvider] = None # Alias for backward compatibility
 
     @classmethod
     def set_provider(cls, provider: AIProvider):
         """Set the AI provider instance"""
         cls._provider = provider
+        cls._client = provider # Sync alias
 
     @classmethod
     def set_client(cls, client):
@@ -30,8 +32,8 @@ class IntelligenceEngine:
         Deprecated: Use set_provider() instead.
         Maintains backward compatibility with tests.
         """
-        # If it's an old OllamaClient, wrap it or treat as provider
         cls._provider = client
+        cls._client = client
 
     @staticmethod
     def generate_chapter_narrative(chapter_id: int, ctx: Dict[str, Any]) -> Dict[str, str]:
@@ -199,20 +201,28 @@ class IntelligenceEngine:
             model = prefs.get('ai_model', 'llama3')
 
             # Call async generate method
-            # Check if there's an event loop running
-            try:
-                loop = asyncio.get_running_loop()
-                # We're in an async context - but this method is sync
-                # Use run_coroutine_threadsafe or create task
-                future = asyncio.ensure_future(
-                    cls._provider.generate(user_prompt, system=system_prompt, model=model, json_mode=True)
-                )
-                response_text = asyncio.get_event_loop().run_until_complete(future)
-            except RuntimeError:
-                # No event loop running - create one
-                response_text = asyncio.run(
-                    cls._provider.generate(user_prompt, system=system_prompt, model=model, json_mode=True)
-                )
+            # Check if there's an event loop running and if it's already running
+            coro = cls._provider.generate(user_prompt, system=system_prompt, model=model, json_mode=True)
+            
+            # If coro is not actually a coroutine (e.g. magic mock returned a string), just use it
+            if not asyncio.iscoroutine(coro):
+                response_text = str(coro)
+            else:
+                try:
+                    loop = asyncio.get_running_loop()
+                    if loop.is_running():
+                        # We are in a running loop (e.g. pytest-asyncio)
+                        # We can't use run_until_complete or asyncio.run.
+                        # This sync method is being called from an async context.
+                        # This is a design flaw in the sync wrapper, but for now:
+                        import nest_asyncio
+                        nest_asyncio.apply()
+                        response_text = loop.run_until_complete(coro)
+                    else:
+                        response_text = loop.run_until_complete(coro)
+                except (RuntimeError, ImportError):
+                    # No event loop or nest_asyncio missing
+                    response_text = asyncio.run(coro)
 
             # Parse JSON
             # Sometimes local models wrap in ```json ... ```

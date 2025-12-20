@@ -4,22 +4,22 @@ A powerful, data-driven real estate analysis tool that transforms Funda listings
 
 ## 🚀 Overview
 
-The **AI Woning Rapport** is designed to provide potential homebuyers (specifically tailored for "Marcel & Petra") with deep, context-aware insights into real estate listings. It goes beyond standard data points, using an intelligent engine to analyze technical state, energy efficiency, personal preferences, and investment potential.
+The **AI Woning Rapport** is designed to provide potential homebuyers with deep, context-aware insights into real estate listings. It goes beyond standard data points, using an intelligent engine to analyze technical state, energy efficiency, personal preferences, and investment potential.
 
 ### Key Features
 
-- **Multi-Source Ingestion**: Parse data via Funda URLs or direct HTML/Text paste (bypassing scrapers).
-- **Intelligence Engine**: 13 unique analysis chapters including Technical State, Energy, Maintenance, and Personal Match.
-- **Bento Grid Dashboard**: A modern, responsive React interface optimized for 4K displays.
-- **Personalized Logic**: Weighted matching system based on specific user personas (Marcel & Petra).
-- **High-Quality PDF**: Professional magazine-style PDF generation via WeasyPrint.
-- **Live Processing**: Real-time analysis status updates via SSE (Server-Sent Events).
+- **Multi-Source Ingestion**: Parse data via Funda URLs or direct HTML/Text paste. Robust handling of image pasting with automated upload.
+- **AI Provider Factory**: Modular support for **Ollama** (Local), **OpenAI**, **Anthropic Claude**, and **Google Gemini**.
+- **Advanced Parser**: High-accuracy extraction with multi-line support, logical validation, and cross-consistency checks.
+- **Dynamic Bento Dashboard**: A premium, responsive interface optimized for any resolution, featuring interactive charts and real-time status tracking.
+- **Intelligent Pipeline**: Asynchronous processing with data persistence and automated PDF generation.
+- **Runtime Configuration**: Granular control over AI models, market data, and user preferences via a dedicated Settings API.
 
 ## 🛠 Tech Stack
 
-- **Frontend**: React 18, Vite, TypeScript, Tailwind CSS v3.
-- **Backend**: Python 3.11+, FastAPI, SQLite.
-- **Analysis**: Custom `IntelligenceEngine` with rule-based heuristics and AI-simulated narratives.
+- **Frontend**: React 18, Vite, TypeScript, Tailwind CSS v3, Recharts.
+- **Backend**: Python 3.11+, FastAPI, Pydantic v2, SQLite.
+- **AI Engine**: LangChain-style provider abstraction with robust fallback logic.
 - **PDF Generation**: WeasyPrint with custom CSS styling.
 - **Containerization**: Docker & Docker Compose.
 
@@ -27,54 +27,52 @@ The **AI Woning Rapport** is designed to provide potential homebuyers (specifica
 
 ### Prerequisites
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Recommended)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - Node.js 18+ (for local frontend development)
 - Python 3.11+ (for local backend development)
 
 ### Quick Start (Docker)
-
-The easiest way to run the entire stack is using Docker:
 
 ```bash
 docker compose up --build
 ```
 
 Access the application at:
-- **Frontend**: [http://localhost:8000](http://localhost:8000) (Served by Backend)
-- **Direct Frontend Dev**: [http://localhost:5173](http://localhost:5173) (if running Vite separately)
+- **Application**: [http://localhost:8000](http://localhost:8000)
 - **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ## 📁 Project Structure
 
 ```text
 .
-├── backend/            # FastAPI Backend & Intelligence Engine
-├── frontend/           # React TypeScript Frontend
-├── docs/               # Technical documentation & PRD
-├── data/               # Persistent SQLite database
-├── test-data/          # Example HTML files for parsing tests
+├── backend/            # FastAPI Backend, Intelligence Engine & AI Providers
+├── frontend/           # React TypeScript Frontend & Bento Components
+├── docs/               # Technical documentation & API Specs
+├── data/               # Persistent SQLite database & Uploads
+├── test-data/          # Example HTML fixtures for parser validation
 └── docker-compose.yml  # Orchestration for the full stack
 ```
 
 ## 📖 Documentation
 
-- [**PRD**](docs/PRODUCT_REQUIREMENTS_DOCUMENT.md): Full product requirements and chapter specifications.
+- [**API Specification**](docs/API.md): Full documentation of all REST endpoints.
+- [**Architecture**](docs/ARCHITECTURE.md): Detailed system design and data flow diagrams.
+- [**Configuration**](docs/CONFIGURATION.md): Environment variables and runtime settings guide.
+- [**Parser Guide**](docs/PARSER.md): Field mapping, validation rules, and extraction logic.
+- [**AI Providers**](docs/AI_PROVIDERS.md): Setup guide for different AI backends.
 - [**Mandatory Guidelines**](GUIDELINES_MANDATORY.md): Enforced development and design standards.
-- [**Backend Docs**](backend/README.md): API details and Intelligence Engine logic.
-- [**Frontend Docs**](frontend/README.md): UI component library and Bento layout guide.
-- [**Color System**](docs/design/COLOR_CODING_SYSTEM.md): Semantic color coding and visualization rules.
 
 ## 🧪 Testing
 
-We follow a **Zero Regression Policy**. All changes must pass the full test suite.
+We follow a **Zero Regression Policy**.
 
 ```bash
 # Run all backend tests
-cd backend
-pytest tests/
-```
+cd backend && pytest
 
-For more details on testing, see [docs/technical/TEST_COVERAGE_SUMMARY.md](docs/technical/TEST_COVERAGE_SUMMARY.md).
+# Run frontend tests
+cd frontend && npm test
+```
 
 ## ⚖️ License
 
