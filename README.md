@@ -60,6 +60,7 @@ Access the application at:
 - [**Configuration**](docs/CONFIGURATION.md): Environment variables and runtime settings guide.
 - [**Parser Guide**](docs/PARSER.md): Field mapping, validation rules, and extraction logic.
 - [**AI Providers**](docs/AI_PROVIDERS.md): Setup guide for different AI backends.
+- [**Roadmap**](docs/ROADMAP.md): Future AI innovations and feature plan.
 - [**Mandatory Guidelines**](GUIDELINES_MANDATORY.md): Enforced development and design standards.
 
 ## 🧪 Testing
