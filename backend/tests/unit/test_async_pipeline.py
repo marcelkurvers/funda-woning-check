@@ -156,8 +156,10 @@ class TestThreadExecutor:
 
     def test_executor_exists(self):
         """Test that thread executor is initialized"""
+        from config.settings import get_settings
+        settings = get_settings()
         assert executor is not None
-        assert executor._max_workers == 2
+        assert executor._max_workers == settings.pipeline.max_workers
 
     def test_simulate_pipeline_callable(self):
         """Test that simulate_pipeline function is callable"""

@@ -22,6 +22,7 @@ from parser import Parser
 from consistency import ConsistencyChecker
 from chapters.registry import get_chapter_class
 from intelligence import IntelligenceEngine
+from config.settings import get_settings, reset_settings, AppSettings
 try:
     from ollama_client import OllamaClient
 except ImportError:
@@ -32,6 +33,9 @@ import logging
 # Configure Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Get settings singleton
+settings = get_settings()
 
 # --- CONFIGURATION ---
 # --- CONFIGURATION ---
@@ -171,13 +175,21 @@ class PasteIn(BaseModel):
     extra_facts: Optional[str] = None
     media_urls: Optional[List[str]] = []
 
+class ConfigUpdateRequest(BaseModel):
+    """Request model for updating configuration"""
+    ai: Optional[dict] = None
+    market: Optional[dict] = None
+    preferences: Optional[dict] = None
+    validation: Optional[dict] = None
+    pipeline: Optional[dict] = None
+
 # --- FASTAPI APP ---
 app = FastAPI(title="AI Woning Rapport (Local) v2")
 # Ensure database tables exist immediately upon import (useful for tests and scripts)
 init_db()
 
 # Background task executor for async pipeline processing
-executor = ThreadPoolExecutor(max_workers=2)
+executor = ThreadPoolExecutor(max_workers=settings.pipeline.max_workers)
 
 # Determine static directory (Docker environment)
 static_dir = "/app/frontend/dist"
@@ -264,10 +276,11 @@ async def upload_image(file: UploadFile = File(...)):
         if not file.content_type or not file.content_type.startswith("image/"):
             raise HTTPException(400, "File must be an image")
 
-        # Validate file size (max 10MB)
+        # Validate file size (max from settings)
         content = await file.read()
-        if len(content) > 10 * 1024 * 1024:
-            raise HTTPException(400, "Image too large (max 10MB)")
+        max_size = settings.pipeline.image_max_size_mb * 1024 * 1024
+        if len(content) > max_size:
+            raise HTTPException(400, f"Image too large (max {settings.pipeline.image_max_size_mb}MB)")
 
         # Generate unique filename
         ext = file.filename.split('.')[-1] if file.filename and '.' in file.filename else 'png'
@@ -336,7 +349,7 @@ def get_ai_status():
     prefs = get_kv("preferences", {})
     provider = prefs.get("ai_provider", "Ollama")
     model = prefs.get("ai_model", "llama3")
-    
+
     status = "offline"
     if provider == "Ollama" and OllamaClient:
         try:
@@ -345,12 +358,154 @@ def get_ai_status():
                 status = "online"
         except:
             pass
-            
+
     return {
         "provider": provider,
         "model": model,
         "status": status
     }
+
+# --- CONFIGURATION MANAGEMENT ENDPOINTS ---
+
+@app.get("/api/config")
+async def get_config():
+    """
+    Get current application configuration
+
+    Returns all configurable settings including AI provider,
+    market parameters, user preferences, validation rules, etc.
+    """
+    settings = get_settings()
+    return {
+        "ai": settings.ai.model_dump(),
+        "market": settings.market.model_dump(),
+        "preferences": settings.preferences.model_dump(),
+        "validation": settings.validation.model_dump(),
+        "pipeline": settings.pipeline.model_dump(),
+        "database_url": settings.database_url
+    }
+
+@app.post("/api/config")
+async def update_config(config: ConfigUpdateRequest):
+    """
+    Update application configuration
+
+    Accepts partial updates to any configuration domain.
+    Changes are applied to the running instance but not persisted.
+    """
+    settings = get_settings()
+
+    # Update each section if provided
+    if config.ai:
+        for key, value in config.ai.items():
+            if hasattr(settings.ai, key):
+                setattr(settings.ai, key, value)
+
+    if config.market:
+        for key, value in config.market.items():
+            if hasattr(settings.market, key):
+                setattr(settings.market, key, value)
+
+    if config.preferences:
+        for key, value in config.preferences.items():
+            if hasattr(settings.preferences, key):
+                setattr(settings.preferences, key, value)
+
+    if config.validation:
+        for key, value in config.validation.items():
+            if hasattr(settings.validation, key):
+                setattr(settings.validation, key, value)
+
+    if config.pipeline:
+        for key, value in config.pipeline.items():
+            if hasattr(settings.pipeline, key):
+                setattr(settings.pipeline, key, value)
+
+    return {"status": "updated", "config": await get_config()}
+
+@app.get("/api/ai/providers")
+async def list_ai_providers():
+    """
+    List available AI providers and their models
+
+    Returns information about all registered AI providers
+    including available models for each.
+    """
+    from ai.provider_factory import ProviderRegistry, ProviderFactory
+
+    providers = {}
+    for provider_name in ProviderRegistry.list_providers():
+        try:
+            # Create a temporary instance to get models (without API key for cloud providers)
+            if provider_name == "ollama":
+                provider = ProviderFactory.create_provider(provider_name)
+                providers[provider_name] = {
+                    "name": provider_name,
+                    "models": provider.list_models(),
+                    "requires_api_key": False
+                }
+            else:
+                # Cloud providers - just list known models without instantiating
+                provider_class = ProviderRegistry.get_provider_class(provider_name)
+                # Create a mock instance to get models list
+                if provider_name == "openai":
+                    models = ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"]
+                elif provider_name == "anthropic":
+                    models = ["claude-3-5-sonnet-20241022", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"]
+                elif provider_name == "gemini":
+                    models = ["gemini-pro", "gemini-1.5-pro", "gemini-1.5-flash"]
+                else:
+                    models = []
+
+                providers[provider_name] = {
+                    "name": provider_name,
+                    "models": models,
+                    "requires_api_key": True
+                }
+        except Exception as e:
+            logger.warning(f"Could not load provider {provider_name}: {e}")
+
+    return {"providers": providers}
+
+@app.get("/api/ai/health")
+async def check_ai_health():
+    """
+    Check health of current AI provider
+
+    Tests connectivity to the configured AI provider.
+    """
+    settings = get_settings()
+    from ai.provider_factory import ProviderFactory
+
+    try:
+        # Create provider based on current settings
+        if settings.ai.provider == "ollama":
+            provider = ProviderFactory.create_provider("ollama", base_url=settings.ai.ollama_base_url)
+        elif settings.ai.provider == "openai":
+            if not settings.ai.openai_api_key:
+                return {"healthy": False, "error": "OpenAI API key not configured"}
+            provider = ProviderFactory.create_provider("openai", api_key=settings.ai.openai_api_key)
+        elif settings.ai.provider == "anthropic":
+            if not settings.ai.anthropic_api_key:
+                return {"healthy": False, "error": "Anthropic API key not configured"}
+            provider = ProviderFactory.create_provider("anthropic", api_key=settings.ai.anthropic_api_key)
+        elif settings.ai.provider == "gemini":
+            if not settings.ai.gemini_api_key:
+                return {"healthy": False, "error": "Gemini API key not configured"}
+            provider = ProviderFactory.create_provider("gemini", api_key=settings.ai.gemini_api_key)
+        else:
+            return {"healthy": False, "error": f"Unknown provider: {settings.ai.provider}"}
+
+        # Check health
+        healthy = await provider.check_health()
+        return {
+            "healthy": healthy,
+            "provider": settings.ai.provider,
+            "model": settings.ai.model or "default"
+        }
+    except Exception as e:
+        logger.error(f"AI health check failed: {e}", exc_info=True)
+        return {"healthy": False, "error": str(e)}
 
 # --- CORE LOGIC ---
 
@@ -442,12 +597,12 @@ def build_kpis(property_core: Dict[str, Any]) -> Dict[str, Any]:
     completeness = round(present / len(fields), 2)
     
     # Fit Score
-    fit_score = 0.50
-    if completeness > 0.8: fit_score += 0.20
-    elif completeness > 0.5: fit_score += 0.10
+    fit_score = settings.fit_score.base
+    if completeness > 0.8: fit_score += settings.fit_score.completeness_bonus
+    elif completeness > 0.5: fit_score += settings.fit_score.completeness_bonus / 2
     label = (property_core.get("energy_label") or "").upper()
-    if label.startswith("A"): fit_score += 0.15
-    elif label == "B": fit_score += 0.10
+    if label.startswith("A"): fit_score += settings.fit_score.energy_bonus
+    elif label == "B": fit_score += settings.fit_score.energy_bonus * 2/3
     
     # Value Trend
     value_text = "€ TBD"
@@ -464,15 +619,15 @@ def build_kpis(property_core: Dict[str, Any]) -> Dict[str, Any]:
                 if sqm_price < 4500: value_trend = "up"
                 elif sqm_price > 6000: value_trend = "down"
                 value_text = f"€ {int(sqm_price)}/m²"
-                
+
                 # INJECT STRATEGIC VALUES
-                market_avg = 5200 # Assumed average
+                market_avg = settings.market.avg_price_m2
                 dev = ((sqm_price - market_avg) / market_avg) * 100
                 property_core["price_deviation_percent"] = dev
         except: pass
 
     # Energy Future Score
-    label_scores = {"A": 95, "B": 80, "C": 65, "D": 50, "E": 35, "F": 20, "G": 10}
+    label_scores = settings.market.energy_label_scores
     clean_label = label[0] if label else "G"
     property_core["energy_future_score"] = label_scores.get(clean_label, 50)
         

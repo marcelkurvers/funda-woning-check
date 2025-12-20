@@ -267,13 +267,13 @@ function App() {
         </header>
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
 
-          {/* Property Header - Compact & Premium */}
-          <div className="mb-6 bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col md:flex-row items-center gap-6 animate-in slide-in-from-top-2">
+          {/* Property Header - Ultra Compact for 4K */}
+          <div className="mb-4 bg-white rounded-xl border border-slate-100 shadow-sm p-3 flex flex-col md:flex-row items-center gap-4 animate-in slide-in-from-top-2">
 
             {/* Thumbnail */}
-            <div className="relative shrink-0 w-full md:w-48 h-32 rounded-xl overflow-hidden shadow-inner ring-1 ring-slate-100 group">
+            <div className="relative shrink-0 w-full md:w-40 h-24 rounded-lg overflow-hidden shadow-inner ring-1 ring-slate-100 group">
               <img
                 src={(report.chapters["0"] as any)?.property_core?.media_urls?.[0] || "https://images.unsplash.com/photo-1600596542815-27b88e360290?q=80&w=2000&auto=format&fit=crop"}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -286,7 +286,7 @@ function App() {
             </div>
 
             {/* Info & Stats */}
-            <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+            <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
 
               {/* Address & Status */}
               <div className="md:col-span-1 flex flex-col justify-center">

@@ -17,7 +17,7 @@ interface BentoCardProps {
 
 export const BentoGrid = ({ children, className = "" }: BentoGridProps) => {
     return (
-        <div className={`grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 auto-rows-[minmax(140px,auto)] p-4 max-w-[1920px] mx-auto ${className}`}>
+        <div className={`grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3 auto-rows-[minmax(120px,auto)] p-0 max-w-[2560px] mx-auto ${className}`}>
             {children}
         </div>
     );

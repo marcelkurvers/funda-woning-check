@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import re
 from typing import Dict, Any, Optional, List
 import logging
+from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -10,15 +11,18 @@ class Parser:
     Enhanced parser for Funda property listings with comprehensive field extraction
     and data validation to prevent illogical values.
     """
-    
-    # Validation thresholds
-    MAX_BEDROOMS = 15  # Unlikely to have more than 15 bedrooms in residential property
-    MAX_BATHROOMS = 10  # Unlikely to have more than 10 bathrooms
-    MAX_TOTAL_ROOMS = 30  # Unlikely to have more than 30 total rooms
-    MIN_LIVING_AREA = 10  # Minimum 10 m² for a living space
-    MAX_LIVING_AREA = 2000  # Maximum 2000 m² for residential
-    MIN_BUILD_YEAR = 1500  # Oldest reasonable build year
-    MAX_BUILD_YEAR = 2030  # Future construction
+
+    # Get settings singleton for validation thresholds
+    settings = get_settings()
+
+    # Validation thresholds from settings
+    MAX_BEDROOMS = settings.validation.max_bedrooms
+    MAX_BATHROOMS = settings.validation.max_bathrooms
+    MAX_TOTAL_ROOMS = settings.validation.max_total_rooms
+    MIN_LIVING_AREA = settings.validation.min_living_area
+    MAX_LIVING_AREA = settings.validation.max_living_area
+    MIN_BUILD_YEAR = settings.validation.min_build_year
+    MAX_BUILD_YEAR = settings.validation.max_build_year
     
     def parse_html(self, html: str) -> Dict[str, Any]:
         """

@@ -4,25 +4,34 @@ import re
 from typing import Dict, Any, Optional
 import json
 import logging
+import asyncio
 
-try:
-    from ollama_client import OllamaClient
-except ImportError:
-    OllamaClient = Any
+from ai.provider_factory import ProviderFactory
+from ai.provider_interface import AIProvider
 
 logger = logging.getLogger(__name__)
 
 class IntelligenceEngine:
     """
-    Simulates a sophisticated AI analyst that generates dynamic narratives 
-    based on property data. In a full production version, this would 
+    Simulates a sophisticated AI analyst that generates dynamic narratives
+    based on property data. In a full production version, this would
     interface with an LLM (e.g., OpenAI API).
     """
-    _client: Optional[OllamaClient] = None
+    _provider: Optional[AIProvider] = None
 
     @classmethod
-    def set_client(cls, client: OllamaClient):
-        cls._client = client
+    def set_provider(cls, provider: AIProvider):
+        """Set the AI provider instance"""
+        cls._provider = provider
+
+    @classmethod
+    def set_client(cls, client):
+        """
+        Deprecated: Use set_provider() instead.
+        Maintains backward compatibility with tests.
+        """
+        # If it's an old OllamaClient, wrap it or treat as provider
+        cls._provider = client
 
     @staticmethod
     def generate_chapter_narrative(chapter_id: int, ctx: Dict[str, Any]) -> Dict[str, str]:
@@ -93,7 +102,7 @@ class IntelligenceEngine:
             result["main_analysis"] = result.get("main_analysis", "") + kpi_expl
 
         # AI OVERRIDE
-        if IntelligenceEngine._client:
+        if IntelligenceEngine._provider:
             try:
                 ai_result = IntelligenceEngine._generate_ai_narrative(chapter_id, data, result)
                 if ai_result:
@@ -144,15 +153,21 @@ class IntelligenceEngine:
     @classmethod
     def _generate_ai_narrative(cls, chapter_id: int, data: Dict[str, Any], fallback: Dict[str, str]) -> Optional[Dict[str, str]]:
         """
-        Uses Ollama to generate the narrative.
+        Uses AI provider to generate the narrative.
         """
-        if not cls._client: return None
-        
+        if not cls._provider:
+            # Create default Ollama provider if none set
+            try:
+                cls._provider = ProviderFactory.create_provider("ollama")
+            except Exception as e:
+                logger.warning(f"Failed to create default Ollama provider: {e}")
+                return None
+
         # Construct Prompt
         # We strip heavy fields to save context matching if needed, but local LLMs handle 4k/8k usually.
         # Ensure preferences are known
         prefs = data.get('_preferences', {})
-        
+
         system_prompt = (
             "You are a Senior Strategic Real Estate Consultant for 'Multi-Check Pro'. "
             "Your clients are Marcel (Infrastructure Specialist, Tech-focus) and Petra (Expert in Interior Atmosphere and Ergonomics). "
@@ -162,27 +177,43 @@ class IntelligenceEngine:
             "{'title': str, 'intro': str, 'main_analysis': str, 'interpretation': str, 'advice': str, 'conclusion': str, 'strengths': [str]}. "
             "Use HTML tags <p>, <ul>, <li>, <strong>, <h4> for logical structure."
         )
-        
+
         user_prompt = f"""
         **Context**: Chapter {chapter_id}
         **Property Data**: {json.dumps(data, default=str)}
         **Current Hardcoded Draft (Reference)**: {json.dumps(fallback, default=str)}
-        
+
         **Task**:
-        1. Rewrite the content to be more insightful and PERSONALIZED for Marcel & Petra. 
+        1. Rewrite the content to be more insightful and PERSONALIZED for Marcel & Petra.
            ALWAYS mention Marcel and Petra by name in the 'interpretation' and explain how this chapter relates to their specific profile.
         2. Check specific preferences: {json.dumps(prefs.get('marcel', {}))} and {json.dumps(prefs.get('petra', {}))}.
         3. Include a 'KPI Begrippenlijst' or explanation of the relevant KPIs (Price, Area, Year, Label) within the 'main_analysis' section.
         4. Keep the same Keys. 'main_analysis' should be detailed.
         5. If data is missing (0 or null), explicitly mention it in 'advice'.
-        
+
         Return ONLY the JSON object.
         """
 
-        
+
         try:
             model = prefs.get('ai_model', 'llama3')
-            response_text = cls._client.generate(user_prompt, system=system_prompt, model=model, json_mode=True)
+
+            # Call async generate method
+            # Check if there's an event loop running
+            try:
+                loop = asyncio.get_running_loop()
+                # We're in an async context - but this method is sync
+                # Use run_coroutine_threadsafe or create task
+                future = asyncio.ensure_future(
+                    cls._provider.generate(user_prompt, system=system_prompt, model=model, json_mode=True)
+                )
+                response_text = asyncio.get_event_loop().run_until_complete(future)
+            except RuntimeError:
+                # No event loop running - create one
+                response_text = asyncio.run(
+                    cls._provider.generate(user_prompt, system=system_prompt, model=model, json_mode=True)
+                )
+
             # Parse JSON
             # Sometimes local models wrap in ```json ... ```
             clean_text = response_text.strip()
@@ -190,10 +221,10 @@ class IntelligenceEngine:
                 clean_text = clean_text.split("```json")[1].split("```")[0]
             elif clean_text.startswith("```"):
                 clean_text = clean_text.split("```")[1].split("```")[0]
-            
+
             return json.loads(clean_text)
         except Exception as e:
-            logger.error(f"Failed to parse AI response: {e}\nResponse: {response_text}")
+            logger.error(f"Failed to parse AI response: {e}", exc_info=True)
             return None
 
     # --- NARRATIVES ---
