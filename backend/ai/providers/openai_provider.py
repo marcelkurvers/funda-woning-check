@@ -1,5 +1,7 @@
 import os
 import logging
+import base64
+import mimetypes
 from typing import List, Dict, Any, Optional
 from openai import AsyncOpenAI
 import openai
@@ -38,16 +40,18 @@ class OpenAIProvider(AIProvider):
         prompt: str,
         system: str = "",
         model: str = None,
+        images: List[str] = None,
         json_mode: bool = False,
         options: Dict[str, Any] = None
     ) -> str:
         """
-        Generate text completion using OpenAI's GPT models
+        Generate text completion using OpenAI's GPT models (supports multimodal)
 
         Args:
             prompt: The user prompt/message
             system: System prompt/instructions
             model: Model name (defaults to gpt-4o)
+            images: List of image URLs or local file paths for multimodal input
             json_mode: Whether to force JSON output
             options: Additional options (temperature, max_tokens, etc.)
 
@@ -65,7 +69,37 @@ class OpenAIProvider(AIProvider):
         messages = []
         if system:
             messages.append({"role": "system", "content": system})
-        messages.append({"role": "user", "content": prompt})
+
+        # Process images for multimodal support
+        user_content = [{"type": "text", "text": prompt}]
+        
+        if images:
+            for img_path in images:
+                try:
+                    # Check if it's a URL or local path
+                    if img_path.startswith(('http://', 'https://')):
+                        user_content.append({
+                            "type": "image_url",
+                            "image_url": {"url": img_path}
+                        })
+                    else:
+                        # Local file - read and base64 encode
+                        if os.path.exists(img_path):
+                            mime_type, _ = mimetypes.guess_type(img_path)
+                            if not mime_type: mime_type = "image/jpeg"
+                            
+                            with open(img_path, "rb") as image_file:
+                                base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+                                user_content.append({
+                                    "type": "image_url",
+                                    "image_url": {"url": f"data:{mime_type};base64,{base64_image}"}
+                                })
+                        else:
+                            logger.warning(f"Image path not found: {img_path}")
+                except Exception as e:
+                    logger.error(f"Failed to process image {img_path}: {e}")
+
+        messages.append({"role": "user", "content": user_content})
 
         # Prepare request parameters
         request_params = {

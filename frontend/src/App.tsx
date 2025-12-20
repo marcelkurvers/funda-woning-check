@@ -3,6 +3,7 @@ import { BentoGrid, BentoCard } from './components/layout/BentoLayout';
 import { Target, ListChecks, ChevronRight, Loader2, AlertCircle, Sparkles, AlertTriangle, CheckCircle2, TrendingUp, BookOpen, Plus, FileText, Home, Settings, Zap, BarChart3, ShieldAlert, Bug } from 'lucide-react';
 import { LandingPage } from './components/LandingPage';
 import { DataVerifier } from './components/common/DataVerifier';
+import { SettingsModal } from './components/common/SettingsModal';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ScatterChart, Scatter, ZAxis } from 'recharts';
 
 import type { ReportData } from './types';
@@ -224,38 +225,6 @@ function App() {
               {debugMode ? <Bug className="w-5 h-5" /> : <Settings className="w-5 h-5" />}
             </button>
 
-            {/* Settings Popover */}
-            {settingsOpen && (
-              <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-100 p-4 z-50 animate-in slide-in-from-top-2">
-                <h3 className="font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2">Instellingen</h3>
-
-                {/* Debug Toggle */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-slate-700">Debug Modus</span>
-                    <span className="text-xs text-slate-400 leading-tight">Toon data inconsistenties</span>
-                  </div>
-                  <button
-                    onClick={() => setDebugMode(!debugMode)}
-                    className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${debugMode ? 'bg-blue-600 justify-end' : 'bg-slate-200 justify-start'}`}
-                  >
-                    <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
-                  </button>
-                </div>
-
-                {/* Preference Navigation */}
-                <a href="/preferences" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors group">
-                  <div className="p-1.5 bg-slate-100 text-slate-500 rounded group-hover:bg-white group-hover:text-blue-600 shadow-sm transition-all">
-                    <Settings className="w-4 h-4" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-slate-700 group-hover:text-blue-700">Persoonlijke Voorkeuren</span>
-                    <span className="text-[10px] text-slate-400">Marcel & Petra profiel beheren</span>
-                  </div>
-                </a>
-              </div>
-            )}
-
             <button
               onClick={handleDownloadPdf}
               className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all font-bold text-xs shadow-lg shadow-slate-200"
@@ -265,6 +234,14 @@ function App() {
             </button>
           </div>
         </header>
+
+        {/* Global Settings Modal */}
+        <SettingsModal
+          isOpen={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          debugMode={debugMode}
+          setDebugMode={setDebugMode}
+        />
 
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">

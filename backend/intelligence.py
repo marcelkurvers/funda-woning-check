@@ -115,6 +115,26 @@ class IntelligenceEngine:
             except Exception as e:
                 logger.error(f"AI Generation failed for Chapter {chapter_id}: {e}")
         
+        # VISUAL AUDIT (Only for Chapter 0 if images present)
+        if chapter_id == 0 and data.get("media_urls") and IntelligenceEngine._provider:
+            try:
+                # Need to run async in sync - reuse existing loop pattern
+                coro = IntelligenceEngine.process_visuals(data)
+                import asyncio
+                import nest_asyncio
+                nest_asyncio.apply()
+                try:
+                    loop = asyncio.get_running_loop()
+                    vision_audit = loop.run_until_complete(coro)
+                except RuntimeError:
+                    vision_audit = asyncio.run(coro)
+                
+                if vision_audit:
+                    # Append strictly to chapter 0's main analysis or a new field
+                    result["main_analysis"] = vision_audit + result.get("main_analysis", "")
+            except Exception as e:
+                logger.error(f"Vision Audit failed for Ch 0: {e}")
+        
         # Post-process: Ensure Marcel & Petra mention if missing
         prefs = data.get('_preferences', {})
         if prefs and "Marcel" not in result.get("interpretation", ""):
@@ -138,6 +158,60 @@ class IntelligenceEngine:
         # Augment the result dictionary
         result['chapter_id'] = chapter_id
         return result
+
+    @classmethod
+    async def process_visuals(cls, property_data: Dict[str, Any]) -> str:
+        """
+        Multimodal "Vision" Audit: Analyzes property photos to detect maintenance state,
+        quality of finish, and potential risks.
+        """
+        media_urls = property_data.get('media_urls', [])
+        if not media_urls or not cls._provider:
+            return ""
+
+        logger.info(f"Vision Audit: Processing {len(media_urls)} images...")
+
+        system_prompt = (
+            "You are a Senior Technical Building Inspector and Interior Architect. "
+            "Analyze the provided property photos as if you are doing a physical walkthrough for Marcel & Petra. "
+            "Focus on: \n"
+            "1. Maintenance (window frames, moisture, roof state if visible)\n"
+            "2. Quality (kitchen appliances, flooring materials, bathroom finish)\n"
+            "3. Risks (cracks, damp spots, old wiring signs)\n"
+            "4. Atmosphere for Petra, Tech-infrastructure for Marcel.\n"
+            "Be professional, critical, and specific. Use the names Marcel & Petra."
+        )
+
+        user_prompt = "Hier zijn de foto's van de woning. Voer een visuele audit uit. Noem Marcel en Petra herhaaldelijk bij naam."
+        
+        # Resolve local paths for files in /uploads/
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        resolved_paths = []
+        for url in media_urls[:10]: # Limit to first 10 for performance
+            if url.startswith('/uploads/'):
+                # Extract filename and join with data/uploads
+                filename = url.split('/')[-1]
+                path = os.path.join(base_dir, "data", "uploads", filename)
+                if os.path.exists(path):
+                    resolved_paths.append(path)
+                else:
+                    logger.warning(f"Vision Audit: Uploaded file not found at {path}")
+                    resolved_paths.append(url)
+            else:
+                resolved_paths.append(url)
+
+        try:
+            # Use gpt-4o or similar for vision
+            model = property_data.get('_preferences', {}).get('ai_model', 'gpt-4o')
+            # If model is gpt-3.5 or similar, force gpt-4o for vision if possible
+            if 'gpt-3.5' in model:
+                 model = 'gpt-4o'
+            
+            audit = await cls._provider.generate(user_prompt, system=system_prompt, model=model, images=resolved_paths)
+            return f"<div className='p-4 bg-blue-50/50 border border-blue-100 rounded-xl mb-6'><h4>🔍 Visuele Audit Insights</h4>{audit}</div>"
+        except Exception as e:
+            logger.error(f"Vision Audit failed: {e}")
+            return ""
 
 
     @staticmethod

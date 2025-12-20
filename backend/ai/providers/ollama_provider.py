@@ -1,6 +1,7 @@
 import httpx
 import os
 import logging
+import base64
 from typing import List, Dict, Any, Optional
 
 from ..provider_interface import AIProvider
@@ -101,11 +102,12 @@ class OllamaProvider(AIProvider):
         prompt: str,
         system: str = "",
         model: str = None,
+        images: List[str] = None,
         json_mode: bool = False,
         options: Optional[Dict[str, Any]] = None
     ) -> str:
         """
-        Generate text using the specified model.
+        Generate text using the specified model (supports multimodal).
 
         Args:
             prompt: The user prompt/message
@@ -130,6 +132,20 @@ class OllamaProvider(AIProvider):
 
         if json_mode:
             payload["format"] = "json"
+
+        if images:
+            b64_images = []
+            for img_path in images:
+                try:
+                    if os.path.exists(img_path):
+                        with open(img_path, "rb") as f:
+                            b64_images.append(base64.b64encode(f.read()).decode('utf-8'))
+                    else:
+                        logger.warning(f"Ollama image path not found: {img_path}")
+                except Exception as e:
+                    logger.error(f"Failed to encode image for Ollama: {e}")
+            if b64_images:
+                payload["images"] = b64_images
 
         if options:
             payload["options"] = options

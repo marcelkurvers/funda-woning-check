@@ -10,16 +10,18 @@ class AIProvider(ABC):
         prompt: str,
         system: str = "",
         model: str = None,
+        images: List[str] = None,
         json_mode: bool = False,
         options: Dict[str, Any] = None
     ) -> str:
         """
-        Generate text completion
+        Generate text completion (optionally with images for multimodal models)
 
         Args:
             prompt: The user prompt/message
             system: System prompt/instructions
             model: Model name (provider-specific)
+            images: List of local file paths or URLs to images
             json_mode: Whether to force JSON output
             options: Provider-specific options (temperature, max_tokens, etc.)
 
