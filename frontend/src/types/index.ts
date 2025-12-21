@@ -27,9 +27,21 @@ export interface ConsistencyItem {
     message?: string;
 }
 
+export interface PropertyCore {
+    media_urls?: string[];
+    asking_price_eur?: string;
+    living_area_m2?: number;
+    plot_area_m2?: number;
+    build_year?: number;
+    energy_label?: string;
+    address?: string;
+    [key: string]: any;
+}
+
 export interface ReportData {
     runId: string;
     address: string;
     chapters: Record<string, ChapterData>;
     consistency?: ConsistencyItem[];
+    property_core?: PropertyCore;
 }

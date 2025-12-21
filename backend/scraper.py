@@ -41,3 +41,10 @@ class Scraper:
             
         except requests.RequestException as e:
             raise Exception(f"Network error: {str(e)}")
+    def derive_property_core(self, url: str) -> dict:
+        """
+        Fetches the page and parses it into property core data.
+        """
+        html = self.fetch_page(url)
+        from parser import Parser
+        return Parser().parse_html(html)

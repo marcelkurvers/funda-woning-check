@@ -24,16 +24,6 @@ class IntelligenceEngine:
     def set_provider(cls, provider: AIProvider):
         """Set the AI provider instance"""
         cls._provider = provider
-        cls._client = provider # Sync alias
-
-    @classmethod
-    def set_client(cls, client):
-        """
-        Deprecated: Use set_provider() instead.
-        Maintains backward compatibility with tests.
-        """
-        cls._provider = client
-        cls._client = client
 
     @staticmethod
     def generate_chapter_narrative(chapter_id: int, ctx: Dict[str, Any]) -> Dict[str, str]:
@@ -54,15 +44,23 @@ class IntelligenceEngine:
             "plot": plot_val,
             "year": year_val,
             "label": label,
-            "address": ctx.get('adres', 'het object'),
+            "asking_price_eur": ctx.get('asking_price_eur'),
+            "living_area_m2": ctx.get('living_area_m2'),
+            "plot_area_m2": ctx.get('plot_area_m2'),
+            "build_year": ctx.get('build_year'),
+            "energy_label": label,
+            "address": ctx.get('address') or ctx.get('adres', 'het object'),
             "description": ctx.get('description', ''),
             "features": ctx.get('features', []),
+            "media_urls": ctx.get('media_urls', []),
             "_preferences": ctx.get('_preferences', {})
         }
 
         result = {}
         if chapter_id == 0:
             result = IntelligenceEngine._narrative_ch0(data)
+            # BRIDGE: Inject core data into Chapter 0 for the frontend dashboard header
+            result["property_core"] = data
         elif chapter_id == 1:
             result = IntelligenceEngine._narrative_ch1(data)
         elif chapter_id == 2:
@@ -96,7 +94,7 @@ class IntelligenceEngine:
             "<ul>"
             "<li><strong>Vraagprijs:</strong> De marktwaarde-indicatie.</li>"
             "<li><strong>Woonoppervlak:</strong> De netto bruikbare ruimte (NEN2580).</li>"
-            "<li><strong>Bouwjaar:</strong> Indicatie voor bouwkwaliteit en isolatienormen.</li>"
+            "<li><strong>Bouwjaar:</strong> Indicatie voor bouwqualiteit en isolatienormen.</li>"
             "<li><strong>Energielabel:</strong> Impact op comfort en maandlasten.</li>"
             "</ul>"
         )
@@ -108,10 +106,13 @@ class IntelligenceEngine:
             try:
                 ai_result = IntelligenceEngine._generate_ai_narrative(chapter_id, data, result)
                 if ai_result:
-                     # Merge or replace.
+                     # Merge or replace. Be careful not to overwrite property_core bridge
+                     p_core = result.get("property_core")
                      result.update(ai_result)
+                     if p_core: result["property_core"] = p_core
+
                      if "AI Enhanced" not in result.get("interpretation", ""):
-                        result["interpretation"] = result.get("interpretation", "") + " (AI Enhanced)"
+                        result["interpretation"] = result.get("interpretation", "") + "\n\nDeze analyse is gegenereerd door de Funda AI-engine (AI Enhanced)"
             except Exception as e:
                 logger.error(f"AI Generation failed for Chapter {chapter_id}: {e}")
         
@@ -144,16 +145,6 @@ class IntelligenceEngine:
             else:
                 match_summary += "aan op de specifieke kenmerken die jullie belangrijk vinden.</p>"
             result["interpretation"] = result.get("interpretation", "") + match_summary
-
-        # Append missing KPI notice if any critical fields are missing or zero
-        missing_keys = [k for k in ["price", "area", "plot", "year", "label"] if not data.get(k)]
-        if missing_keys:
-            notice = "\n<p class='text-amber-600 italic'>Let op: Sommige kerngegevens (KPI's) zijn onvolledig voor dit object.</p>"
-            result["main_analysis"] = result.get("main_analysis", "") + notice
-        
-        # Append AI usage disclaimer
-        ai_note = "\n<p class='text-xs text-gray-400 mt-4'>Deze analyse is gegenereerd door de Funda AI-engine.</p>"
-        result["interpretation"] = result.get("interpretation", "") + ai_note
 
         # Augment the result dictionary
         result['chapter_id'] = chapter_id
@@ -928,16 +919,19 @@ class IntelligenceEngine:
         # Main analysis – note missing KPI handling
         # Main analysis – note missing KPI handling
         analysis = ""
+        if price == "onbekend" or area == "onbekend":
+            analysis += "<p>De data over dit object is nog <strong>onvolledig</strong> (vraagprijs of oppervlakte ontbreekt).</p>"
+            
         # Investment / Reform logic check for narrative
         label_clean = str(label).upper()
         if "F" in label_clean or "G" in label_clean:
-             analysis += "<p>Gezien het energielabel is verduurzaming noodzakelijk. Houd rekening met een stevige investering.</p>"
+            analysis += "<p>Gezien het energielabel is verduurzaming noodzakelijk. Houd rekening met een stevige investering.</p>"
         else:
-             analysis += "<p>De woning lijkt instapklaar; wij voorzien in de basis geen directe investering voor verduurzaming.</p>"
+            analysis += "<p>De woning lijkt instapklaar; wij voorzien in de basis geen directe investering voor verduurzaming.</p>"
         
 
         # AI usage note
-        interpretation = ""
+        interpretation = "<p>Deze analyse is gegenereerd door <strong>Multi-Check Pro AI</strong> op basis van de beschikbare Funda-data en de specifieke voorkeuren van Marcel & Petra.</p>"
         # Conclusion
         conclusion = "<strong>Conclusie:</strong> Controleer de ontbrekende gegevens voor een volledige beoordeling."
         return {

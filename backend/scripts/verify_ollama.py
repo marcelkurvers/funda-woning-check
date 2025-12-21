@@ -4,20 +4,31 @@ import os
 # Add backend to path
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from ollama_client import OllamaClient
+from ai.provider_factory import ProviderFactory
 from intelligence import IntelligenceEngine
 
 def test_ollama():
-    print("Testing Ollama Client...")
-    client = OllamaClient()
-    
-    if not client.check_health():
-        print("❌ Ollama server not reachable at http://localhost:11434")
+    print("Testing Ollama Provider...")
+    try:
+        provider = ProviderFactory.create_provider("ollama")
+    except Exception as e:
+        print(f"❌ Failed to create Ollama provider: {e}")
+        return
+
+    # Check health using asyncio
+    import asyncio
+    try:
+        health = asyncio.run(provider.check_health())
+        if not health:
+            print("❌ Ollama server not reachable")
+            return
+    except Exception as e:
+        print(f"❌ Health check failed: {e}")
         return
 
     print("✅ Ollama server reachable.")
-    
-    models = client.list_models()
+
+    models = provider.list_models()
     print(f"✅ Available Models: {models}")
     
     if not models:
@@ -25,8 +36,8 @@ def test_ollama():
         return
 
     print("Testing Generation...")
-    # Inject client
-    IntelligenceEngine.set_client(client)
+    # Inject provider
+    IntelligenceEngine.set_provider(provider)
     
     # Mock Data
     data = {

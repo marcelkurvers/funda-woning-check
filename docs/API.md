@@ -1,7 +1,7 @@
 # AI Woning Rapport - API Specification
 
 **Version**: 2.0
-**Last Updated**: 2025-12-20
+**Last Updated**: 2025-12-21
 **Base URL**: `http://localhost:8001` (Docker) or `http://localhost:8000` (local)
 
 ---
@@ -54,7 +54,27 @@ POST /runs/{run_id}/start
 }
 ```
 
-### 1.3 Get Status
+### 1.3 Update HTML (Paste Mode)
+
+Allows manual submission of Funda HTML content for an existing run.
+
+```http
+POST /runs/{run_id}/paste
+Content-Type: application/json
+
+{
+  "funda_html": "<html>...</html>"
+}
+```
+
+**Response:**
+```json
+{
+  "ok": true
+}
+```
+
+### 1.4 Get Status
 
 Polls current processing status.
 
@@ -65,12 +85,21 @@ GET /runs/{run_id}/status
 **Response:**
 ```json
 {
-  "status": "pending" | "processing" | "done" | "failed",
+  "run_id": "uuid-string",
+  "status": "processing",
+  "steps": {
+     "scrape_funda": "done",
+     "fetch_external_sources": "running",
+     "compute_kpis": "pending",
+     "generate_chapters": "pending",
+     "render_pdf": "pending"
+  },
   "progress": {
-    "current_step": "generate_chapters",
-    "percent": 65,
-    "message": "Generating Chapter 8..."
-  }
+    "current": 1,
+    "total": 5,
+    "percent": 20
+  },
+  "updated_at": "2025-12-21 10:43:12"
 }
 ```
 

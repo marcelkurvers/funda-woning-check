@@ -11,6 +11,7 @@ The Parser is a critical component of the **AI Woning Rapport** system. It is re
 ### 1. Robust Intelligence
 - **Multi-Line Support**: Correctly parses values located on the line below the label.
 - **Bi-Directional Scanning**: Implements both forward and backward scanning for label-value associations.
+- **Dutch Format Support**: Robustly handles dots as thousand separators and commas as decimal points in large numeric values.
 - **Unit Normalization**: Automatically strips units (m², €, etc.) and converts to numbers.
 
 ### 2. Field Mapping
@@ -33,12 +34,15 @@ The parser extracts ~50 fields, categorized as follows:
 ## Technical Implementation
 
 ### Extraction Strategy
-```python
 def _extract_spec_by_keyword(self, soup, keyword):
-    # 1. Search in .v-info-list (Standard Funda layout)
-    # 2. Search in .object-kenmerken-lijst (Old Funda layout)
-    # 3. Fuzzy search for exact label match
+    # 1. Prioritize dt/dd Semantic Pairs
+    # 2. Search in .v-info-list (Standard Funda layout)
+    # 3. Search in .object-kenmerken-lijst (Old Funda layout)
+    # 4. Fuzzy search for exact label match
 ```
+
+### Descriptive Field Extraction
+The parser implements a "Relaxed Scan" for descriptive fields (`property_type`, `heating`, etc.) that allows capturing short strings even without digits, while maintaining "Strict Scan" for numeric fallbacks to prevent capturing unrelated narrative text.
 
 ### Raw Text Scanning
 The `_scan_raw_text` method uses improved regex patterns to handle various layouts:
@@ -59,4 +63,4 @@ Comprehensive testing ensures 0% regression in parsing accuracy:
 - `tests/unit/test_parser_edge_cases.py`: Specific fixes for known Funda edge cases.
 
 ---
-*Last Updated: 2025-12-20*
+*Last Updated: 2025-12-21*

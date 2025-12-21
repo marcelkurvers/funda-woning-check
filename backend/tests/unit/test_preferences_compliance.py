@@ -15,7 +15,7 @@ class TestPreferencesCompliance(unittest.TestCase):
 
     def setUp(self):
         # Ensure no residual client is attached
-        IntelligenceEngine.set_client(None)
+        IntelligenceEngine.set_provider(None)
 
     def test_marcel_petra_preferences_match(self):
         """

@@ -92,7 +92,8 @@ function App() {
           setReport({
             runId: run_id,
             address: data.property_core?.address || "Onbekend Adres",
-            chapters: data.chapters || {}
+            chapters: data.chapters || {},
+            property_core: data.property_core
           });
           setActiveChapterId("0");
           setLoading(false);
@@ -252,7 +253,7 @@ function App() {
             {/* Thumbnail */}
             <div className="relative shrink-0 w-full md:w-40 h-24 rounded-lg overflow-hidden shadow-inner ring-1 ring-slate-100 group">
               <img
-                src={(report.chapters["0"] as any)?.property_core?.media_urls?.[0] || "https://images.unsplash.com/photo-1600596542815-27b88e360290?q=80&w=2000&auto=format&fit=crop"}
+                src={report.property_core?.media_urls?.[0] || "https://images.unsplash.com/photo-1600596542815-27b88e360290?q=80&w=2000&auto=format&fit=crop"}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 alt=""
                 onError={(e) => {
@@ -286,7 +287,7 @@ function App() {
 
                 {/* Logic: Rescue Data from AI Summary if Backend failed */}
                 {(() => {
-                  const core = (report.chapters["0"] as any)?.property_core || {};
+                  const core = report.property_core || {};
                   const summary = (report.chapters["0"] as any)?.chapter_data?.summary || "";
 
                   // 1. Price
@@ -298,8 +299,8 @@ function App() {
                   }
 
                   // 2. Area
-                  let area = core.living_area_m2;
-                  if (!area || area === "0" || area === "N/B") {
+                  let area: string | number | undefined = core.living_area_m2;
+                  if (!area || area === 0) {
                     const m = summary.match(/(\d+)\s?m[²2]/);
                     if (m) area = m[1];
                     else area = "N/B";

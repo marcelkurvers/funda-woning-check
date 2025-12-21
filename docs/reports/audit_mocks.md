@@ -12,16 +12,10 @@ Found **36** potential issues.
 ### 📄 `intelligence.py`
 | Line | Type | Content |
 | :--- | :--- | :--- |
-| 93 | **Hardcoded Item** | `# PRE-AI: Add KPI Explanations (Hardcoded fallback)` |
-| 186 | **Hardcoded Item** | `**Current Hardcoded Draft (Reference)**: {json.dumps(fallback, default=str)}` |
-| 207 | **Mock Data/Functionality** | `# If coro is not actually a coroutine (e.g. magic mock returned a string), just use it` |
-| 897 | **Mock Data/Functionality** | `# Final Score Logic (Mock)` |
-
-### 📄 `main.py`
-| Line | Type | Content |
-| :--- | :--- | :--- |
-| 394 | **Mock Data/Functionality** | `# Create a mock instance to get models list` |
-| 711 | **Placeholder** | `# If the provided URL is a placeholder indicating manual paste, store as NULL to avoid scraping a...` |
+| 91 | **Hardcoded Item** | `# PRE-AI: Add KPI Explanations (Hardcoded fallback)` |
+| 251 | **Hardcoded Item** | `**Current Hardcoded Draft (Reference)**: {json.dumps(fallback, default=str)}` |
+| 272 | **Mock Data/Functionality** | `# If coro is not actually a coroutine (e.g. magic mock returned a string), just use it` |
+| 962 | **Mock Data/Functionality** | `# Final Score Logic (Mock)` |
 
 ### 📄 `config/__init__.py`
 | Line | Type | Content |
@@ -79,16 +73,18 @@ Found **36** potential issues.
 ### 📄 `scripts/verify_ollama.py`
 | Line | Type | Content |
 | :--- | :--- | :--- |
-| 11 | **Leftover Print Debugging** | `print("Testing Ollama Client...")` |
-| 15 | **Leftover Print Debugging** | `print("❌ Ollama server not reachable at http://localhost:11434")` |
-| 18 | **Leftover Print Debugging** | `print("✅ Ollama server reachable.")` |
-| 21 | **Leftover Print Debugging** | `print(f"✅ Available Models: {models}")` |
-| 24 | **Leftover Print Debugging** | `print("⚠️ No models found. Please run 'ollama pull llama3' or similar.")` |
-| 27 | **Leftover Print Debugging** | `print("Testing Generation...")` |
-| 31 | **Mock Data/Functionality** | `# Mock Data` |
-| 45 | **Mock Data/Functionality** | `# Mock fallback` |
-| 52 | **Leftover Print Debugging** | `print("✅ AI Generation Successful!")` |
-| 53 | **Leftover Print Debugging** | `print("--- Result ---")` |
-| 54 | **Leftover Print Debugging** | `print(result)` |
-| 56 | **Leftover Print Debugging** | `print("❌ AI Generation Failed or returned None.")` |
+| 11 | **Leftover Print Debugging** | `print("Testing Ollama Provider...")` |
+| 15 | **Leftover Print Debugging** | `print(f"❌ Failed to create Ollama provider: {e}")` |
+| 23 | **Leftover Print Debugging** | `print("❌ Ollama server not reachable")` |
+| 26 | **Leftover Print Debugging** | `print(f"❌ Health check failed: {e}")` |
+| 29 | **Leftover Print Debugging** | `print("✅ Ollama server reachable.")` |
+| 32 | **Leftover Print Debugging** | `print(f"✅ Available Models: {models}")` |
+| 35 | **Leftover Print Debugging** | `print("⚠️ No models found. Please run 'ollama pull llama3' or similar.")` |
+| 38 | **Leftover Print Debugging** | `print("Testing Generation...")` |
+| 42 | **Mock Data/Functionality** | `# Mock Data` |
+| 56 | **Mock Data/Functionality** | `# Mock fallback` |
+| 63 | **Leftover Print Debugging** | `print("✅ AI Generation Successful!")` |
+| 64 | **Leftover Print Debugging** | `print("--- Result ---")` |
+| 65 | **Leftover Print Debugging** | `print(result)` |
+| 67 | **Leftover Print Debugging** | `print("❌ AI Generation Failed or returned None.")` |
 

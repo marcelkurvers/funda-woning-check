@@ -1,19 +1,14 @@
 # AI Test Plan (Phase 2)
 
-- Generated at: 2025-12-20T21:26:13.920385Z
+- Generated at: 2025-12-21T09:12:50.089086Z
 - Project root: `/Users/marcelkurvers/Development/funda-app`
 
 ## Python Tests
 
 - Status: **detected**
-- Source files detected: **81**
-- Test files detected: **80**
+- Source files detected: **46**
+- Test files detected: **43**
 - Test roots:
-  - `ai-woning-rapport-WERKEND-local/backend/tests`
-  - `ai-woning-rapport-WERKEND-local/backend/tests/e2e`
-  - `ai-woning-rapport-WERKEND-local/backend/tests/integration`
-  - `ai-woning-rapport-WERKEND-local/backend/tests/quality`
-  - `ai-woning-rapport-WERKEND-local/backend/tests/unit`
   - `backend/tests`
   - `backend/tests/e2e`
   - `backend/tests/integration`
@@ -28,7 +23,7 @@
 ## Javascript_typescript Tests
 
 - Status: **detected**
-- Source files detected: **39**
+- Source files detected: **33**
 - Test files detected: **2**
 - Test roots:
   - `frontend/src/test`

@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Body
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 
-from ..config.settings import get_settings, reset_settings
+from config.settings import get_settings, reset_settings
 import sqlite3
 import json
 

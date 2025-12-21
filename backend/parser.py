@@ -33,7 +33,6 @@ class Parser:
         # Extract all fields
         raw_data = {
             "asking_price_eur": self._extract_price(soup),
-            "asking_price_per_m2": self._extract_price_per_m2(soup),
             "address": self._extract_address(soup),
             "living_area_m2": self._extract_spec(soup, "living_area_m2"),
             "plot_area_m2": self._extract_spec(soup, "plot_area_m2"),
@@ -42,20 +41,29 @@ class Parser:
             "rooms": self._extract_spec(soup, "rooms"),
             "bedrooms": self._extract_bedrooms(soup),
             "bathrooms": self._extract_bathrooms(soup),
-            "property_type": self._extract_property_type(soup),
-            "construction_type": self._extract_construction_type(soup),
+            "property_type": self._extract_spec(soup, "property_type"),
+            "construction_type": self._extract_spec(soup, "construction_type"),
             "garage": self._extract_garage(soup),
             "garden": self._extract_garden(soup),
             "balcony": self._extract_balcony(soup),
             "roof_type": self._extract_roof_type(soup),
-            "heating": self._extract_heating(soup),
-            "insulation": self._extract_insulation(soup),
+            "heating": self._extract_spec(soup, "heating"),
+            "insulation": self._extract_spec(soup, "insulation"),
             "volume_m3": self._extract_spec(soup, "volume_m3"),
             "service_costs": self._extract_service_costs(soup),
             "acceptance": self._extract_acceptance(soup),
             "ownership": self._extract_ownership(soup),
             "listed_since": self._extract_spec(soup, "listed_since"),
+            "media_urls": self._extract_media_urls(soup),
         }
+        
+        # Calculate price per m2
+        price = self._parse_num(raw_data["asking_price_eur"])
+        area = self._parse_num(raw_data["living_area_m2"])
+        if price and area:
+            raw_data["asking_price_per_m2"] = f"€ {int(price/area)}"
+        else:
+            raw_data["asking_price_per_m2"] = None
         
         # Validate and clean the data
         validated_data = self._validate_data(raw_data)
@@ -63,35 +71,21 @@ class Parser:
         return validated_data
 
     def _extract_price(self, soup) -> Optional[str]:
-        # 1. Structured CSS Selector (Most reliable if HTML is intact)
+        # 1. Structured CSS Selector
         price_el = soup.select_one(".object-header__price")
         if price_el:
             text = price_el.get_text(strip=True)
-            match = re.search(r"€\s*[\d\.]+", text)
+            match = re.search(r"€\s*[\d\.,]+", text)
             if match:
-                return match.group(0)
+                return match.group(0).rstrip('.,')
 
-        # 2. Robust Full Text Scan (Primary for Pasted/Unstructured Content)
-        # This is moved UP because it handles commas (1,400,000) better than the simple text node search below.
+        # 2. Robust Full Text Scan
         full_text = soup.get_text(separator="\n")
-        
-        # Regex: Matches € followed by digits, supporting both . and , as separators.
-        # e.g. € 1.400.000 or € 1,400,000
         match = re.search(r"€\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?)", full_text)
         if match:
              val = match.group(0).rstrip('.,')
-             # Filter out tiny partial matches like "€1" only if they seem incomplete
              if len(val) > 4 or re.search(r'\d{3}', val):
                  return val
-
-        # 3. Simple Text Node Search (Legacy/Backup)
-        price_el = soup.find(string=re.compile(r"€\s*\d"))
-        if price_el:
-            text = price_el.get_text(strip=True)
-            # This legacy regex only supported dots, which is why it failed for 1,400,000
-            match = re.search(r"€\s*[\d\.]+", text)
-            if match:
-                return match.group(0)
             
         return None
 
@@ -105,525 +99,239 @@ class Parser:
         if soup.title:
             t = soup.title.text
             if "Te koop:" in t:
-                return t.split("Te koop:")[1].split("[")[0].strip()
+                # Clean up "Te koop: Adres | Funda"
+                addr = t.split("Te koop:")[1].split("|")[0].split("[")[0].strip()
+                if addr: return addr
         
-        # 3. First valid line fallback (for raw text pastes)
-        # BLOCKLIST for common navigation/UI elements to ignore
-        BLOCKLIST = [
-            "ga naar", "menu", "zoeken", "inloggen", "funda", 
-            "te koop", "te huur", "favorieten", "foto's", 
-            "video's", "360-graden", "kenmerken", "kaart",
-            "verkoper", "contact"
-        ]
-        
-        lines = [line.strip() for line in soup.get_text().splitlines() if line.strip()]
-        for line in lines:
-            line_lower = line.lower()
-            # Skip if explicitly in blocklist or starts with (e.g. "Ga naar content")
-            if any(line_lower.startswith(b) for b in BLOCKLIST):
-                continue
-            
-            # Additional heuristic: Addresses usually have a number
-            if not any(c.isdigit() for c in line):
-                # If it's a very short word like "Photos", skip it
-                if len(line.split()) < 2:
-                    continue
-            
-            # Heuristic: address usually < 100 chars
-            if len(line) < 100:
-                return line
-                
-        return "Adres onbekend"
-        
-    def _extract_address(self, soup) -> str:
-        # 1. Standard Title
-        title_el = soup.select_one(".object-header__title")
-        if title_el:
-            return title_el.get_text(strip=True)
-        
-        # 2. Page Title tag
-        if soup.title:
-            t = soup.title.text
-            if "Te koop:" in t:
-                return t.split("Te koop:")[1].split("[")[0].strip()
-
-        # 3. Aggressive Regex Search for Address Patterns (Postcode + City)
-        # e.g. "1012 AB Amsterdam"
+        # 3. Postcode search with line cleaning
         text = soup.get_text(separator="\n")
-        # Regex for Dutch Postcode: 4 digits, space, 2 letters
-        postcode_regex = re.compile(r'(\b\d{4}\s?[A-Z]{2}\b)', re.IGNORECASE)
+        lines = [l.strip() for l in text.splitlines() if l.strip()]
+        blocklist = ["menu", "navigation", "ga naar", "funda", "kaart", "lijst", "foto's"]
         
-        lines = [line.strip() for line in text.splitlines() if line.strip()]
-        for i, line in enumerate(lines):
-             match = postcode_regex.search(line)
-             if match:
-                 # Found a postcode. The address is likely this line or previous one.
-                 # If this line starts with postcode, previous line might be street.
-                 if line.startswith(match.group(0)) and i > 0:
-                     potential_street = lines[i-1]
-                     # Heuristic: Street address often ends with a number
-                     if any(c.isdigit() for c in potential_street):
-                         return f"{potential_street}, {line}"
-                 
-                 # If postcode is at end, return whole line
-                 return line
-
-        # 4. Fallback to existing heuristic
-        # BLOCKLIST for common navigation/UI elements to ignore
-        BLOCKLIST = [
-            "ga naar", "menu", "zoeken", "inloggen", "funda", 
-            "te koop", "te huur", "favorieten", "foto's", 
-            "video's", "360-graden", "kenmerken", "kaart",
-            "verkoper", "contact"
-        ]
+        postcode_match = re.search(r'(\d{4}\s?[A-Z]{2})', text)
+        if postcode_match:
+            for i, line in enumerate(lines):
+                if postcode_match.group(1) in line:
+                    # Check if line is just the postcode (e.g. "1234 AB Stad")
+                    # If so, the address might be in the previous line
+                    if i > 0 and not any(b in lines[i-1].lower() for b in blocklist) and len(lines[i-1]) < 80:
+                         return f"{lines[i-1]} {line}"
+                    return line
         
+        # 4. Filter blocklist from raw lines if we have something that looks like an address
         for line in lines:
-            line_lower = line.lower()
-            if any(line_lower.startswith(b) for b in BLOCKLIST): continue
-            
-            # Heuristic: Addresses usually have a number
-            if not any(c.isdigit() for c in line):
-                if len(line.split()) < 2: continue
-            
-            if len(line) < 100:
-                return line
-                
+            if any(char.isdigit() for char in line) and len(line) < 100:
+                if not any(b in line.lower() for b in blocklist):
+                     return line
+
         return "Adres onbekend"
 
     def _extract_spec(self, soup, keyword):
-        # Map logical keys to multiple Dutch keywords
         kw_map = {
-            "living_area_m2": ["Woonoppervlakte", "Wonen", "Gebruiksoppervlakte wonen"],
+            "living_area_m2": ["Woonoppervlakte", "Wonen", "Gebruiksoppervlakte wonen", "Gebruiksoppervlakte"],
             "plot_area_m2": ["Perceel", "Perceeloppervlakte"],
             "build_year": ["Bouwjaar"],
             "energy_label": ["Energielabel"],
-            "rooms": ["Aantal kamers", "kamers"],
+            "rooms": ["Aantal kamers"],
             "volume_m3": ["Inhoud", "Bruto inhoud"],
-            "listed_since": ["Aangeboden sinds"]
+            "listed_since": ["Aangeboden sinds"],
+            "property_type": ["Soort woonhuis", "Soort appartement", "Woningtype"],
+            "construction_type": ["Soort bouw", "Bouwvorm"],
+            "heating": ["Verwarming"],
+            "insulation": ["Isolatie"]
         }
         
         keywords = kw_map.get(keyword, [keyword])
         
-        for k in keywords:
-            val = self._extract_spec_by_keyword(soup, k)
+        # 1. Try DT/DD structure first (very reliable for Funda)
+        for kw in keywords:
+            for dt in soup.find_all("dt"):
+                if kw.lower() in dt.get_text().lower():
+                    dd = dt.find_next_sibling("dd")
+                    if dd:
+                        val = dd.get_text(strip=True)
+                        if val: return val
+
+        # 2. Fallback to line-based search
+        for kw in keywords:
+            val = self._extract_spec_by_keyword(soup, kw)
             if val: return val
             
         return None
 
-    def _extract_spec_by_keyword(self, soup, keyword_long):
-        # Strategy 1: specific classes (skipped as we focus on robustness)
-        pass 
-        
-        # Strategy 2: Text scan in any text node
-        
-        # Helper to scan with specific flags
-        def scan(flags):
-            candidates = soup.find_all(string=re.compile(keyword_long, flags))
-            for cand in candidates:
-                # Check if exact match to keyword (heuristic: titles are usually exact)
-                # This avoids matching "woonoppervlak" inside a sentence
-                if len(cand.strip()) < len(keyword_long) + 5: 
-                    pass
-                
-                text = cand.strip()
-                # 1. Strict Colon Match first "Label: Value"
-                match_colon = re.search(f"{keyword_long}:\s*(.*)", text, flags)
-                if match_colon:
-                    val = match_colon.group(1).strip()
-                    if self._validate_value(keyword_long, val): return val
-                    
-                # 2. Loose match (no colon) - ONLY if line is short (likely a list item)
-                # This prevents matching "Garage" in "Mooie woning met garage en tuin..."
-                if len(text) < 50:
-                    match_loose = re.search(f"{keyword_long}\s+(.*)", text, flags)
-                    if match_loose:
-                        val = match_loose.group(1).strip()
-                        if self._validate_value(keyword_long, val): return val
-
-                # 3. Value in next sibling (remains same)
-                parent = cand.parent
-                if parent:
-                    for sib in parent.next_siblings:
-                        s_text = None
-                        if isinstance(sib, str):
-                            s_text = sib.strip()
-                        elif hasattr(sib, 'get_text'):
-                            s_text = sib.get_text(strip=True)
-                        
-                        if s_text:
-                            if self._validate_value(keyword_long, s_text): return s_text
-                            break
-            return None
-
-        # 1. Try EXACT casing first (e.g. "Wonen" vs "wonen")
-        val = scan(0) # 0 means case-sensitive
-        if val: return val
-        
-        # 2. Fallback to IGNORECASE scan in DOM
-        val = scan(re.IGNORECASE)
-        if val: return val
-        
-        # 3. Fallback: Raw Text Scan (for copy-pastes where structure is lost)
-        return self._scan_raw_text(soup, keyword_long)
-
-        return None
-
-        return None
-
-    def _scan_raw_text(self, soup, keyword):
-        """
-        Scans the full text content using robust regex patterns.
-        """
+    def _extract_spec_by_keyword(self, soup, keyword):
         text = soup.get_text(separator="\n")
+        lines = [l.strip() for l in text.splitlines() if l.strip()]
         
-        # KEYWORD MAPPING for "Paste Mode"
-        # Map internal keys back to their Dutch display labels found in raw text
-        
-        # Construct a flexible regex for the keyword
-        # allow optional colon, allow spaces
-        # Pattern: (Keyword)[:\s]+(Value)
-        
-        # 1. Look for "Label: Value" or "Label \n Value" (Forward Search)
-        pattern_forward = re.compile(f"(?:^|\\n)\\s*({keyword})[:\\s]+(.+?)(?=\\n|$)", re.IGNORECASE)
-        match_f = pattern_forward.search(text)
-        if match_f:
-             val = match_f.group(2).strip()
-             if not val:
-                 # Look for the very next non-empty line
-                 next_lines = text[match_f.end():].splitlines()
-                 for line in next_lines:
-                     if line.strip():
-                         val = line.strip()
-                         break
-             
-             if len(val) < 100 and self._validate_value(keyword, val):
-                 return val
-
-        # 2. Look for "Value \n Label" (Backward Search - common in Funda lists)
-        # Regex: find the keyword, then look at the line above it.
-        pattern_backward = re.compile(f"(?:^|\\n)(.*?)\\n\\s*({keyword})\\s*(?:\\n|$)", re.IGNORECASE)
-        match_b = pattern_backward.search(text)
-        if match_b:
-            val = match_b.group(1).strip()
-            if len(val) < 100 and self._validate_value(keyword, val):
-                return val
+        for i, line in enumerate(lines):
+            # Check if line IS the keyword or CONTAINS it at the end (e.g. "453 m2 wonen")
+            if re.search(f"\\b{keyword}\\b", line, re.IGNORECASE):
+                # Case 1: "Keyword: Value"
+                match_colon = re.search(f"{keyword}:?\\s*(.*)", line, re.IGNORECASE)
+                if match_colon and match_colon.group(1).strip():
+                    val = match_colon.group(1).strip()
+                    if self._is_mostly_digits(val): return val
                 
-        # 3. Fallback: Specialized searches for specific units
-        if "m2" in keyword.lower() or "wonen" in keyword.lower() or "m3" in keyword.lower() or "inhoud" in keyword.lower():
-             unit = "m[²2]"
-             if "m3" in keyword.lower() or "inhoud" in keyword.lower():
-                 unit = "m[³3]"
-                 
-             p2 = re.compile(r'(\d+(?:[\.,]\d+)?)\s*' + unit, re.IGNORECASE)
-             match = p2.search(text)
-             
-             if match and ("wonen" in keyword.lower() or "inhoud" in keyword.lower()):
-                 return match.group(0)
-                 
+                # Case 2: "Value Keyword" (e.g. "453 m² wonen" or "2 badkamers")
+                # Value must be at the end of the line with the keyword, and relatively short
+                match_before = re.search(f"(^|\\s)(.{1,15})\\s+{keyword}$", line, re.IGNORECASE)
+                if match_before and match_before.group(2).strip():
+                    val = match_before.group(2).strip()
+                    if self._is_mostly_digits(val): return val
+
+                # Case 3: Value is in next line
+                if i < len(lines) - 1:
+                    nxt = lines[i+1]
+                    if self._is_mostly_digits(nxt): return nxt
+
+                # Case 4: Value is in previous line (Use strict check to avoid crossing)
+                if i > 0:
+                    prev = lines[i-1]
+                    if self._is_mostly_digits(prev, strict=True): return prev
+        
         return None
 
-    def _validate_value(self, keyword, value):
-        # Heuristics to reject bad matches
-        val_lower = value.lower()
-        if not value: return False
+    def _is_mostly_digits(self, text, strict=False):
+        if not text: return False
         
-        # Energy label: short (A, B, C, A+++)
-        if "label" in keyword.lower():
-            if len(value) > 10: return False
-            if "blikvanger" in val_lower: return False # Specific garbage seen in test
+        # Original density check
+        clean = re.sub(r'[\d\.,\s]|m[²23]', '', text, flags=re.IGNORECASE)
+        is_dense = len(clean) < len(text) * 0.4
+        if is_dense: return True
+        
+        if strict: return False
+
+        # Relaxed check for Case 1, 2, 3 (Same line or Next line)
+        # Allow short descriptive strings even without digits (e.g. "Villa", "Gas", "Bestaande bouw")
+        if len(text) < 80:
+            # Avoid picking up long narrative lines
+            if len(text) > 40 and any(c in text for c in [",", ".", "!"]):
+                 # Sounds like a sentence
+                 return False
             return True
-            
-        # Areas: must have digits
-        if "m2" in keyword.lower() or "oppervl" in keyword.lower():
-            return any(c.isdigit() for c in value)
-            
-        return True
-
-    def _extract_label(self, soup) -> Optional[str]:
-        # Try generic spec extraction
-        val = self._extract_spec(soup, "energy_label")
-        if val:
-            return val.split("(")[0].strip()
-            
-        # Try finding badge class
-        label_badge = soup.select_one(".energy-label")
-        if label_badge:
-            return label_badge.get_text(strip=True)
-            
-        return None
-
-    def _extract_price_per_m2(self, soup) -> Optional[str]:
-        """Extract price per square meter"""
-        keywords = ["Vraagprijs per m²", "prijs per m²", "per m²"]
-        for kw in keywords:
-            val = self._extract_spec_by_keyword(soup, kw)
-            if val:
-                return val
-        return None
-
-    def _extract_bedrooms(self, soup) -> Optional[str]:
-        """Extract number of bedrooms separately from total rooms"""
-        keywords = ["slaapkamers", "slaapkamer"]
         
-        # First try to find in the structured data
-        for kw in keywords:
-            val = self._extract_spec_by_keyword(soup, kw)
-            if val:
-                # Extract just the number
-                match = re.search(r'(\d+)', val)
-                if match:
-                    num = int(match.group(1))
-                    if num <= self.MAX_BEDROOMS:
-                        return str(num)
-                    else:
-                        logger.warning(f"Suspicious bedroom count: {num} (max expected: {self.MAX_BEDROOMS})")
-                        return str(num)  # Return raw for validation to handle
-        
-        # Fallback: check if it's in the rooms field
-        rooms_text = self._extract_spec(soup, "rooms")
-        if rooms_text:
-            match = re.search(r'(\d+)\s*slaapkamers?', rooms_text, re.IGNORECASE)
-            if match:
-                num = int(match.group(1))
-                if num <= self.MAX_BEDROOMS:
-                    return str(num)
-                else:
-                    logger.warning(f"Suspicious bedroom count in rooms field: {num} (max expected: {self.MAX_BEDROOMS})")
-                    return str(num)
-        
-        return None
+        return False
 
-    def _extract_bathrooms(self, soup) -> Optional[str]:
-        """Extract number of bathrooms"""
-        keywords = ["Aantal badkamers"]
-        # First try to find in the structured data
-        for kw in keywords:
-            val = self._extract_spec_by_keyword(soup, kw)
-            if val:
-                # Extract just the number
-                match = re.search(r'(\d+)', val)
-                if match:
-                    num = int(match.group(1))
-                    if num <= self.MAX_BATHROOMS:
-                        return str(num)
-                    else:
-                        logger.warning(f"Suspicious bathroom count: {num} (max expected: {self.MAX_BATHROOMS})")
-                        return str(num)  # Return raw for validation to handle
+    def _extract_label(self, soup) -> str:
+        # Search for "Energielabel" then find letter A-G
+        text = soup.get_text(separator="\n")
+        # Handle "Energielabel: C" or "Energielabel C" or "Energielabel: A++"
+        match = re.search(r"Energielabel[:\s]*([A-G][\+]*)\b", text, re.IGNORECASE)
+        if match: return match.group(1).upper()
         
-        # Alternative: look for pattern like "2 badkamers"
+        # Simple letter search in short lines
+        for line in text.splitlines():
+            if len(line.strip()) < 15 and re.match(r"^[A-G][\+]*$", line.strip()):
+                return line.strip().upper()
+        
+        return "?"
+
+    def _extract_media_urls(self, soup) -> List[str]:
+        # Extract images from meta tags and standard img tags
+        urls = []
+        # Meta og:image is usually the main photo
+        meta_img = soup.find("meta", property="og:image")
+        if meta_img: urls.append(meta_img.get("content"))
+        
+        # First few large images
+        imgs = soup.find_all("img", src=True)
+        for img in imgs:
+            src = img["src"]
+            if "media.funda.nl" in src and "p2" in src: # p2 is usually high res
+                urls.append(src)
+            if len(urls) >= 10: break
+            
+        return [u for u in urls if u]
+
+    def _extract_bedrooms(self, soup):
         text = soup.get_text()
-        match = re.search(r'(\d+)\s+badkamers?(?:\s+en)?', text, re.IGNORECASE)
-        if match:
-            num = int(match.group(1))
-            if num <= self.MAX_BATHROOMS:
-                return str(num)
-            else:
-                logger.warning(f"Suspicious bathroom count in text: {num} (max expected: {self.MAX_BATHROOMS})")
-                return str(num)
-        
-        return None
+        m = re.search(r"(\d+)\s*slaapkamer", text, re.IGNORECASE)
+        if m: return m.group(1)
+        val = self._extract_spec(soup, "slaapkamers")
+        num = self._parse_num(val)
+        return str(num) if num is not None else None
 
-    def _extract_property_type(self, soup) -> Optional[str]:
-        """Extract property type (villa, apartment, etc.)"""
-        keywords = ["Soort woonhuis", "Type woning", "Woningtype"]
-        
-        for kw in keywords:
-            val = self._extract_spec_by_keyword(soup, kw)
-            if val:
-                return val
-        
-        return None
+    def _extract_bathrooms(self, soup):
+        val = self._extract_spec(soup, "badkamers")
+        num = self._parse_num(val)
+        return str(num) if num is not None else None
 
-    def _extract_construction_type(self, soup) -> Optional[str]:
-        """Extract construction type (new/existing)"""
-        keywords = ["Soort bouw", "Bouwtype"]
-        
-        for kw in keywords:
-            val = self._extract_spec_by_keyword(soup, kw)
-            if val:
-                return val
-        
-        return None
+    def _extract_property_type(self, soup):
+        return self._extract_spec(soup, "Soort woonhuis")
 
-    def _extract_garage(self, soup) -> Optional[str]:
-        """Extract garage information"""
-        keywords = ["Soort garage", "Garage", "Parkeren"]
-        
-        for kw in keywords:
-            val = self._extract_spec_by_keyword(soup, kw)
-            if val:
-                return val
-        
-        return None
+    def _extract_construction_type(self, soup):
+        return self._extract_spec(soup, "Soort bouw")
 
-    def _extract_garden(self, soup) -> Optional[str]:
-        """Extract garden information"""
-        keywords = ["Tuin", "Achtertuin", "Ligging tuin"]
-        
-        for kw in keywords:
-            val = self._extract_spec_by_keyword(soup, kw)
-            if val:
-                return val
-        
-        return None
+    def _extract_garage(self, soup):
+        return self._extract_spec(soup, "Soort garage")
 
-    def _extract_balcony(self, soup) -> Optional[str]:
-        """Extract balcony/terrace information"""
-        keywords = ["Balkon", "dakterras", "Balkon/dakterras"]
-        
-        for kw in keywords:
-            val = self._extract_spec_by_keyword(soup, kw)
-            if val:
-                return val
-        
-        return None
+    def _extract_garden(self, soup):
+        return self._extract_spec(soup, "Tuin")
 
-    def _extract_roof_type(self, soup) -> Optional[str]:
-        """Extract roof type"""
-        keywords = ["Soort dak", "Dak"]
-        
-        for kw in keywords:
-            val = self._extract_spec_by_keyword(soup, kw)
-            if val:
-                return val
-        
-        return None
+    def _extract_balcony(self, soup):
+        return "Ja" if self._extract_spec(soup, "Balkon") else "Nee"
 
-    def _extract_heating(self, soup) -> Optional[str]:
-        """Extract heating information"""
-        keywords = ["Verwarming", "Cv-ketel"]
-        
-        for kw in keywords:
-            val = self._extract_spec_by_keyword(soup, kw)
-            if val:
-                return val
-        
-        return None
+    def _extract_roof_type(self, soup):
+        return self._extract_spec(soup, "Soort dak")
 
-    def _extract_insulation(self, soup) -> Optional[str]:
-        """Extract insulation information"""
-        keywords = ["Isolatie"]
-        
-        for kw in keywords:
-            val = self._extract_spec_by_keyword(soup, kw)
-            if val:
-                return val
-        
-        return None
+    def _extract_heating(self, soup):
+        return self._extract_spec(soup, "Verwarming")
 
-    def _extract_service_costs(self, soup) -> Optional[str]:
-        """Extract service costs"""
-        keywords = ["Servicekosten", "Bijdrage VvE"]
-        for kw in keywords:
-            val = self._extract_spec_by_keyword(soup, kw)
-            if val: return val
-        return None
+    def _extract_insulation(self, soup):
+        return self._extract_spec(soup, "Isolatie")
 
-    def _extract_acceptance(self, soup) -> Optional[str]:
-        """Extract acceptance (e.g. In overleg)"""
-        keywords = ["Aanvaarding"]
-        for kw in keywords:
-            val = self._extract_spec_by_keyword(soup, kw)
-            if val: return val
-        return None
+    def _extract_service_costs(self, soup):
+        return self._extract_spec(soup, "Servicekosten")
 
-    def _extract_ownership(self, soup) -> Optional[str]:
-        """Extract ownership situation"""
-        keywords = ["Eigendomssituatie"]
-        for kw in keywords:
-            val = self._extract_spec_by_keyword(soup, kw)
-            if val: return val
-        return None
+    def _extract_acceptance(self, soup):
+        return self._extract_spec(soup, "Aanvaarding")
+
+    def _extract_ownership(self, soup):
+        return self._extract_spec(soup, "Eigendomssituatie")
 
     def _validate_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Validate extracted data and flag suspicious values.
-        Returns validated data with quality warnings.
-        """
+        # Ensure we don't have crazy values
         validated = data.copy()
         warnings = []
         
-        # Validate bedrooms
-        if data.get("bedrooms"):
-            try:
-                num = int(re.search(r'\d+', str(data["bedrooms"])) .group())
-                if num > self.MAX_BEDROOMS:
-                    warnings.append(f"Suspicious bedroom count: {num} (max expected: {self.MAX_BEDROOMS})")
-                    validated["bedrooms"] = str(self.MAX_BEDROOMS)  # Cap it
-                elif num == 0:
-                    warnings.append("Zero bedrooms detected, likely parsing error")
-                    validated["bedrooms"] = None
-                # If exactly max, keep as is (could be legitimate)
-            except (AttributeError, ValueError):
-                pass
-        
-        # Validate bathrooms
-        if data.get("bathrooms"):
-            try:
-                num = int(re.search(r'\d+', str(data["bathrooms"])).group())
-                if num > self.MAX_BATHROOMS:
-                    warnings.append(f"Suspicious bathroom count: {num} (max expected: {self.MAX_BATHROOMS})")
-                    validated["bathrooms"] = str(self.MAX_BATHROOMS) # Cap it
-            except (AttributeError, ValueError):
-                pass
-        
-        # Validate total rooms
-        if data.get("rooms"):
-            try:
-                num = int(re.search(r'\d+', str(data["rooms"])).group())
-                if num > self.MAX_TOTAL_ROOMS:
-                    warnings.append(f"Suspicious total room count: {num} (max expected: {self.MAX_TOTAL_ROOMS})")
-                    # INVALIDATE it. Better to estimate from m2 than to show "54 rooms".
-                    validated["rooms"] = None
-            except (AttributeError, ValueError):
-                pass
-        
-        # Validate living area
+        # Room logic
+        try:
+            rooms_val = self._parse_num(data.get("rooms"))
+            bed_val = self._parse_num(data.get("bedrooms"))
+            bath_val = self._parse_num(data.get("bathrooms"))
+            if bed_val and bed_val > self.MAX_BEDROOMS:
+                validated["bedrooms"] = str(self.MAX_BEDROOMS)
+                warnings.append(f"Suspicious bedroom count: {bed_val}. Capping at {self.MAX_BEDROOMS}.")
+            if rooms_val and rooms_val > self.MAX_TOTAL_ROOMS:
+                validated["rooms"] = str(self.MAX_TOTAL_ROOMS)
+                warnings.append(f"Suspiciously high room count: {rooms_val}. Capping at {self.MAX_TOTAL_ROOMS}.")
+            if bath_val and bath_val > self.MAX_BATHROOMS:
+                validated["bathrooms"] = str(self.MAX_BATHROOMS)
+                warnings.append(f"Suspicious bathroom count: {bath_val}.")
+        except: pass
+
         if data.get("living_area_m2"):
-            try:
-                # Extract digits including dots/commas
-                match = re.search(r'[\d\.,]+', str(data["living_area_m2"]))
-                if match:
-                    raw_num = match.group().replace('.', '').replace(',', '')
-                    num = int(raw_num)
-                    if num < self.MIN_LIVING_AREA:
-                        warnings.append(f"Suspicious living area: {num} m² (min expected: {self.MIN_LIVING_AREA} m²)")
-                    elif num > self.MAX_LIVING_AREA:
-                        warnings.append(f"Suspicious living area: {num} m² (max expected: {self.MAX_LIVING_AREA} m²)")
-            except (AttributeError, ValueError):
-                pass
+            area = self._parse_num(data["living_area_m2"])
+            if area and (area < self.MIN_LIVING_AREA or area > self.MAX_LIVING_AREA):
+                validated["living_area_m2"] = None
+                warnings.append(f"Living area out of logical range: {area}")
         
-        # Validate build year
         if data.get("build_year"):
-            try:
-                # Basic check for YYYY
-                match = re.search(r'(\d{4})', str(data["build_year"]))
-                if match:
-                    year = int(match.group(1))
-                    if year < self.MIN_BUILD_YEAR or year > self.MAX_BUILD_YEAR:
-                        warnings.append(f"Suspicious build year: {year} (expected between {self.MIN_BUILD_YEAR}-{self.MAX_BUILD_YEAR})")
-                        validated["build_year"] = None
-                else:
-                    validated["build_year"] = None
-            except (AttributeError, ValueError):
-                pass
+            year = self._parse_num(data["build_year"])
+            if year and (year < self.MIN_BUILD_YEAR or year > self.MAX_BUILD_YEAR):
+                validated["build_year"] = None
+                warnings.append(f"Build year out of range: {year}")
         
-        # Cross-validation: bedrooms should be less than total rooms
-        if validated.get("bedrooms") and validated.get("rooms"):
-            try:
-                bedrooms = int(re.search(r'\d+', str(validated["bedrooms"])).group())
-                total_rooms = int(re.search(r'\d+', str(validated["rooms"])).group())
-                
-                if bedrooms > total_rooms:
-                    warnings.append(f"Bedrooms ({bedrooms}) exceeds total rooms ({total_rooms})")
-                    # Trust bedrooms more if rooms is suspiciously small, or rooms more if bedrooms is huge?
-                    # For now just warn.
-            except (AttributeError, ValueError):
-                pass
-        
-        # Add warnings to validated data if any
         if warnings:
             validated["_parsing_warnings"] = warnings
-            logger.warning(f"Data validation warnings: {warnings}")
-        
+                
         return validated
+
+    def _parse_num(self, val):
+        if not val: return None
+        # Dutch format uses dots for thousands. Remove them before extracting numbers.
+        # But be careful: if there's a comma, it might be a decimal. 
+        # For our purposes (area, rooms, price), we'll strip dots and treat comma as a separator.
+        s = str(val).replace('.', '')
+        match = re.search(r'(\d+)', s)
+        return int(match.group(1)) if match else None

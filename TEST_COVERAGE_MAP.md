@@ -1,16 +1,16 @@
 # Test Coverage Map
 
-**Generated**: 2025-12-20 21:31:14 UTC
+**Generated**: 2025-12-21 09:13:58 UTC
 **Project**: `/Users/marcelkurvers/Development/funda-app`
 
 ## Executive Summary
 
-**Status**: ✅ All tests passing
-**Success Rate**: 100.0% (1/1 test suites)
+**Status**: ❌ All tests failing
+**Success Rate**: 0.0% (0/2 test suites)
 
-- ✅ **Passed**: 1
-- ❌ **Failed**: 0
-- ⏭️ **Skipped**: 5
+- ✅ **Passed**: 0
+- ❌ **Failed**: 2
+- ⏭️ **Skipped**: 4
 - 📊 **Total**: 6
 
 ## Language Detection
@@ -18,14 +18,14 @@
 **Detected Languages**: 2/6
 
 ### ✓ Python
-- **Source files**: 81
-- **Test files**: 80
-- **Test ratio**: 99% (80 test files per 81 source files)
+- **Source files**: 46
+- **Test files**: 43
+- **Test ratio**: 93% (43 test files per 46 source files)
 
 ### ✓ Javascript/Typescript
-- **Source files**: 39
+- **Source files**: 33
 - **Test files**: 2
-- **Test ratio**: 5% (2 test files per 39 source files)
+- **Test ratio**: 6% (2 test files per 33 source files)
 
 ### ○ Go
 - **Source files**: 0
@@ -49,17 +49,12 @@
 
 ## Test Execution Results
 
-### ✅ Successful Test Suites
+### ❌ Failed Test Suites
 
-| Framework | Tests | Duration | Details |
-|-----------|-------|----------|---------|
-| pytest | N/A | N/A | ✓ All tests passed |
-
-### ⚠️ Error Test Suites
-
-| Framework | Reason |
-|-----------|--------|
-| jest | Timeout after 300 seconds |
+| Framework | Tests | Duration | Failed Tests |
+|-----------|-------|----------|--------------|
+| pytest | N/A | N/A | Exit code: 1 |
+| jest | N/A | N/A | Exit code: 1 |
 
 ### ⏭️ Skipped Test Suites
 
@@ -72,4 +67,4 @@
 
 ## Recommendations
 
-- **Install missing frameworks**: Some test frameworks are not installed or not accessible
+- **Fix failing tests**: Review the failed test details above and fix the issues

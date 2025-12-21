@@ -125,9 +125,9 @@ class GeneralFeatures(BaseChapter):
             <li><strong>Bouwtype:</strong> {ctx.get('construction_type', 'Onbekend')}</li>
             <li><strong>Bouwjaar:</strong> {construction_year}</li>
             <li><strong>Energielabel:</strong> {label}</li>
-            <li><strong>Verwarming:</strong> {ctx.get('heating', 'Onbekend')[:50]}...</li>
-            <li><strong>Isolatie:</strong> {ctx.get('insulation', 'Onbekend')}</li>
-            <li><strong>Garage:</strong> {ctx.get('garage', 'Onbekend')}</li>
+            <li><strong>Verwarming:</strong> {(ctx.get('heating') or 'Onbekend')[:50]}...</li>
+            <li><strong>Isolatie:</strong> {ctx.get('insulation') or 'Onbekend'}</li>
+            <li><strong>Garage:</strong> {ctx.get('garage') or 'Onbekend'}</li>
             </ul>
             """
         }
