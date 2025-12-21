@@ -1,5 +1,5 @@
 {
-  "scanned_at": "2025-12-20T21:26:13.920159Z",
+  "scanned_at": "2025-12-21T09:12:50.088825Z",
   "root": "/Users/marcelkurvers/Development/funda-app",
   "excluded_dirs": [
     ".cache",
@@ -24,14 +24,9 @@
   "languages": {
     "python": {
       "language": "python",
-      "source_files": 81,
-      "test_files": 80,
+      "source_files": 46,
+      "test_files": 43,
       "test_roots": [
-        "ai-woning-rapport-WERKEND-local/backend/tests",
-        "ai-woning-rapport-WERKEND-local/backend/tests/e2e",
-        "ai-woning-rapport-WERKEND-local/backend/tests/integration",
-        "ai-woning-rapport-WERKEND-local/backend/tests/quality",
-        "ai-woning-rapport-WERKEND-local/backend/tests/unit",
         "backend/tests",
         "backend/tests/e2e",
         "backend/tests/integration",
@@ -43,7 +38,7 @@
     },
     "js_ts": {
       "language": "javascript_typescript",
-      "source_files": 39,
+      "source_files": 33,
       "test_files": 2,
       "test_roots": [
         "frontend/src/test"
