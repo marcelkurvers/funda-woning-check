@@ -1,0 +1,7 @@
+{
+  "name": "Funda.nl Huis Analyse",
+  "description": "An advanced property analysis tool that extracts hidden insights, price history, and sustainability data from Funda.nl listings using Gemini AI.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
