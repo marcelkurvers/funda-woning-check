@@ -1,16 +1,16 @@
 # Test Coverage Map
 
-**Generated**: 2025-12-22 21:54:12 UTC
+**Generated**: 2025-12-22 22:40:28 UTC
 **Project**: `/Users/marcelkurvers/Development/funda-app`
 
 ## Executive Summary
 
 **Status**: ❌ All tests failing
-**Success Rate**: 0.0% (0/1 test suites)
+**Success Rate**: 0.0% (0/2 test suites)
 
 - ✅ **Passed**: 0
-- ❌ **Failed**: 1
-- ⏭️ **Skipped**: 5
+- ❌ **Failed**: 2
+- ⏭️ **Skipped**: 4
 - 📊 **Total**: 6
 
 ## Language Detection
@@ -18,9 +18,9 @@
 **Detected Languages**: 2/6
 
 ### ✓ Python
-- **Source files**: 50
-- **Test files**: 45
-- **Test ratio**: 90% (45 test files per 50 source files)
+- **Source files**: 52
+- **Test files**: 47
+- **Test ratio**: 90% (47 test files per 52 source files)
 
 ### ✓ Javascript/Typescript
 - **Source files**: 39
@@ -54,12 +54,7 @@
 | Framework | Tests | Duration | Failed Tests |
 |-----------|-------|----------|--------------|
 | pytest | N/A | N/A | Exit code: 1 |
-
-### ⚠️ Error Test Suites
-
-| Framework | Reason |
-|-----------|--------|
-| jest | Timeout after 300 seconds |
+| jest | N/A | N/A | Exit code: 1 |
 
 ### ⏭️ Skipped Test Suites
 
@@ -72,5 +67,4 @@
 
 ## Recommendations
 
-- **Install missing frameworks**: Some test frameworks are not installed or not accessible
 - **Fix failing tests**: Review the failed test details above and fix the issues

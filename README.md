@@ -14,6 +14,8 @@ The **AI Woning Rapport** is designed to provide potential homebuyers with deep,
 ### Key Features
 
 - **AI Trust & Transparency Architecture**: Every insight is labeled as **Fact** (from data) or **Inferred** (AI analysis), complete with **AI Provenance** (model/provider tracking) and **Proof of Reasoning**.
+- **Smart Variable Display Strategy**: Core property data shown ONLY once (Chapter 0), with each chapter displaying only relevant, domain-specific variables. No repetition, maximum clarity.
+- **Marcel & Petra Preference Matching**: Automatic calculation and visual indication of how each property variable matches personal preferences, with color-coded indicators (blue for Marcel, pink for Petra, purple for both).
 - **Domain Variable Authority**: Strict adherence to a domain-specific set of 14 variables per chapter, ensuring "Onbekend" states are explicitly detected and surfaced.
 - **Multi-Check Pro Link**: Chrome/Edge extension for one-click ingestion from any Funda listing, bypassing CAPTCHAs and anti-bot measures.
 - **Dynamic Interpretation Pipeline**: AI-driven attribute discovery that automatically extracts and classifies property facts with confidence scoring.

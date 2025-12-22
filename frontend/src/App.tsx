@@ -343,26 +343,65 @@ function App() {
                   </BentoCard>
                 )}
 
-                {/* Domain Variables Grid (High Trust) */}
+                {/* Domain Variables Grid (High Trust) - Now with Preference Matching */}
                 {content.variables && Object.keys(content.variables).length > 0 && (
-                  <BentoCard className="col-span-1 md:col-span-3 lg:col-span-3" title="Core Data Snapshot" icon={<Database className="w-5 h-5 text-indigo-600" />}>
+                  <BentoCard
+                    className="col-span-1 md:col-span-3 lg:col-span-3"
+                    title={activeChapterId === "0" ? "Core Property Data" : "Chapter-Specific Variables"}
+                    icon={<Database className="w-5 h-5 text-indigo-600" />}
+                  >
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {Object.entries(content.variables).map(([key, data]: [string, any]) => (
-                        <div key={key} className="bg-slate-50 p-3 rounded-xl border border-slate-100 group/var transition-all hover:bg-white hover:shadow-sm">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter truncate pr-2">{key.replace(/_/g, ' ')}</span>
-                            <span className={`px-1.5 py-0.5 rounded-[4px] text-[8px] font-bold uppercase ${data.status === 'fact' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
-                              {data.status}
-                            </span>
-                          </div>
-                          <div className="text-sm font-black text-slate-900 group-hover/var:text-blue-600 transition-colors uppercase">{data.value || "onbekend"}</div>
-                          {data.reasoning && (
-                            <div className="mt-1.5 text-[10px] text-slate-500 italic leading-tight opacity-0 group-hover/var:opacity-100 transition-opacity">
-                              {data.reasoning}
+                      {Object.entries(content.variables).map(([key, data]: [string, any]) => {
+                        const prefMatch = data.preference_match || {};
+                        const marcelMatch = prefMatch.marcel;
+                        const petraMatch = prefMatch.petra;
+                        const hasPreferenceMatch = marcelMatch || petraMatch;
+
+                        return (
+                          <div
+                            key={key}
+                            className={`bg-slate-50 p-3 rounded-xl border group/var transition-all hover:bg-white hover:shadow-sm ${marcelMatch && petraMatch ? 'border-purple-200 bg-purple-50/30' :
+                                marcelMatch ? 'border-blue-200 bg-blue-50/30' :
+                                  petraMatch ? 'border-pink-200 bg-pink-50/30' :
+                                    'border-slate-100'
+                              }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter truncate pr-2">
+                                {key.replace(/_/g, ' ')}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                {marcelMatch && (
+                                  <div className="w-2 h-2 rounded-full bg-blue-500" title="Marcel's preference" />
+                                )}
+                                {petraMatch && (
+                                  <div className="w-2 h-2 rounded-full bg-pink-500" title="Petra's preference" />
+                                )}
+                                <span className={`px-1.5 py-0.5 rounded-[4px] text-[8px] font-bold uppercase ${data.status === 'fact' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
+                                  }`}>
+                                  {data.status}
+                                </span>
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      ))}
+                            <div className="text-sm font-black text-slate-900 group-hover/var:text-blue-600 transition-colors uppercase">
+                              {data.value || "onbekend"}
+                            </div>
+                            {data.reasoning && (
+                              <div className="mt-1.5 text-[10px] text-slate-500 italic leading-tight opacity-0 group-hover/var:opacity-100 transition-opacity">
+                                {data.reasoning}
+                              </div>
+                            )}
+                            {hasPreferenceMatch && prefMatch.interpretation && (
+                              <div className={`mt-2 text-[10px] font-bold leading-tight px-2 py-1 rounded ${marcelMatch && petraMatch ? 'bg-purple-100 text-purple-700' :
+                                  marcelMatch ? 'bg-blue-100 text-blue-700' :
+                                    'bg-pink-100 text-pink-700'
+                                }`}>
+                                {prefMatch.interpretation}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </BentoCard>
                 )}

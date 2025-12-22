@@ -6,6 +6,7 @@ import json
 import logging
 import asyncio
 import time
+from datetime import datetime
 
 from ai.provider_factory import ProviderFactory
 from ai.provider_interface import AIProvider
@@ -192,10 +193,20 @@ class IntelligenceEngine:
     async def _generate_ai_narrative(cls, chapter_id: int, data: Dict[str, Any], fallback: Dict[str, str]) -> Optional[Dict[str, Any]]:
         """
         Uses AI provider to generate the narrative with strict data adherence and persona comparison.
-        Now includes authoritative domain variable mapping and provenance tracking.
+        Now includes authoritative domain variable mapping, provenance tracking, and chapter-specific variable filtering.
         """
         if not cls._provider:
             return None
+
+        # Import chapter variable strategy
+        from domain.chapter_variables import (
+            get_chapter_ai_prompt,
+            filter_variables_for_chapter,
+            should_show_core_data
+        )
+        
+        # Get chapter-specific AI prompt
+        chapter_specific_prompt = get_chapter_ai_prompt(chapter_id)
 
         # --- v5.0 TRUST SAFETY NET ---
         # Ensure EVERY chapter has a variables grid and provenance
@@ -210,59 +221,71 @@ class IntelligenceEngine:
                 "provider": "Trust Architecture v5.0",
                 "model": "Hybrid Heuristic/AI",
                 "confidence": "high",
-                "timestamp": int(time.time() * 1000)
+                "timestamp": datetime.now().isoformat()
             }
 
         prefs = data.get('_preferences', {})
         provider_name = getattr(cls._provider, 'name', 'unknown')
         model_name = prefs.get('ai_model', 'unknown')
         
-        # Authoritative variable descriptions per chapter for the prompt
+        # CRITICAL: Determine if this chapter should show core data
+        show_core_data = should_show_core_data(chapter_id)
+        
+        # Chapter-specific variable requirements (focused, not repetitive)
         chapter_vars = {
-            1: "Adres, Postcode, Type woning, Bouwjaar, Woonoppervlakte, Perceel, Kamers, Slaapkamers, Energielabel, Isolatie, Verwarming, Prijs, Prijs/m2",
-            2: "Eisenlijst (per persoon), Match per eis (volledig/deels/niet/onbekend), Totale matchscore",
-            3: "Vraagprijs, WOZ, Marktindicatie, Afwijking vs WOZ, Afwijking vs Markt, Benchmark",
-            4: "Datum plaatsing, Dagen op Funda, Prijswijzigingen, Historisch verloop",
-            5: "Onderhandelingsargumenten (technisch/markt/juridisch), Risico's, Strategie",
-            6: "Aankoopkosten, Vaste lasten, Energie-inschatting, Onderhoudskosten, Renovatiekosten, TCO 10j",
-            7: "Buurttype, Voorzieningen, Geluid/Infra, Veiligheid",
-            8: "Samenvattende score, Koopadvies (pos/neu/neg), Belangrijkste pros/cons",
-            9: "Openingsbod, Doelbod, Maxbod, Voorbehouden, Risico's",
-            10: "KPI's (BCI, FDS, RNS, KRI, BRI), Interpretatie, Benchmark",
-            11: "Nodige aanpassingen, Optionele verbeteringen, Indicatieve kosten, Impact",
-            12: "Marktsentiment, Toekomstverwachting, Strategische reflex"
+            0: "ALL core property data: address, price, area, plot, rooms, energy label, build year, ownership, etc. + Marcel & Petra match scores",
+            1: "DERIVED features ONLY: building classification, space efficiency ratio, architectural period characteristics. NO raw data repetition.",
+            2: "Marcel & Petra preference matching ONLY: match percentages, specific hits/misses per person, viewing focus points",
+            3: "Technical state ONLY: roof/foundation condition, asbestos risk, plumbing age, maintenance buffer",
+            4: "Energy & sustainability ONLY: insulation level, heating type, solar potential, energy cost estimation, subsidy options",
+            5: "Layout analysis ONLY: space distribution quality, light penetration, renovation possibilities, flow assessment",
+            6: "Maintenance & finish ONLY: kitchen/bathroom age, flooring condition, paintwork state, modernization costs",
+            7: "Garden & outdoor ONLY: garden size/orientation, privacy score, maintenance intensity, expansion possibilities",
+            8: "Parking & mobility ONLY: parking situation, public transport access, highway proximity, charging facilities",
+            9: "Legal aspects ONLY: ownership type, ground lease, VvE costs, easements, zoning plan",
+            10: "Financial analysis ONLY: purchase costs, monthly costs, TCO 10-year, rental ROI",
+            11: "Market position ONLY: days on market, price changes, comparable properties, negotiation leverage",
+            12: "Final advice ONLY: buy recommendation, bidding strategy (opening/target/max), contingencies"
         }
 
-        target_vars = chapter_vars.get(chapter_id, "Algemene analyse")
+        target_vars = chapter_vars.get(chapter_id, "Chapter-specific analysis")
         
         system_prompt = (
-            f"You are a Lead AI Architect and Strategic Consultant. Context: Chapter {chapter_id}.\n"
-            f"REQUIRED DOMAIN VARIABLES: {target_vars}\n"
-            "STRICT RULES:\n"
-            "1. Output MUST be valid JSON.\n"
-            "2. Use 'onbekend / nader te onderzoeken' if data is missing. Never invent facts.\n"
-            "3. Provide PROOF of reasoning (explain WHY an inference was made).\n"
-            "4. Distinguish between 'fact' (from Data) and 'inferred' (from your analysis).\n"
-            "5. Confidence must be 'low', 'medium', or 'high'.\n"
-            "6. Dutch high-level vocabulary required.\n"
-            "7. IMPORTANT: Do NOT use inline styles for colors (e.g. no black text). Use semantic tags."
+            f"You are a Lead AI Architect and Strategic Consultant for Marcel & Petra. Context: Chapter {chapter_id}.\\n"
+            f"CHAPTER-SPECIFIC FOCUS: {chapter_specific_prompt}\\n"
+            f"REQUIRED DOMAIN VARIABLES: {target_vars}\\n"
+            "STRICT RULES:\\n"
+            "1. Output MUST be valid JSON.\\n"
+            "2. Use 'onbekend / nader te onderzoeken' if data is missing. Never invent facts.\\n"
+            "3. Provide PROOF of reasoning (explain WHY an inference was made).\\n"
+            "4. Distinguish between 'fact' (from Data) and 'inferred' (from your analysis).\\n"
+            "5. Confidence must be 'low', 'medium', or 'high'.\\n"
+            "6. Dutch high-level vocabulary required.\\n"
+            "7. IMPORTANT: Do NOT use inline styles for colors (e.g. no black text). Use semantic tags.\\n"
+            f"8. CRITICAL: {'Show ALL core property data with full detail' if show_core_data else 'Do NOT repeat core property data (address, price, area, etc.). Focus ONLY on chapter-specific variables.'}.\\n"
+            "9. For EVERY variable, include Marcel & Petra preference relevance if applicable.\\n"
+            "10. Provide actionable interpretation, not just data display."
         )
 
         user_prompt = f"""
         **Property Data**: {json.dumps(data, default=str)}
         **Reference Draft**: {json.dumps(fallback, default=str)}
+        **Marcel's Preferences**: {json.dumps(prefs.get('marcel', {}), default=str)}
+        **Petra's Preferences**: {json.dumps(prefs.get('petra', {}), default=str)}
         
         **Task**:
         - Populate and interpret the REQUIRED DOMAIN VARIABLES for Chapter {chapter_id}.
         - Create a deep analysis for Marcel & Petra.
+        - For EACH variable, explicitly state if it matches Marcel's or Petra's preferences.
+        - Provide specific recommendations based on their combined profile.
         
         **JSON Structure**:
         {{
             "title": "...",
             "intro": "...",
             "main_analysis": "...",
-            "variables": {{ "var_name": {{ "value": "...", "status": "fact|inferred|unknown", "reasoning": "..." }} }},
-            "comparison": {{ "marcel": "...", "petra": "...", "combined_advice": "..." }},
+            "variables": {{ "var_name": {{ "value": "...", "status": "fact|inferred|unknown", "reasoning": "...", "preference_match": {{ "marcel": true/false, "petra": true/false, "interpretation": "..." }} }} }},
+            "comparison": {{ "marcel": "How this chapter's aspects match Marcel's tech & ROI focus", "petra": "How this chapter's aspects match Petra's atmosphere & comfort focus", "combined_advice": "Actionable advice for both" }},
             "advice": ["Tip 1", "Tip 2"],
             "conclusion": "...",
             "metadata": {{
@@ -289,7 +312,7 @@ class IntelligenceEngine:
                 "confidence": result.get('metadata', {}).get('confidence', 'medium'),
                 "inferred_variables": result.get('metadata', {}).get('inferred_vars', []),
                 "factual_variables": [k for k,v in result.get('variables', {}).items() if v.get('status') == 'fact'],
-                "timestamp": int(time.time() * 1000)
+                "timestamp": datetime.now().isoformat()
             }
 
             # Vision Audit for Chapter 0 (if applicable)
@@ -319,7 +342,7 @@ class IntelligenceEngine:
                     "provider": "Trust Architecture v5.0",
                     "model": "Hybrid Heuristic/AI",
                     "confidence": "high",
-                    "timestamp": int(time.time() * 1000)
+                    "timestamp": datetime.now().isoformat()
                 }
 
             # Post-process: Ensure Marcel & Petra mention if missing

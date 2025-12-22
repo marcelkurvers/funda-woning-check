@@ -39,7 +39,7 @@ Found **31** potential issues.
 ### 📄 `chapters/base.py`
 | Line | Type | Content |
 | :--- | :--- | :--- |
-| 192 | **Generic Variable Name** | `# 5. CONCLUSION (Bottom Bar)` |
+| 193 | **Generic Variable Name** | `# 5. CONCLUSION (Bottom Bar)` |
 
 ### 📄 `static/preferences.html`
 | Line | Type | Content |

@@ -70,17 +70,18 @@ class BaseChapter(ABC):
         prov_html = ""
         if provenance:
             conf_class = f"conf-{provenance.get('confidence', 'medium')}"
+            timestamp_str = str(provenance.get('timestamp', ''))[:16]
             prov_html = f"""
-            <div class="mag-provenance-header">
-                <div class="prov-badge {conf_class}">
-                    <ion-icon name="shield-checkmark"></ion-icon>
+            \u003cdiv class="mag-provenance-header"\u003e
+                \u003cdiv class="prov-badge {conf_class}"\u003e
+                    \u003cion-icon name="shield-checkmark"\u003e\u003c/ion-icon\u003e
                     AI Vertrouwen: {provenance.get('confidence', 'not set').upper()}
-                </div>
-                <div class="prov-details">
-                    <span><ion-icon name="hardware-chip"></ion-icon> {provenance.get('model', 'Unknown Model')}</span>
-                    <span><ion-icon name="time"></ion-icon> {provenance.get('timestamp', '')[:16]}</span>
-                </div>
-            </div>
+                \u003c/div\u003e
+                \u003cdiv class="prov-details"\u003e
+                    \u003cspan\u003e\u003cion-icon name="hardware-chip"\u003e\u003c/ion-icon\u003e {provenance.get('model', 'Unknown Model')}\u003c/span\u003e
+                    \u003cspan\u003e\u003cion-icon name="time"\u003e\u003c/ion-icon\u003e {timestamp_str}\u003c/span\u003e
+                \u003c/div\u003e
+            \u003c/div\u003e
             """
 
         # 1. DOMAIN VARIABLES GRID
