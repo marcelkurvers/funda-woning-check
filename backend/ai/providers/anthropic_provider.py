@@ -22,6 +22,7 @@ class AnthropicProvider(AIProvider):
         
         self.client = AsyncAnthropic(api_key=self.api_key, timeout=timeout)
         self._name = "anthropic"
+        self.timeout = timeout
         self.default_model = model or os.getenv("AI_MODEL", "claude-3-5-sonnet-20240620")
         logger.info(f"AnthropicProvider initialized with model: {self.default_model}")
 
@@ -113,6 +114,9 @@ class AnthropicProvider(AIProvider):
         except Exception as e:
             logger.error(f"Anthropic Generation Error: {e}")
             raise RuntimeError(f"Anthropic failed: {str(e)}")
+
+    def list_models(self) -> List[str]:
+        return ["claude-3-5-sonnet-20241022", "claude-3-5-sonnet-20240620", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"]
 
     async def check_health(self) -> bool:
         try:

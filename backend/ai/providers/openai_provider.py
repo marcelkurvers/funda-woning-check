@@ -23,6 +23,7 @@ class OpenAIProvider(AIProvider):
         # Use shared persistent client
         self.client = AsyncOpenAI(api_key=self.api_key, timeout=timeout)
         self._name = "openai"
+        self.timeout = timeout
         self.default_model = model or os.getenv("AI_MODEL", "gpt-4o")
         logger.info(f"OpenAIProvider initialized with model: {self.default_model}")
 
@@ -97,6 +98,9 @@ class OpenAIProvider(AIProvider):
         except Exception as e:
             logger.error(f"OpenAI Generation Error: {e}")
             raise RuntimeError(f"OpenAI failed: {str(e)}")
+
+    def list_models(self) -> List[str]:
+        return ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"]
 
     async def check_health(self) -> bool:
         try:

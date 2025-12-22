@@ -52,6 +52,13 @@ class AIProvider(ABC):
         pass
 
     @abstractmethod
+    def list_models(self) -> List[str]:
+        """
+        List available recommended models for this provider
+        """
+        pass
+
+    @abstractmethod
     async def close(self):
         """
         Cleanup and close any persistent resources (e.g., HTTP clients)

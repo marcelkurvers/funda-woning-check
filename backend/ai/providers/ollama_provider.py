@@ -100,6 +100,22 @@ class OllamaProvider(AIProvider):
             logger.error(f"Ollama generation failed: {e}")
             raise RuntimeError(f"Ollama failed: {str(e)}")
 
+    def list_models(self) -> List[str]:
+        """
+        In a real scenario, this would call /api/tags. 
+        For the factory list and UI consistency, we return common recommended models.
+        """
+        try:
+            # We use a sync request here for consistency with the interface which is sync
+            with httpx.Client(timeout=5.0) as client:
+                resp = client.get(f"{self.base_url}/api/tags")
+                if resp.status_code == 200:
+                    models = resp.json().get("models", [])
+                    return [m["name"] for m in models]
+        except Exception:
+            pass
+        return ["llama3", "mistral", "phi3", "nomic-embed-text", "llama3.1"]
+
     async def check_health(self) -> bool:
         try:
             client = await self._get_client()

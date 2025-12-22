@@ -105,6 +105,9 @@ class GeminiProvider(AIProvider):
             logger.error(f"Gemini Generation Error: {e}")
             raise RuntimeError(f"Gemini failed: {str(e)}")
 
+    def list_models(self) -> List[str]:
+        return ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-3-fast", "gemini-3-pro", "gemini-3-thinking"]
+
     async def check_health(self) -> bool:
         try:
             # Quick list models check to verify API key

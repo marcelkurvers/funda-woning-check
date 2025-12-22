@@ -1,6 +1,6 @@
 # Test Coverage Map
 
-**Generated**: 2025-12-22 21:12:26 UTC
+**Generated**: 2025-12-22 21:15:47 UTC
 **Project**: `/Users/marcelkurvers/Development/funda-app/backend`
 
 ## Executive Summary
@@ -52,7 +52,7 @@
 
 | Framework | Tests | Duration | Failed Tests |
 |-----------|-------|----------|--------------|
-| pytest | N/A | N/A | Exit code: 2 |
+| pytest | 0 passed, 0 failed | 1.02s | See logs for details |
 
 ### ⏭️ Skipped Test Suites
 
