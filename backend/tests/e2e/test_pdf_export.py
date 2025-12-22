@@ -125,7 +125,7 @@ class TestPDFExport(unittest.TestCase):
         # To be safe, we patch main.HTML directly here.
         
         with patch("main.HTML", side_effect=side_effect_HTML):
-            response = self.client.get(f"/runs/{run_id}/pdf")
+            response = self.client.get(f"/api/runs/{run_id}/pdf")
 
         # 3. Validation
         
