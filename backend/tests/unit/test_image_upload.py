@@ -180,7 +180,7 @@ class TestImageUploadIntegration:
         image_url = upload_response.json()["url"]
 
         # Create a run with the uploaded image
-        create_response = client.post("/runs", json={
+        create_response = client.post("/api/runs", json={
             "funda_url": "manual-paste",
             "funda_html": "<html><body>Property</body></html>",
             "media_urls": [image_url]
@@ -190,11 +190,11 @@ class TestImageUploadIntegration:
         run_id = create_response.json()["run_id"]
 
         # Start and get report
-        client.post(f"/runs/{run_id}/start")
+        client.post(f"/api/runs/{run_id}/start")
         import time
         time.sleep(2)
 
-        report_response = client.get(f"/runs/{run_id}/report")
+        report_response = client.get(f"/api/runs/{run_id}/report")
         report_data = report_response.json()
 
         # Media URLs should be preserved

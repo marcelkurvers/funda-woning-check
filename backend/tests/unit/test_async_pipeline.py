@@ -33,7 +33,7 @@ class TestAsyncPipeline:
     def test_start_run_returns_immediately(self, client, mock_run_id):
         """Test that /runs/{run_id}/start returns immediately without blocking"""
         # First create a run
-        create_response = client.post("/runs", json={
+        create_response = client.post("/api/runs", json={
             "funda_url": "manual-paste",
             "funda_html": "<html><body>Test property</body></html>"
         })
@@ -42,7 +42,7 @@ class TestAsyncPipeline:
 
         # Start the run
         start_time = time.time()
-        start_response = client.post(f"/runs/{run_id}/start")
+        start_response = client.post(f"/api/runs/{run_id}/start")
         elapsed_time = time.time() - start_time
 
         # Should return immediately (< 1 second)
@@ -54,14 +54,14 @@ class TestAsyncPipeline:
     def test_status_polling_endpoint_exists(self, client, mock_run_id):
         """Test that status polling endpoint is accessible"""
         # Create a run first
-        create_response = client.post("/runs", json={
+        create_response = client.post("/api/runs", json={
             "funda_url": "manual-paste",
             "funda_html": "<html><body>Test property</body></html>"
         })
         run_id = create_response.json()["run_id"]
 
         # Check status endpoint
-        status_response = client.get(f"/runs/{run_id}/status")
+        status_response = client.get(f"/api/runs/{run_id}/status")
         assert status_response.status_code == 200
 
         data = status_response.json()
@@ -73,14 +73,14 @@ class TestAsyncPipeline:
     def test_status_polling_progress_calculation(self, client):
         """Test that progress is calculated correctly"""
         # Create a run
-        create_response = client.post("/runs", json={
+        create_response = client.post("/api/runs", json={
             "funda_url": "manual-paste",
             "funda_html": "<html><body>Test property</body></html>"
         })
         run_id = create_response.json()["run_id"]
 
         # Get status
-        status_response = client.get(f"/runs/{run_id}/status")
+        status_response = client.get(f"/api/runs/{run_id}/status")
         data = status_response.json()
 
         progress = data["progress"]
@@ -92,24 +92,24 @@ class TestAsyncPipeline:
 
     def test_status_endpoint_404_for_nonexistent_run(self, client):
         """Test that status endpoint returns 404 for non-existent run"""
-        response = client.get("/runs/nonexistent-id/status")
+        response = client.get("/api/runs/nonexistent-id/status")
         assert response.status_code == 404
 
     def test_pipeline_runs_in_background(self, client):
         """Test that pipeline executes in background thread"""
         # Create and start a run
-        create_response = client.post("/runs", json={
+        create_response = client.post("/api/runs", json={
             "funda_url": "manual-paste",
             "funda_html": "<html><body>Test property with price €500,000</body></html>"
         })
         run_id = create_response.json()["run_id"]
 
         # Start pipeline (should return immediately)
-        start_response = client.post(f"/runs/{run_id}/start")
+        start_response = client.post(f"/api/runs/{run_id}/start")
         assert start_response.status_code == 200
 
         # Initially should be queued or running
-        status_response = client.get(f"/runs/{run_id}/status")
+        status_response = client.get(f"/api/runs/{run_id}/status")
         initial_status = status_response.json()["status"]
         assert initial_status in ["queued", "running"]
 
@@ -119,13 +119,13 @@ class TestAsyncPipeline:
         while wait_time < max_wait:
             time.sleep(1)
             wait_time += 1
-            status_response = client.get(f"/runs/{run_id}/status")
+            status_response = client.get(f"/api/runs/{run_id}/status")
             status = status_response.json()["status"]
             if status == "done":
                 break
 
         # Should eventually complete
-        final_status = client.get(f"/runs/{run_id}/status")
+        final_status = client.get(f"/api/runs/{run_id}/status")
         assert final_status.json()["status"] == "done"
 
     def test_multiple_concurrent_pipelines(self, client):
@@ -134,7 +134,7 @@ class TestAsyncPipeline:
 
         # Create multiple runs
         for i in range(3):
-            response = client.post("/runs", json={
+            response = client.post("/api/runs", json={
                 "funda_url": "manual-paste",
                 "funda_html": f"<html><body>Property {i}</body></html>"
             })
@@ -142,12 +142,12 @@ class TestAsyncPipeline:
 
         # Start all pipelines
         for run_id in run_ids:
-            response = client.post(f"/runs/{run_id}/start")
+            response = client.post(f"/api/runs/{run_id}/start")
             assert response.status_code == 200
 
         # All should be processing or queued
         for run_id in run_ids:
-            status = client.get(f"/runs/{run_id}/status")
+            status = client.get(f"/api/runs/{run_id}/status")
             assert status.json()["status"] in ["queued", "running", "done"]
 
 
@@ -172,18 +172,18 @@ class TestBackwardCompatibility:
     def test_report_endpoint_still_works(self, client):
         """Test that /runs/{run_id}/report endpoint still functions"""
         # Create and process a run
-        create_response = client.post("/runs", json={
+        create_response = client.post("/api/runs", json={
             "funda_url": "manual-paste",
             "funda_html": "<html><body>Test property</body></html>"
         })
         run_id = create_response.json()["run_id"]
 
         # Start and wait for completion
-        client.post(f"/runs/{run_id}/start")
+        client.post(f"/api/runs/{run_id}/start")
         time.sleep(5)  # Wait a bit for processing
 
         # Report endpoint should still work
-        report_response = client.get(f"/runs/{run_id}/report")
+        report_response = client.get(f"/api/runs/{run_id}/report")
         assert report_response.status_code == 200
 
         data = report_response.json()
@@ -192,7 +192,7 @@ class TestBackwardCompatibility:
 
     def test_create_run_endpoint_unchanged(self, client):
         """Test that creating runs still works as before"""
-        response = client.post("/runs", json={
+        response = client.post("/api/runs", json={
             "funda_url": "manual-paste",
             "funda_html": "<html><body>Test</body></html>"
         })

@@ -32,24 +32,24 @@ class TestIntegration(unittest.TestCase):
     def test_full_flow_with_paste(self):
         # 1. Start Run
         print("\n[Test] Starting Run...")
-        resp = client.post("/runs", json={"funda_url": "https://www.funda.nl/test"})
+        resp = client.post("/api/runs", json={"funda_url": "https://www.funda.nl/test"})
         self.assertEqual(resp.status_code, 200)
         run_id = resp.json()["run_id"]
         
         # 2. Start Pipeline
-        client.post(f"/runs/{run_id}/start")
+        client.post(f"/api/runs/{run_id}/start")
         
         # Wait for "scrape" to finish (simulated)
         time.sleep(1)
         
         # 3. Paste HTML
         print("[Test] Pasting HTML content...")
-        resp = client.post(f"/runs/{run_id}/paste", json={"funda_html": SAMPLE_HTML})
+        resp = client.post(f"/api/runs/{run_id}/paste", json={"funda_html": SAMPLE_HTML})
         self.assertEqual(resp.status_code, 200)
         
         # 4. Verify Data is updated in property_core (via Report)
         print("[Test] Fetching Report...")
-        resp = client.get(f"/runs/{run_id}/report")
+        resp = client.get(f"/api/runs/{run_id}/report")
         data = resp.json()
         
         kpis = data["kpis"].get("dashboard_cards", [])
