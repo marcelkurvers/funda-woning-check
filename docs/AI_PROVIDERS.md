@@ -1,7 +1,7 @@
 # AI Woning Rapport - AI Provider Integration Guide
 
-**Version**: 2.0
-**Last Updated**: 2025-12-20
+**Version**: 2.1
+**Last Updated**: 2025-12-22
 
 ---
 
@@ -313,11 +313,16 @@ except ProviderAuthError:
 ### Unit Tests
 
 Comprehensive tests for all providers are located in:
-`backend/tests/unit/test_providers.py`
+- `backend/tests/unit/test_providers.py` - Individual provider tests
+- `backend/tests/unit/test_ai_refactor.py` - Provider factory, model selection, and preferences sync tests
 
 Run with:
 ```bash
-pytest backend/tests/unit/test_providers.py
+# Run all provider tests
+pytest backend/tests/unit/test_providers.py backend/tests/unit/test_ai_refactor.py
+
+# Run only the refactor tests (factory, models API, preferences sync)
+pytest backend/tests/unit/test_ai_refactor.py -v
 ```
 
 ### Mock Provider for Testing

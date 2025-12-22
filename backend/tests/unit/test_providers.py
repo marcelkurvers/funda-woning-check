@@ -35,6 +35,8 @@ mock_anthropic.APIStatusError = MockAPIStatusError
 sys.modules['anthropic'] = mock_anthropic
 
 sys.modules['openai'] = MagicMock()
+sys.modules['openai.resources'] = MagicMock()
+sys.modules['openai.resources.chat'] = MagicMock()
 sys.modules['google'] = MagicMock()
 sys.modules['google.genai'] = MagicMock()
 sys.modules['google.genai.types'] = MagicMock()
@@ -131,7 +133,9 @@ class TestOllamaProvider:
 
             models = provider.list_models()
 
-        assert models == []
+        # Implementation returns fallback list on error
+        assert len(models) > 0
+        assert "llama3" in models
 
     def test_ollama_list_models_connection_error(self):
         """Test Ollama list_models handles connection errors gracefully"""
@@ -146,7 +150,9 @@ class TestOllamaProvider:
 
             models = provider.list_models()
 
-        assert models == []
+        # Should return fallback models
+        assert len(models) > 0
+        assert "llama3" in models
 
     @pytest.mark.anyio
     async def test_ollama_generate_success(self):
@@ -184,9 +190,8 @@ class TestOllamaProvider:
             mock_context.post = AsyncMock(side_effect=httpx.TimeoutException("Timeout"))
             mock_client.return_value = mock_context
 
-            result = await provider.generate(prompt="Test")
-
-        assert "failed" in result.lower()
+            with pytest.raises(RuntimeError, match="Ollama failed"):
+                await provider.generate(prompt="Test")
 
     @pytest.mark.anyio
     async def test_ollama_check_health_success(self):
@@ -331,8 +336,7 @@ class TestOpenAIProvider:
         """Test OpenAI health check returns True when accessible"""
         provider = OpenAIProvider(api_key="test-key")
 
-        mock_response = Mock()
-        provider.client.chat.completions.create = AsyncMock(return_value=mock_response)
+        provider.client.models.list = AsyncMock(return_value=Mock())
 
         health = await provider.check_health()
 
@@ -343,7 +347,7 @@ class TestOpenAIProvider:
         """Test OpenAI health check returns False on error"""
         provider = OpenAIProvider(api_key="test-key")
 
-        provider.client.chat.completions.create = AsyncMock(
+        provider.client.models.list = AsyncMock(
             side_effect=Exception("Connection failed")
         )
 
@@ -445,8 +449,7 @@ class TestAnthropicProvider:
         """Test Anthropic health check returns True when accessible"""
         provider = AnthropicProvider(api_key="test-key")
 
-        mock_response = Mock()
-        provider.client.messages.create = AsyncMock(return_value=mock_response)
+        provider.client.models.list = AsyncMock(return_value=Mock())
 
         health = await provider.check_health()
 
@@ -459,7 +462,7 @@ class TestAnthropicProvider:
 
         # Use the module-level MockAPIError that's already set up
         error = MockAPIError("API error")
-        provider.client.messages.create = AsyncMock(side_effect=error)
+        provider.client.models.list = AsyncMock(side_effect=error)
         health = await provider.check_health()
 
         assert health is False
@@ -570,9 +573,10 @@ class TestGeminiProvider:
             provider = GeminiProvider(api_key="test-key")
             
             # Mock the async iterator for list models
-            mock_iterator = AsyncMock()
-            mock_iterator.__aiter__.return_value = [Mock()]
-            provider.client.aio.models.list.return_value = mock_iterator
+            async def mock_async_iterator(*args, **kwargs):
+                yield Mock()
+            
+            provider.client.aio.models.list.side_effect = mock_async_iterator
 
             health = await provider.check_health()
             assert health is True

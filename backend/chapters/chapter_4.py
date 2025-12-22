@@ -99,10 +99,14 @@ class EnergySustainability(BaseChapter):
         </div>
         """)
         
-        # Assuming 'consumption' is defined elsewhere or needs to be derived from ctx
-        # For the purpose of this edit, let's mock it or derive it simply if possible
-        # In a real scenario, this would come from the IntelligenceEngine or ctx
-        consumption = IntelligenceEngine._parse_int(ctx.get('energy_consumption_kwh', '5000')) # Example default
+        # Derive consumption from context if available, otherwise estimate based on size
+        raw_consumption = ctx.get('energy_consumption_kwh') or ctx.get('gas_verbruik')
+        if raw_consumption:
+            consumption = IntelligenceEngine._parse_int(str(raw_consumption))
+        else:
+            # Simple heuristic fallback (e.g. 15 kWh per m2 for housing average)
+            size_val = (IntelligenceEngine._parse_int(ctx.get('oppervlakte','0')) or 120)
+            consumption = size_val * 15 
 
         layout = {
             "layout_type": "modern_dashboard",

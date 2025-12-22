@@ -1,7 +1,7 @@
 # AI Woning Rapport - Configuration Reference
 
-**Version**: 2.0
-**Last Updated**: 2025-12-20
+**Version**: 2.1
+**Last Updated**: 2025-12-22
 
 This document lists all configurable values in the application, their defaults, and where they were previously hardcoded.
 

@@ -473,12 +473,12 @@ def build_kpis(core: Dict[str, Any]) -> Dict[str, Any]:
     present = sum(1 for f in fields if core.get(f))
     completeness = round(present / len(fields), 2)
     
-    # Basic Score Logic
-    fit_score = 0.75
+    # Dynamic Score Logic based on preferences
+    fit_score = IntelligenceEngine.calculate_fit_score(core)
     value_text = core.get("asking_price_eur", "€ N/B")
     
     cards = [
-        {"id": "fit", "title": "Match Score", "value": f"{int(fit_score*100)}%", "trend": "neutral", "desc": "Match Marcel & Petra"},
+        {"id": "fit", "title": "Match Score", "value": f"{int(fit_score*100)}%", "trend": "up" if fit_score > 0.6 else "neutral", "desc": "Match Marcel & Petra"},
         {"id": "completeness", "title": "Data Kwaliteit", "value": f"{int(completeness*100)}%", "trend": "up" if completeness > 0.8 else "neutral", "desc": "Extrahering"},
         {"id": "value", "title": "Vraagprijs", "value": value_text, "trend": "neutral", "desc": "Per direct"},
         {"id": "energy", "title": "Energielabel", "value": core.get("energy_label") or "?", "trend": "neutral", "desc": "Duurzaamheid"}

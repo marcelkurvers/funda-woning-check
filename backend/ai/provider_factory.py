@@ -55,16 +55,18 @@ class ProviderFactory:
             if provider_name == 'ollama':
                 # Ollama uses base_url instead of api_key
                 return provider_class(
-                    base_url=kwargs.get('base_url'),
-                    timeout=kwargs.get('timeout'),
-                    model=kwargs.get('model')
+                    base_url=kwargs.pop('base_url', None),
+                    timeout=kwargs.pop('timeout', 180),
+                    model=kwargs.pop('model', None),
+                    **kwargs
                 )
             else:
                 # API-based providers
                 return provider_class(
-                    api_key=kwargs.get('api_key'),
-                    timeout=kwargs.get('timeout'),
-                    model=kwargs.get('model')
+                    api_key=kwargs.pop('api_key', None),
+                    timeout=kwargs.pop('timeout', 180),
+                    model=kwargs.pop('model', None),
+                    **kwargs
                 )
         except Exception as e:
             logger.error(f"Failed to instantiate {provider_name} provider: {e}")

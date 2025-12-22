@@ -13,15 +13,15 @@ class TestComprehensive(unittest.TestCase):
 
     def test_all_chapters_generated(self):
         """
-        Verify that all 12 chapters are generated and contain the address.
+        Verify that all 14 chapters (0-13) are generated.
         """
         chapters = build_chapters(self.core_data)
         
-        # Check we have 13 chapters (0-12)
-        self.assertEqual(len(chapters), 13, f"Expected 13 chapters, got {len(chapters)}")
+        # Check we have 14 chapters (0-13)
+        self.assertEqual(len(chapters), 14, f"Expected 14 chapters, got {len(chapters)}")
         
         # Verify specific content in each chapter
-        for i in range(1, 13):
+        for i in range(1, 14):
             str_i = str(i)
             self.assertIn(str_i, chapters, f"Chapter {i} missing")
             # Check for grid layout main content

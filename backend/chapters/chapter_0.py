@@ -84,7 +84,8 @@ class ExecutiveSummary(BaseChapter):
             else:
                 construction_alert = "Relatief jonge bouw; beperkt risico."
         except Exception as e:
-            print(f"DEBUG EXCEPTION YEAR: {e}")
+            # construction_alert = "Bouwjaar verificatie vereist."
+            logging.warning(f"Bouwjaar verificatie vereist voor: {year} ({e})")
             construction_alert = "Bouwjaar verificatie vereist."
             year_val = 2000
 

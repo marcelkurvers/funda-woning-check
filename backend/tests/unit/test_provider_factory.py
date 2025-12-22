@@ -281,9 +281,12 @@ class TestFactoryRegistryIntegration:
 
             async def check_health(self):
                 return True
+                
+            async def close(self):
+                pass
 
         # Register the custom provider
-        ProviderRegistry.register("custom", CustomProvider)
+        ProviderFactory.register_provider("custom", CustomProvider)
 
         try:
             # Create it using the factory (need to provide api_key since it's not "ollama")
@@ -304,8 +307,8 @@ class TestFactoryRegistryIntegration:
 
         finally:
             # Clean up
-            if "custom" in ProviderRegistry._providers:
-                del ProviderRegistry._providers["custom"]
+            if "custom" in ProviderFactory._registry:
+                del ProviderFactory._registry["custom"]
 
     def test_all_registered_providers_can_be_created(self):
         """Test that every registered provider can be created via factory"""
@@ -352,8 +355,9 @@ class TestProviderFactoryErrorHandling:
         ollama = ProviderFactory.create_provider("Ollama")
         assert ollama.name == "ollama"
 
-        with pytest.raises(ValueError, match="Unknown provider: OPENAI"):
-            ProviderFactory.create_provider("OPENAI", api_key="key")  # Should be "openai"
+        # Should also NOT raise because factory calls .lower()
+        openai = ProviderFactory.create_provider("OPENAI", api_key="key")
+        assert openai.name == "openai"
 
     def test_helpful_error_message_lists_available_providers(self):
         """Test that error message for unknown provider lists available options"""

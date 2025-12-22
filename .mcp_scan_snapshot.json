@@ -1,5 +1,5 @@
 {
-  "scanned_at": "2025-12-21T09:12:50.088825Z",
+  "scanned_at": "2025-12-22T21:49:12.009581Z",
   "root": "/Users/marcelkurvers/Development/funda-app",
   "excluded_dirs": [
     ".cache",
@@ -24,9 +24,10 @@
   "languages": {
     "python": {
       "language": "python",
-      "source_files": 46,
-      "test_files": 43,
+      "source_files": 50,
+      "test_files": 45,
       "test_roots": [
+        "backend",
         "backend/tests",
         "backend/tests/e2e",
         "backend/tests/integration",
@@ -38,7 +39,7 @@
     },
     "js_ts": {
       "language": "javascript_typescript",
-      "source_files": 33,
+      "source_files": 39,
       "test_files": 2,
       "test_roots": [
         "frontend/src/test"

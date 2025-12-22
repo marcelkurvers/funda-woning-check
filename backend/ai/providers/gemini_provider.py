@@ -109,6 +109,8 @@ class GeminiProvider(AIProvider):
         return ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-3-fast", "gemini-3-pro", "gemini-3-thinking"]
 
     async def check_health(self) -> bool:
+        if not self.api_key:
+            return False
         try:
             # Quick list models check to verify API key
             async for _ in self.client.aio.models.list(config={'page_size': 1}):

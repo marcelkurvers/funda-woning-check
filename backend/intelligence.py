@@ -91,18 +91,7 @@ class IntelligenceEngine:
         else:
             result = {"title": "Analyse", "intro": "Generieke analyse.", "main_analysis": "Geen data.", "conclusion": "N.v.t."}
         
-        # PRE-AI: Add KPI Explanations (Hardcoded fallback)
-        kpi_expl = (
-            "\n<h3>Begrip van de KPI's</h3>"
-            "<ul>"
-            "<li><strong>Vraagprijs:</strong> De marktwaarde-indicatie.</li>"
-            "<li><strong>Woonoppervlak:</strong> De netto bruikbare ruimte (NEN2580).</li>"
-            "<li><strong>Bouwjaar:</strong> Indicatie voor bouwqualiteit en isolatienormen.</li>"
-            "<li><strong>Energielabel:</strong> Impact op comfort en maandlasten.</li>"
-            "</ul>"
-        )
-        if "KPI Explanations" not in result.get("main_analysis", ""):
-            result["main_analysis"] = result.get("main_analysis", "") + kpi_expl
+        # KPI Explanation logic moved to specific chapters or AI prompts to avoid hardcoding here
 
         # AI OVERRIDE
         if IntelligenceEngine._provider:
@@ -464,6 +453,49 @@ class IntelligenceEngine:
         }
 
     @staticmethod
+    def calculate_fit_score(d: Dict[str, Any]) -> float:
+        """
+        Calculates a numeric fit score (0.0 - 1.0) based on preferences and property data.
+        """
+        prefs = d.get('_preferences', {})
+        marcel_props = prefs.get('marcel', {})
+        petra_props = prefs.get('petra', {})
+        
+        marcel_prio = marcel_props.get('priorities', [])
+        marcel_hidden = marcel_props.get('hidden_priorities', [])
+        petra_prio = petra_props.get('priorities', [])
+        petra_hidden = petra_props.get('hidden_priorities', [])
+        
+        # Combine all priorities
+        all_prio = marcel_prio + marcel_hidden + petra_prio + petra_hidden
+        if not all_prio:
+            return 0.5 # Default middle ground
+            
+        # Combine source text for searching
+        description = d.get('description', '') or ""
+        features = str(d.get('features', []))
+        source_blob = f"{description} {features}".lower()
+        
+        matches = 0
+        for p in all_prio:
+            p_lower = p.lower()
+            # Basic token matching
+            tokens = [t.strip() for t in p_lower.split('/') if len(t.strip()) > 2]
+            if not tokens: tokens = [p_lower]
+            
+            for token in tokens:
+                # Specialized mappings
+                if token == "solar": token = "zonnepanelen"
+                if token == "jaren 30": token = "193"
+                
+                if token in source_blob:
+                    matches += 1
+                    break
+        
+        score = matches / len(all_prio)
+        return round(score, 2)
+
+    @staticmethod
     def _narrative_ch2(d):
         prefs = d.get('_preferences', {})
         marcel_props = prefs.get('marcel', {})
@@ -522,10 +554,7 @@ class IntelligenceEngine:
         ph_matches, ph_misses = check_features(petra_hidden, source_blob)
         
         # Scoring includes BOTH visible and hidden
-        total_prio = len(marcel_prio) + len(petra_prio) + len(marcel_hidden) + len(petra_hidden)
-        total_match = len(m_matches) + len(p_matches) + len(mh_matches) + len(ph_matches)
-        
-        score_pct = int((total_match / total_prio * 100)) if total_prio > 0 else 50 # Default 50 if no prefs
+        score_pct = int(IntelligenceEngine.calculate_fit_score(d) * 100)
 
         intro = f"Op basis van de aangescherpte profielen van Marcel (Tech & Infra) en Petra (Sfeer & Comfort) scoort deze woning een match van {score_pct}%."
         
@@ -1023,8 +1052,11 @@ class IntelligenceEngine:
         advice = "<ul><li>Laatste check: Bestemmingsplan omgeving.</li><li>Biedt strategisch (geen ronde getallen).</li></ul>"
         strengths = ["Unieke combinatie locatie/ruimte"]
         
-        # Final Score Logic (Mock)
-        final_score = 8.5 if d['label'] in ['A','B'] else 7.0
+        # Integrated Score Logic (Data-driven)
+        score_base = 6.5
+        if d['label'] in ['A','B']: score_base += 1.5
+        if d['year'] > 2000: score_base += 1.0
+        final_score = min(9.5, score_base)
 
         conclusion = f"Eindcijfer: {final_score}/10. {'KOOPWAARDIG' if final_score > 7 else 'AANDACHT VEREIST'}."
         

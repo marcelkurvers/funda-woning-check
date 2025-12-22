@@ -1,14 +1,15 @@
 # AI Test Plan (Phase 2)
 
-- Generated at: 2025-12-21T09:12:50.089086Z
+- Generated at: 2025-12-22T21:49:12.010033Z
 - Project root: `/Users/marcelkurvers/Development/funda-app`
 
 ## Python Tests
 
 - Status: **detected**
-- Source files detected: **46**
-- Test files detected: **43**
+- Source files detected: **50**
+- Test files detected: **45**
 - Test roots:
+  - `backend`
   - `backend/tests`
   - `backend/tests/e2e`
   - `backend/tests/integration`
@@ -23,7 +24,7 @@
 ## Javascript_typescript Tests
 
 - Status: **detected**
-- Source files detected: **33**
+- Source files detected: **39**
 - Test files detected: **2**
 - Test roots:
   - `frontend/src/test`

@@ -21,11 +21,22 @@ class AdviceConclusion(BaseChapter):
         
         main_content = self._render_rich_narrative(narrative)
         
+        # Calculate dynamic final score and risk
+        fit_score = IntelligenceEngine.calculate_fit_score(ctx)
+        
+        # Energy label based risk
+        label = ctx.get('label', 'G').upper()
+        energy_risk = "Hoog" if label in ["F", "G"] else "Middel" if label in ["D", "E"] else "Laag"
+        risk_color = "red" if energy_risk == "Hoog" else "orange" if energy_risk == "Middel" else "green"
+        
+        # Action recommendation
+        action = "Bezichtig" if fit_score > 0.6 else "Heroverweeg"
+        
         metrics = [
-            {"id": "final", "label": "Totaalscore", "value": "7.5/10", "icon": "trophy", "color": "blue", "explanation": "Goede investering"},
-            {"id": "risk", "label": "Risico", "value": "Laag", "icon": "shield-checkmark", "color": "green", "explanation": "Stabiele waarde"},
-            {"id": "action", "label": "Actie", "value": "Bezichtig", "icon": "walk", "color": "blue", "explanation": "Vraag direct aan"},
-            {"id": "bid", "label": "Bieding", "value": "Op Aanvraag", "icon": "cash", "color": "orange", "explanation": "Zie strategie"}
+            {"id": "final", "label": "Totaalscore", "value": f"{int(fit_score*10 + 2)}/10", "icon": "trophy", "color": "blue", "explanation": "Goede investering" if fit_score > 0.6 else "Gemiddeld"},
+            {"id": "risk", "label": "Risico (Energie)", "value": energy_risk, "icon": "shield-checkmark", "color": risk_color, "explanation": "Impact op waarde"},
+            {"id": "action", "label": "Actie", "value": action, "icon": "walk", "color": "blue", "explanation": "Volgende stap"},
+            {"id": "bid", "label": "Bieding", "value": "Individueel", "icon": "cash", "color": "orange", "explanation": "Zie strategie"}
         ]
         # New metrics (additive)
         price_val = IntelligenceEngine._parse_int(ctx.get('prijs') or ctx.get('asking_price_eur'))

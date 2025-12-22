@@ -119,10 +119,12 @@ class AnthropicProvider(AIProvider):
         return ["claude-3-5-sonnet-20241022", "claude-3-5-sonnet-20240620", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"]
 
     async def check_health(self) -> bool:
+        if not self.api_key:
+            return False
         try:
-            # We don't have a direct 'list models' that is easy for health, 
-            # so we do a tiny generation if possible or just check init.
-            return self.api_key is not None
+            # Try to list models as a health check
+            await self.client.models.list(limit=1)
+            return True
         except Exception:
             return False
 
