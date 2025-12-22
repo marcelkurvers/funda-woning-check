@@ -1,6 +1,11 @@
 # AI Woning Rapport
 
+[![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue?logo=docker)](https://ghcr.io/marcelkurvers/funda-app)
+[![Build Status](https://github.com/marcelkurvers/funda-app/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/marcelkurvers/funda-app/actions/workflows/docker-publish.yml)
+[![License](https://img.shields.io/badge/license-Private-red)](LICENSE)
+
 A powerful, data-driven real estate analysis tool that transforms Funda listings into comprehensive, personalized property reports.
+
 
 ## 🚀 Overview
 

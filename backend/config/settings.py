@@ -9,6 +9,7 @@ See docs/CONFIGURATION.md for complete documentation.
 
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
 from typing import Optional, Dict, Any, Type, Tuple
+from pathlib import Path
 import json
 import sqlite3
 import os
