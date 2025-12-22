@@ -18,6 +18,8 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import sys
+import asyncio
+import concurrent.futures
 from pathlib import Path
 
 # Ensure backend directory is in path for internal imports
@@ -288,6 +290,14 @@ def _startup():
     init_db()
     init_ai_provider()
 
+@app.on_event("shutdown")
+async def _shutdown():
+    # Properly close AI Provider shared client (Risk 2 Mitigation)
+    from intelligence import IntelligenceEngine
+    provider = IntelligenceEngine._provider
+    if provider and hasattr(provider, "close"):
+        await provider.close()
+
 # Include configuration router
 from api import config as config_router
 app.include_router(config_router.router)
@@ -354,9 +364,9 @@ def simulate_pipeline(run_id):
         steps["dynamic_extraction"] = "running"
         update_run(run_id, steps_json=json.dumps(steps))
         try:
-            import asyncio
-            # Since we are in a ThreadPoolExecutor thread, we can use asyncio.run
-            asyncio.run(run_dynamic_extraction(run_id, row["funda_html"]))
+            # Use safe execution bridge (Risk 1 Mitigation)
+            from ai.bridge import safe_execute_async
+            safe_execute_async(run_dynamic_extraction(run_id, row["funda_html"]))
             steps["dynamic_extraction"] = "done"
             update_run(run_id, steps_json=json.dumps(steps))
         except Exception as e:

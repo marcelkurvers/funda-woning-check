@@ -11,17 +11,13 @@ logger = logging.getLogger(__name__)
 
 class OllamaProvider(AIProvider):
     """
-    Refined Ollama AI provider implementation.
-    Handles model selection via environment variables and ensures async correctness.
+    Hardened Ollama AI provider implementation.
+    Reuses httpx.AsyncClient and handles lifecycle safely.
     """
 
     def __init__(self, base_url: Optional[str] = None, timeout: int = 120):
         """
         Initialize the Ollama provider.
-        Priority:
-        1. Environment variable OLLAMA_BASE_URL
-        2. Detected Docker environment
-        3. Localhost
         """
         if not base_url:
             base_url = os.environ.get("OLLAMA_BASE_URL")
@@ -34,17 +30,34 @@ class OllamaProvider(AIProvider):
 
         self.base_url = base_url.rstrip('/')
         
-        # Read timeout from env or use provided default (120s)
         env_timeout = os.environ.get("OLLAMA_TIMEOUT")
         self.timeout = int(env_timeout) if env_timeout else timeout
-        
-        # Default model: mistral (as per requirements)
         self.model = os.environ.get("OLLAMA_MODEL", "mistral")
         
         self.generate_endpoint = f"{self.base_url}/api/generate"
         self.tags_endpoint = f"{self.base_url}/api/tags"
         
-        logger.info(f"OllamaProvider: base={self.base_url}, model={self.model}, timeout={self.timeout}s")
+        # Shared client instance for connection pooling (Risk 2 Mitigation)
+        self._async_client: Optional[httpx.AsyncClient] = None
+        
+        logger.info(f"OllamaProvider initialized (model={self.model}, timeout={self.timeout}s)")
+
+    async def _get_client(self) -> httpx.AsyncClient:
+        """Lazy-initialize and return a shared AsyncClient"""
+        if self._async_client is None or self._async_client.is_closed:
+            self._async_client = httpx.AsyncClient(
+                timeout=httpx.Timeout(float(self.timeout)),
+                limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+                follow_redirects=True
+            )
+        return self._async_client
+
+    async def close(self):
+        """Shutdown hook for resources cleanup"""
+        if self._async_client and not self._async_client.is_closed:
+            await self._async_client.aclose()
+            self._async_client = None
+            logger.info("OllamaProvider: Shared AsyncClient closed.")
 
     @property
     def name(self) -> str:
@@ -52,15 +65,15 @@ class OllamaProvider(AIProvider):
 
     async def check_health(self) -> bool:
         try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                response = await client.get(self.base_url)
-                return response.status_code == 200
+            client = await self._get_client()
+            response = await client.get(self.base_url, timeout=5.0)
+            return response.status_code == 200
         except Exception as e:
             logger.error(f"Ollama health check failed: {e}")
             return False
 
     def list_models(self) -> List[str]:
-        """Synchronous listing of models (interface requirement)"""
+        """Synchronous listing remains using sync client to avoid loop mixing in simple calls"""
         try:
             with httpx.Client(timeout=10.0) as client:
                 response = client.get(self.tags_endpoint)
@@ -82,17 +95,15 @@ class OllamaProvider(AIProvider):
     ) -> str:
         """
         Generate text response from Ollama.
-        Streaming is ALWAYS disabled.
-        Only the OLLAMA_MODEL environment variable or explicit override is used.
+        Reuses a shared AsyncClient for performance and resource management.
         """
-        # Selection priority: 1. Method argument, 2. Env variable (self.model)
         selected_model = model if model else self.model
         
         payload = {
             "model": selected_model,
             "prompt": prompt,
             "system": system,
-            "stream": False,  # Mandatory: disabled streaming
+            "stream": False,
         }
 
         if json_mode:
@@ -100,47 +111,46 @@ class OllamaProvider(AIProvider):
 
         if images:
             b64_images = []
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                for img_path in images:
-                    try:
-                        if img_path.startswith(('http://', 'https://')):
-                            resp = await client.get(img_path)
-                            resp.raise_for_status()
-                            b64_images.append(base64.b64encode(resp.content).decode('utf-8'))
-                        elif os.path.exists(img_path):
-                            with open(img_path, "rb") as f:
-                                b64_images.append(base64.b64encode(f.read()).decode('utf-8'))
-                    except Exception as e:
-                        logger.warning(f"Failed to process image {img_path}: {e}")
+            client_ref = await self._get_client()
+            for img_path in images:
+                try:
+                    if img_path.startswith(('http://', 'https://')):
+                        resp = await client_ref.get(img_path)
+                        resp.raise_for_status()
+                        b64_images.append(base64.b64encode(resp.content).decode('utf-8'))
+                    elif os.path.exists(img_path):
+                        with open(img_path, "rb") as f:
+                            b64_images.append(base64.b64encode(f.read()).decode('utf-8'))
+                except Exception as e:
+                    logger.warning(f"Ollama image process failed ({img_path}): {e}")
             if b64_images:
                 payload["images"] = b64_images
 
         if options:
             payload["options"] = options
 
-        logger.info(f"Ollama Request: model={selected_model} (Timeout: {self.timeout}s)")
+        logger.info(f"Ollama Request: model={selected_model} (Awaiting response...)")
         
         try:
-            # Use httpx.AsyncClient to ensure non-blocking I/O in async context
-            async with httpx.AsyncClient(timeout=float(self.timeout)) as client:
-                response = await client.post(self.generate_endpoint, json=payload)
-                
-                if response.status_code != 200:
-                    error_msg = f"Ollama Error {response.status_code}: {response.text}"
-                    logger.error(error_msg)
-                    raise RuntimeError(error_msg)
-                
-                data = response.json()
-                answer = data.get("response")
-                
-                if answer is None:
-                    raise RuntimeError("Ollama returned invalid JSON (missing 'response' field)")
-                
-                return str(answer)
+            client = await self._get_client()
+            response = await client.post(self.generate_endpoint, json=payload)
+            
+            if response.status_code != 200:
+                error_body = response.text
+                logger.error(f"Ollama Error Response: {error_body}")
+                raise RuntimeError(f"Ollama server returned {response.status_code}")
+            
+            data = response.json()
+            answer = data.get("response")
+            
+            if answer is None:
+                raise RuntimeError("Ollama returned invalid response structure")
+            
+            return str(answer)
                 
         except httpx.TimeoutException:
-            logger.error(f"Ollama request timed out after {self.timeout}s")
+            logger.error(f"Ollama timeout after {self.timeout}s")
             raise TimeoutError(f"Ollama request timed out after {self.timeout}s")
         except Exception as e:
-            logger.error(f"Ollama Pipeline Failure: {e}")
-            raise # Fail fast, do not return partial data
+            logger.error(f"Ollama provider failure: {e}", exc_info=True)
+            raise

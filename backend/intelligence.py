@@ -106,13 +106,10 @@ class IntelligenceEngine:
 
         # AI OVERRIDE
         if IntelligenceEngine._provider:
-            # Note: Called via asyncio.run if in sync context, but we want it awaited if possible.
-            # To maintain sync contract for chapters while being '100% correct' internally:
+            # Note: Called via safe bridge to handle event loop conflicts (Risk 1 Mitigation)
             try:
-                import nest_asyncio
-                nest_asyncio.apply()
-                loop = asyncio.get_event_loop()
-                ai_result = loop.run_until_complete(IntelligenceEngine._generate_ai_narrative(chapter_id, data, result))
+                from ai.bridge import safe_execute_async
+                ai_result = safe_execute_async(IntelligenceEngine._generate_ai_narrative(chapter_id, data, result))
                 
                 if ai_result:
                      p_core = result.get("property_core")
