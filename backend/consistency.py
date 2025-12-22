@@ -102,13 +102,36 @@ class ConsistencyChecker:
 
             # STRATEGY B: String/Enum Verification (e.g. Label A, Garage present)
             else:
-                # If short string, enforce word boundary to avoid finding "G" in "Garage"
-                if len(str_val) < 4:
-                    # Escape special regex chars if any
+                # Special case: Boolean values (Ja/Nee)
+                if str_val.lower() in ['ja', 'nee', 'yes', 'no']:
+                    # For boolean values, check if the field name appears in the text
+                    field_keywords = []
+                    if 'balcony' in key.lower() or 'balkon' in key.lower():
+                        field_keywords = ['balkon', 'balcony']
+                    elif 'garden' in key.lower() or 'tuin' in key.lower():
+                        field_keywords = ['tuin', 'garden']
+                    elif 'garage' in key.lower():
+                        field_keywords = ['garage', 'parkeer']
+                    elif 'terrace' in key.lower() or 'terras' in key.lower():
+                        field_keywords = ['terras', 'terrace']
+                    
+                    if field_keywords:
+                        if any(kw in flat_text_lower for kw in field_keywords):
+                            status = "ok"
+                        else:
+                            status = "mismatch"
+                            msg = f"Veld '{key}' niet gevonden in brontekst."
+                    else:
+                        if str_val.lower() in flat_text_lower:
+                            status = "ok"
+                        else:
+                            status = "mismatch"
+                            msg = f"Waarde '{str_val}' niet gevonden als losstaand woord."
+                
+                # If short string (non-boolean), enforce word boundary
+                elif len(str_val) < 4:
                     safe_val = re.escape(str_val.lower())
                     if re.search(rf'\b{safe_val}\b', flat_text_lower):
-                        # For very short values (1-2 chars), ideally we check context too, 
-                        # but word boundary is a good first step.
                         status = "ok"
                     else:
                         status = "mismatch"
