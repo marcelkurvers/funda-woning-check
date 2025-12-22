@@ -21,7 +21,7 @@ class DynamicExtractor:
         """
         self.provider = provider
 
-    def extract_attributes(self, text: str) -> List[Dict[str, Any]]:
+    async def extract_attributes(self, text: str) -> List[Dict[str, Any]]:
         """
         Performs the full segmentation -> extraction -> classification pipeline.
         
@@ -35,7 +35,7 @@ class DynamicExtractor:
         
         try:
             # We use a lower temperature for extraction to improve reliability
-            response = self.provider.generate(prompt)
+            response = await self.provider.generate(prompt)
             
             # 2. Pipeline Stage: Parse LLM output
             # Look for JSON array in the response

@@ -353,9 +353,16 @@ def simulate_pipeline(run_id):
         logger.info(f"Pipeline [{run_id}]: Starting Dynamic Extraction")
         steps["dynamic_extraction"] = "running"
         update_run(run_id, steps_json=json.dumps(steps))
-        run_dynamic_extraction(run_id, row["funda_html"])
-        steps["dynamic_extraction"] = "done"
-        update_run(run_id, steps_json=json.dumps(steps))
+        try:
+            import asyncio
+            # Since we are in a ThreadPoolExecutor thread, we can use asyncio.run
+            asyncio.run(run_dynamic_extraction(run_id, row["funda_html"]))
+            steps["dynamic_extraction"] = "done"
+            update_run(run_id, steps_json=json.dumps(steps))
+        except Exception as e:
+            logger.error(f"Pipeline [{run_id}]: Dynamic Extraction failed: {e}")
+            update_run(run_id, status="error", steps_json=json.dumps(steps))
+            return # Stop pipeline on failure
 
     # 2. KPIs
     logger.info(f"Pipeline [{run_id}]: Computing KPIs")
@@ -370,8 +377,13 @@ def simulate_pipeline(run_id):
     steps["generate_chapters"] = "running"
     update_run(run_id, steps_json=json.dumps(steps))
     
-    chapters = build_chapters(core)
-    unknowns = build_unknowns(core)
+    try:
+        chapters = build_chapters(core)
+        unknowns = build_unknowns(core)
+    except Exception as e:
+        logger.error(f"Pipeline [{run_id}]: Chapter generation failed: {e}")
+        update_run(run_id, status="error", steps_json=json.dumps(steps))
+        return # Stop pipeline as requested
     
     steps["generate_chapters"] = "done"
     logger.info(f"Pipeline [{run_id}]: Complete")
@@ -698,7 +710,7 @@ def extension_ingest(data: Dict[str, Any]):
         
     return {"run_id": run_id, "status": "processing"}
 
-def run_dynamic_extraction(run_id: str, html: str):
+async def run_dynamic_extraction(run_id: str, html: str):
     try:
         init_ai_provider()
         provider = IntelligenceEngine._provider
@@ -713,7 +725,8 @@ def run_dynamic_extraction(run_id: str, html: str):
         main = soup.find('main') or soup.find('article') or soup.body or soup
         text = main.get_text(separator="\n")
         
-        attributes = extractor.extract_attributes(text)
+        # 100% Correct async call
+        attributes = await extractor.extract_attributes(text)
         
         con = db()
         cur = con.cursor()
@@ -726,6 +739,7 @@ def run_dynamic_extraction(run_id: str, html: str):
         con.close()
     except Exception as e:
         logger.error(f"Background dynamic extraction failed: {e}")
+        raise # Propagate to stop pipeline
 
 @app.get("/api/health")
 def health_check():

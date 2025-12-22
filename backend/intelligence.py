@@ -106,8 +106,14 @@ class IntelligenceEngine:
 
         # AI OVERRIDE
         if IntelligenceEngine._provider:
+            # Note: Called via asyncio.run if in sync context, but we want it awaited if possible.
+            # To maintain sync contract for chapters while being '100% correct' internally:
             try:
-                ai_result = IntelligenceEngine._generate_ai_narrative(chapter_id, data, result)
+                import nest_asyncio
+                nest_asyncio.apply()
+                loop = asyncio.get_event_loop()
+                ai_result = loop.run_until_complete(IntelligenceEngine._generate_ai_narrative(chapter_id, data, result))
+                
                 if ai_result:
                      p_core = result.get("property_core")
                      result.update(ai_result)
@@ -117,6 +123,7 @@ class IntelligenceEngine:
                         result["interpretation"] = result.get("interpretation", "") + "\n\nDeze analyse is gegenereerd door de AI-engine (Deep Analysis Mode)."
             except Exception as e:
                 logger.error(f"AI Generation failed for Chapter {chapter_id}: {e}")
+                raise # Re-raise to stop pipeline as requested
         
         # Ensure v5.0 defaults if AI or chapter logic missed them
         if '_provenance' not in result:
@@ -196,7 +203,7 @@ class IntelligenceEngine:
             return 0
 
     @classmethod
-    def _generate_ai_narrative(cls, chapter_id: int, data: Dict[str, Any], fallback: Dict[str, str]) -> Optional[Dict[str, Any]]:
+    async def _generate_ai_narrative(cls, chapter_id: int, data: Dict[str, Any], fallback: Dict[str, str]) -> Optional[Dict[str, Any]]:
         """
         Uses AI provider to generate the narrative with strict data adherence and persona comparison.
         Now includes authoritative domain variable mapping and provenance tracking.
@@ -281,19 +288,11 @@ class IntelligenceEngine:
         """
 
         try:
-            coro = cls._provider.generate(user_prompt, system=system_prompt, model=model_name, json_mode=True)
+            # 100% Correct async call with await
+            response_text = await cls._provider.generate(user_prompt, system=system_prompt, model=model_name, json_mode=True)
             
-            # (Keep the existing async handling logic ...)
-            if not asyncio.iscoroutine(coro):
-                response_text = str(coro)
-            else:
-                try:
-                    import nest_asyncio
-                    nest_asyncio.apply()
-                    loop = asyncio.get_event_loop()
-                    response_text = loop.run_until_complete(coro)
-                except:
-                    response_text = asyncio.run(coro)
+            if not response_text or not isinstance(response_text, str):
+                raise ValueError(f"Provider returned invalid response type: {type(response_text)}")
 
             result = json.loads(cls._clean_json(response_text))
             
@@ -310,21 +309,16 @@ class IntelligenceEngine:
             # Vision Audit for Chapter 0 (if applicable)
             if chapter_id == 0 and data.get("media_urls") and IntelligenceEngine._provider:
                 try:
-                    # Need to run async in sync - reuse existing loop pattern
-                    vision_coro = IntelligenceEngine.process_visuals(data)
-                    import nest_asyncio
-                    nest_asyncio.apply()
-                    try:
-                        loop = asyncio.get_event_loop()
-                        vision_audit = loop.run_until_complete(vision_coro)
-                    except:
-                        vision_audit = asyncio.run(vision_coro)
+                    # 100% Correct: await the vision audit in this async context
+                    vision_audit = await IntelligenceEngine.process_visuals(data)
                     
                     if vision_audit:
                         # Append strictly to chapter 0's main analysis or a new field
                         result["main_analysis"] = vision_audit + result.get("main_analysis", "")
                 except Exception as e:
                     logger.error(f"Vision Audit failed for Ch 0: {e}")
+                    # Vision is optional, but we log it. 
+                    # If it's a hard failure requirement, we should raise here too.
 
             # --- v5.0 TRUST SAFETY NET ---
             # Ensure EVERY chapter has a variables grid and provenance
