@@ -11,10 +11,10 @@ This document lists all configurable values in the application, their defaults, 
 
 | Setting | Type | Default | Env Var | Description |
 |---------|------|---------|---------|-------------|
-| `ai_provider` | string | `"ollama"` | `AI_PROVIDER` | Active AI provider: `ollama`, `openai`, `anthropic`, `gemini` |
-| `ai_model` | string | `"llama3"` | `AI_MODEL` | Model to use for text generation |
-| `ai_timeout` | int | `30` | `AI_TIMEOUT` | Request timeout in seconds |
-| `ai_fallback_enabled` | bool | `true` | `AI_FALLBACK_ENABLED` | Fall back to hardcoded content if AI fails |
+| `ai_provider` | string | `"ollama"` | `AI_PROVIDER` | Active AI provider: `ollama`, `openai`, `anthropic`, `gemini`. Can be updated via Preferences UI. |
+| `ai_model` | string | `"llama3"` | `AI_MODEL` | Model to use for text generation. Synchronized with Preferences pane. |
+| `ai_timeout` | int | `30` | `AI_TIMEOUT` | Request timeout in seconds. |
+| `ai_fallback_enabled` | bool | `true` | `AI_FALLBACK_ENABLED` | Fall back to hardcoded content if AI fails. |
 
 ### API Keys
 

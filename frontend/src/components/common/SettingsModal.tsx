@@ -67,13 +67,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, d
     };
 
     const updateSection = (section: string, field: string, value: any) => {
-        setConfig((prev: any) => ({
-            ...prev,
-            [section]: {
-                ...prev[section],
-                [field]: value
+        setConfig((prev: any) => {
+            const next = {
+                ...prev,
+                [section]: {
+                    ...prev[section],
+                    [field]: value
+                }
+            };
+
+            // Auto-select first model if provider changed
+            if (section === 'ai' && field === 'provider') {
+                const providerData = providers.find(p => p.name === value);
+                if (providerData && providerData.models && providerData.models.length > 0) {
+                    next.ai.model = providerData.models[0];
+                }
             }
-        }));
+
+            return next;
+        });
     };
 
     if (!isOpen) return null;
@@ -135,13 +147,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, d
 
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Model</label>
-                                        <input
-                                            type="text"
+                                        <select
                                             value={config.ai.model}
                                             onChange={(e) => updateSection('ai', 'model', e.target.value)}
-                                            placeholder="e.g. llama3, gpt-4o"
                                             className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                        />
+                                        >
+                                            <option value="">Selecteer een model...</option>
+                                            {providers.find(p => p.name === config.ai.provider)?.models?.map((m: string) => (
+                                                <option key={m} value={m}>{m}</option>
+                                            )) || (
+                                                    <option value={config.ai.model}>{config.ai.model} (handmatig)</option>
+                                                )}
+                                        </select>
                                     </div>
                                 </div>
 

@@ -98,9 +98,18 @@ export function LandingPage({ onStartAnalysis, isLoading, error }: LandingPagePr
                         <span className="text-blue-500">Direct Gedecodeerd.</span>
                     </h1>
 
-                    {/* CRITICAL VERIFICATION BADGE */}
-                    <div className="mt-4 inline-block px-6 py-2 bg-amber-500 text-black font-black text-sm rounded-lg shadow-2xl animate-bounce">
-                        BUILD v5.0.0-PRO LIVE | REFRESH (SHIFT+F5) IF NOT VISIBLE
+                    {/* CRITICAL VERIFICATION BADGE & PREFS LINK */}
+                    <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <div className="px-6 py-2 bg-amber-500 text-black font-black text-sm rounded-lg shadow-2xl animate-bounce">
+                            BUILD v5.0.0-PRO LIVE
+                        </div>
+                        <button
+                            onClick={() => window.location.href = '/static/preferences.html'}
+                            className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm rounded-lg border border-slate-700 shadow-xl transition-all flex items-center gap-2 group"
+                        >
+                            <Zap className="w-4 h-4 text-blue-400 group-hover:scale-125 transition-transform" />
+                            Aanpassen Voorkeuren & AI Model
+                        </button>
                     </div>
 
                     <p className="text-lg md:text-xl text-slate-400 font-medium max-w-2xl mx-auto leading-relaxed">

@@ -7,7 +7,7 @@
 
 ## 1. Overview
 
-AI Woning Rapport supports multiple AI providers through a unified interface. This allows switching between local (Ollama) and cloud providers (OpenAI, Anthropic, Gemini) without code changes.
+AI Woning Rapport supports multiple AI providers through a unified interface. This allows switching between local (Ollama) and cloud providers (OpenAI, Anthropic, Gemini) directly from the **Preferences** or **Settings** UI.
 
 ### Supported Providers
 
@@ -198,10 +198,7 @@ from ai.provider_factory import ProviderFactory
 from config.settings import get_settings
 
 settings = get_settings()
-provider = ProviderFactory.get_provider(settings)
-
-# Or get a specific provider
-ollama = ProviderFactory.get_provider_by_name("ollama")
+provider = ProviderFactory.create_provider(settings.ai.provider, model=settings.ai.model)
 ```
 
 ### Fallback Chain

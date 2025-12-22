@@ -191,7 +191,14 @@ function App() {
 
         </nav>
 
-        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+        <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-2">
+          <button
+            onClick={() => window.location.href = '/static/preferences.html'}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-white border border-transparent hover:border-slate-200 transition-all font-medium"
+          >
+            <Zap className="w-4 h-4 text-blue-500" />
+            <span>Voorkeuren</span>
+          </button>
           <button onClick={() => setSettingsOpen(true)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white border border-transparent hover:border-slate-200 transition-all">
             <Settings className="w-4 h-4" />
             <span>Instellingen</span>

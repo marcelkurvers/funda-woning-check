@@ -198,29 +198,26 @@ def init_ai_provider():
     global settings
     settings = get_settings() # Refresh settings from DB if needed
     
-    from ai.provider_factory import register_providers
-    register_providers()
     provider_name = settings.ai.provider
     try:
         logger.info(f"Setting up AI Provider: {provider_name}")
-        api_key = None
-        base_url = None
+        
+        # Prepare configuration from settings
+        kwargs = {
+            "timeout": settings.ai.timeout,
+            "model": settings.ai.model
+        }
         
         if provider_name == 'openai':
-            api_key = settings.ai.openai_api_key or os.environ.get("OPENAI_API_KEY")
+            kwargs["api_key"] = settings.ai.openai_api_key
         elif provider_name == 'anthropic':
-            api_key = settings.ai.anthropic_api_key or os.environ.get("ANTHROPIC_API_KEY")
+            kwargs["api_key"] = settings.ai.anthropic_api_key
         elif provider_name == 'gemini':
-            api_key = settings.ai.gemini_api_key or os.environ.get("GEMINI_API_KEY")
+            kwargs["api_key"] = settings.ai.gemini_api_key
         elif provider_name == 'ollama':
-            base_url = settings.ai.ollama_base_url
+            kwargs["base_url"] = settings.ai.ollama_base_url
             
-        provider = ProviderFactory.create_provider(
-            provider_name,
-            api_key=api_key,
-            base_url=base_url,
-            timeout=settings.ai.timeout
-        )
+        provider = ProviderFactory.create_provider(provider_name, **kwargs)
         IntelligenceEngine.set_provider(provider)
         logger.info(f"✓ AI Provider initialized: {provider_name}")
         return True
@@ -404,8 +401,12 @@ def build_chapters(core: Dict[str, Any]) -> Dict[str, Any]:
     
     # Check current preferences from KV store
     prefs = get_kv("preferences", {})
-    # Inject current AI model into prefs for IntelligenceEngine
-    prefs['ai_model'] = settings.ai.model
+    # Ensure current AI settings are reflected in prefs for IntelligenceEngine
+    if 'ai_model' not in prefs or not prefs['ai_model']:
+        prefs['ai_model'] = settings.ai.model
+    if 'ai_provider' not in prefs or not prefs['ai_provider']:
+        prefs['ai_provider'] = settings.ai.provider
+        
     core['_preferences'] = prefs
     
     for i in range(14):
@@ -797,11 +798,48 @@ def get_preferences():
 @app.post("/api/preferences")
 def save_preferences(prefs: Dict[str, Any]):
     set_kv("preferences", prefs)
+    
+    # Sync AI selections back to core settings if present
+    provider = prefs.get('ai_provider')
+    model = prefs.get('ai_model')
+    
+    if provider or model:
+        s = get_settings()
+        if provider: s.ai.provider = provider.lower()
+        if model: s.ai.model = model
+        
+        # Persist to DB using the config router's logic helper if available,
+        # or just do it directly to kv_store
+        from api.config import _persist_section
+        _persist_section("ai", s.ai.model_dump())
+        reset_settings()
+        init_ai_provider()
+        
     return {"ok": True}
 
 @app.get("/api/ai/providers")
 def list_providers():
     return ProviderFactory.list_providers()
+
+@app.get("/api/ai/models")
+def list_models(provider: Optional[str] = None):
+    """Returns a flat list of all recommended models across all providers or 
+    filters by provider if a query param is provided.
+    """
+    providers = ProviderFactory.list_providers()
+    target_provider = provider or settings.ai.provider
+    if target_provider in providers:
+        return {"models": providers[target_provider]["models"]}
+    
+    # If provider unknown but its "all", return everything flat
+    if target_provider == "all":
+        all_models = []
+        for p in providers.values():
+            all_models.extend(p["models"])
+        return {"models": list(set(all_models))}
+        
+    # Fallback
+    return {"models": ["gpt-4o", "claude-3-5-sonnet-20240620", "gemini-1.5-flash", "llama3"]}
 
 @app.get("/api/ai/status")
 def check_ai_status():

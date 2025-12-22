@@ -1,108 +1,106 @@
-"""
-Provider Factory - Creates and manages AI provider instances
-"""
-from typing import Dict, Optional
+import os
+import logging
+from typing import Optional, Dict, Type, Any
 from .provider_interface import AIProvider
+from .providers.openai_provider import OpenAIProvider
+from .providers.anthropic_provider import AnthropicProvider
+from .providers.gemini_provider import GeminiProvider
+from .providers.ollama_provider import OllamaProvider
 
-
-class ProviderRegistry:
-    """Registry for AI providers"""
-
-    _providers: Dict[str, type] = {}
-
-    @classmethod
-    def register(cls, name: str, provider_class: type):
-        """Register a provider class"""
-        cls._providers[name] = provider_class
-
-    @classmethod
-    def get_provider_class(cls, name: str) -> Optional[type]:
-        """Get a provider class by name"""
-        return cls._providers.get(name)
-
-    @classmethod
-    def list_providers(cls) -> list[str]:
-        """List all registered provider names"""
-        return list(cls._providers.keys())
-
+logger = logging.getLogger(__name__)
 
 class ProviderFactory:
-    """Factory for creating AI provider instances"""
+    """
+    Factory for creating AI provider instances.
+    Supports both environment-driven and explicit configuration.
+    """
 
-    @staticmethod
-    def create_provider(
-        provider_name: str,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
-        timeout: int = 30,
-        **kwargs
-    ) -> AIProvider:
+    _registry: Dict[str, Type[AIProvider]] = {
+        "openai": OpenAIProvider,
+        "anthropic": AnthropicProvider,
+        "gemini": GeminiProvider,
+        "ollama": OllamaProvider
+    }
+
+    @classmethod
+    def create_provider(cls, name: Optional[str] = None, **kwargs) -> AIProvider:
         """
-        Create an AI provider instance
-
+        Creates an AI provider instance.
+        
         Args:
-            provider_name: Name of the provider (ollama, openai, anthropic, gemini)
-            api_key: API key for cloud providers (not needed for Ollama)
-            base_url: Base URL for the provider (mainly for Ollama)
-            timeout: Request timeout in seconds
-            **kwargs: Additional provider-specific arguments
-
-        Returns:
-            AIProvider instance
-
-        Raises:
-            ValueError: If provider is not registered or configuration is invalid
+            name: Provider name (openai, anthropic, gemini, ollama). 
+                  If None, uses AI_PROVIDER env var.
+            **kwargs: Config parameters like api_key, base_url, timeout.
         """
-        provider_class = ProviderRegistry.get_provider_class(provider_name)
-
+        provider_name = (name or os.getenv("AI_PROVIDER", "openai")).lower()
+        
+        provider_class = cls._registry.get(provider_name)
         if not provider_class:
-            available = ", ".join(ProviderRegistry.list_providers())
             raise ValueError(
-                f"Unknown provider: {provider_name}. "
-                f"Available providers: {available}"
+                f"Unsupported AI_PROVIDER: '{provider_name}'. "
+                f"Supported: {list(cls._registry.keys())}"
             )
 
-        # Construct provider-specific arguments
-        provider_kwargs = {"timeout": timeout, **kwargs}
+        # Ensure timeout is present
+        if 'timeout' not in kwargs:
+            kwargs['timeout'] = int(os.getenv("AI_TIMEOUT", "180"))
 
-        if provider_name == "ollama":
-            if base_url:
-                provider_kwargs["base_url"] = base_url
-        else:
-            # Cloud providers need API keys
-            if not api_key:
-                raise ValueError(f"API key required for {provider_name} provider")
-            provider_kwargs["api_key"] = api_key
+        logger.info(f"Factory: Creating {provider_name} provider (Config: {list(kwargs.keys())})")
+        
+        try:
+            # We filter kwargs based on the provider's needs if necessary, 
+            # but our providers are flexible with their __init__ or we can just pass them.
+            # Most of our providers take (api_key/base_url, timeout).
+            
+            if provider_name == 'ollama':
+                # Ollama uses base_url instead of api_key
+                return provider_class(
+                    base_url=kwargs.get('base_url'),
+                    timeout=kwargs.get('timeout'),
+                    model=kwargs.get('model')
+                )
+            else:
+                # API-based providers
+                return provider_class(
+                    api_key=kwargs.get('api_key'),
+                    timeout=kwargs.get('timeout'),
+                    model=kwargs.get('model')
+                )
+        except Exception as e:
+            logger.error(f"Failed to instantiate {provider_name} provider: {e}")
+            raise
+            
+    @classmethod
+    def register_provider(cls, name: str, provider_class: Type[AIProvider]):
+        """Allows extension of the factory with new providers"""
+        cls._registry[name] = provider_class
 
-        return provider_class(**provider_kwargs)
-
+    @classmethod
+    def list_providers(cls) -> Dict[str, Any]:
+        """Returns metadata about registered providers for the UI"""
+        return {
+            "openai": {
+                "name": "openai",
+                "label": "OpenAI",
+                "models": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "o1-preview", "o1-mini"]
+            },
+            "anthropic": {
+                "name": "anthropic",
+                "label": "Anthropic",
+                "models": ["claude-3-5-sonnet-20240620", "claude-3-haiku-20240307", "claude-3-opus-20240229"]
+            },
+            "gemini": {
+                "name": "gemini",
+                "label": "Google Gemini",
+                "models": ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-3-fast", "gemini-3-pro", "gemini-3-thinking"]
+            },
+            "ollama": {
+                "name": "ollama",
+                "label": "Ollama (Local)",
+                "models": ["llama3", "mistral", "phi3", "nomic-embed-text", "llama3.1"]
+            }
+        }
 
 def register_providers():
-    """Register all available providers"""
-    try:
-        from .providers.ollama_provider import OllamaProvider
-        ProviderRegistry.register("ollama", OllamaProvider)
-    except ImportError:
-        pass
-
-    try:
-        from .providers.openai_provider import OpenAIProvider
-        ProviderRegistry.register("openai", OpenAIProvider)
-    except ImportError:
-        pass
-
-    try:
-        from .providers.anthropic_provider import AnthropicProvider
-        ProviderRegistry.register("anthropic", AnthropicProvider)
-    except ImportError:
-        pass
-
-    try:
-        from .providers.gemini_provider import GeminiProvider
-        ProviderRegistry.register("gemini", GeminiProvider)
-    except ImportError:
-        pass
-
-
-# Auto-register providers on module import
-register_providers()
+    """Legacy compatibility helper"""
+    pass

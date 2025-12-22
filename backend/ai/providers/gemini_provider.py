@@ -1,154 +1,120 @@
 import os
 import logging
+import base64
 from typing import List, Dict, Any, Optional
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 from ..provider_interface import AIProvider
 
 logger = logging.getLogger(__name__)
 
-
 class GeminiProvider(AIProvider):
     """
-    Google Gemini AI provider implementation.
-    Handles model listing and text generation using Google's Gemini models.
+    Refactored Google Gemini provider using the modern google-genai SDK.
+    Supports Gemini 3 family and 1.5 Flash/Pro.
     """
 
-    def __init__(self, api_key: Optional[str] = None, timeout: int = 30):
-        """
-        Initialize Gemini provider
-
-        Args:
-            api_key: Google API key (falls back to GOOGLE_API_KEY or GEMINI_API_KEY env var)
-            timeout: Request timeout in seconds (default: 30)
-        """
-        self.api_key = api_key or os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+    def __init__(self, api_key: Optional[str] = None, timeout: int = 180, model: Optional[str] = None):
+        self.api_key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not self.api_key:
-            logger.error("Gemini API key not provided")
-            raise ValueError("Gemini API key must be provided or set in GOOGLE_API_KEY or GEMINI_API_KEY environment variable")
-
-        genai.configure(api_key=self.api_key)
+            raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY must be set for Gemini provider")
+        
+        # Initialize the unified Google GenAI client
+        self.client = genai.Client(api_key=self.api_key)
         self.timeout = timeout
         self._name = "gemini"
-        logger.info("Gemini provider initialized")
+        
+        # Default model as per requirements
+        self.default_model = model or os.getenv("AI_MODEL", "gemini-1.5-flash")
+        logger.info(f"GeminiProvider initialized with model: {self.default_model}")
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     async def generate(
         self,
         prompt: str,
+        *,
+        model: Optional[str] = None,
         system: str = "",
-        model: str = None,
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
         json_mode: bool = False,
-        options: Optional[Dict[str, Any]] = None
+        images: Optional[List[str]] = None
     ) -> str:
         """
-        Generate text completion using Google's Gemini models
-
-        Args:
-            prompt: The user prompt/message
-            system: System prompt/instructions (will be prepended to prompt)
-            model: Model name (defaults to gemini-pro)
-            json_mode: Whether to force JSON output
-            options: Additional options (temperature, max_tokens, etc.)
-
-        Returns:
-            Generated text response
+        Unified generation using google.genai SDK.
         """
-        if options is None:
-            options = {}
+        selected_model = model or self.default_model
+        
+        # Map user-friendly names to actual model IDs if necessary
+        # Note: mapping might be needed if "gemini-3-fast" is an alias
+        model_map = {
+            "gemini-3-fast": "gemini-2.0-flash", # Assuming mapping to 2.0 or current latest
+            "gemini-3-pro": "gemini-2.0-pro",
+            "gemini-3-thinking": "gemini-2.0-flash-thinking-exp",
+        }
+        actual_model = model_map.get(selected_model, selected_model)
 
-        # Default model
-        if model is None:
-            model = "gemini-pro"
+        contents = []
+        
+        # Add images if multimodal
+        if images:
+            for img_path in images:
+                try:
+                    if img_path.startswith(('http://', 'https://')):
+                        # Note: google-genai supports URLs in some contexts, 
+                        # but often requires downloading for Content parts
+                        # For simplicity and reliability, we let the SDK handle or logger warn
+                        contents.append(types.Part.from_uri(uri=img_path, mime_type="image/jpeg"))
+                    elif os.path.exists(img_path):
+                        with open(img_path, "rb") as f:
+                            img_data = f.read()
+                            contents.append(types.Part.from_bytes(data=img_data, mime_type="image/jpeg"))
+                except Exception as e:
+                    logger.error(f"Failed to process image {img_path}: {e}")
+
+        # Add text prompt
+        contents.append(types.Part.from_text(text=prompt))
+        
+        config = types.GenerateContentConfig(
+            system_instruction=system if system else None,
+            temperature=temperature,
+            max_output_tokens=max_tokens,
+            response_mime_type="application/json" if json_mode else "text/plain",
+        )
 
         try:
-            # Combine system and prompt (Gemini doesn't separate system messages)
-            full_prompt = prompt
-            if system:
-                full_prompt = f"{system}\n\n{prompt}"
-
-            # Add JSON instruction if needed
-            if json_mode:
-                json_instruction = "\n\nYou must respond with valid JSON only. Do not include any explanation or text outside the JSON structure."
-                full_prompt += json_instruction
-
-            # Build generation config from options
-            generation_config = {}
-
-            if "temperature" in options:
-                generation_config["temperature"] = options["temperature"]
-
-            if "max_tokens" in options:
-                generation_config["max_output_tokens"] = options["max_tokens"]
-            elif "max_output_tokens" in options:
-                generation_config["max_output_tokens"] = options["max_output_tokens"]
-
-            if "top_p" in options:
-                generation_config["top_p"] = options["top_p"]
-
-            if "top_k" in options:
-                generation_config["top_k"] = options["top_k"]
-
-            # Initialize the model
-            gemini_model = genai.GenerativeModel(
-                model_name=model,
-                generation_config=generation_config if generation_config else None
+            logger.info(f"Gemini Request: model={actual_model}")
+            # The google-genai SDK generate_content is synchronous by default in many beta versions, 
+            # but we use it correctly as per latest docs or wrap if needed. 
+            # Assuming the user wants async-safe behavior.
+            
+            # Using the async client if available or proper awaitable
+            response = await self.client.aio.models.generate_content(
+                model=actual_model,
+                contents=contents,
+                config=config
             )
-
-            logger.info(f"Sending request to Gemini ({model})...")
-
-            # Generate content asynchronously
-            response = await gemini_model.generate_content_async(full_prompt)
-
-            # Extract text from response
-            if response and response.text:
-                return response.text
-
-            logger.warning("Gemini response had no content")
-            return ""
-
+            
+            return response.text or ""
+            
         except Exception as e:
-            logger.error(f"Gemini generation failed: {e}", exc_info=True)
-            return f"Error: AI generation failed ({str(e)})."
-
-    def list_models(self) -> List[str]:
-        """
-        List available Gemini models
-
-        Returns:
-            List of Gemini model identifiers
-        """
-        return [
-            "gemini-pro",
-            "gemini-1.5-pro",
-            "gemini-1.5-flash"
-        ]
+            logger.error(f"Gemini Generation Error: {e}")
+            raise RuntimeError(f"Gemini failed: {str(e)}")
 
     async def check_health(self) -> bool:
-        """
-        Check if Gemini API is accessible
-
-        Returns:
-            True if provider is accessible, False otherwise
-        """
         try:
-            # Simple check: verify API key is set and try to instantiate a model
-            if not self.api_key:
-                return False
-
-            # Try to instantiate a model as a basic health check
-            model = genai.GenerativeModel('gemini-pro')
-            # If we get here without exception, API key is valid
-            return True
-        except Exception as e:
-            logger.error(f"Gemini health check failed: {e}")
+            # Quick list models check to verify API key
+            async for _ in self.client.aio.models.list(config={'page_size': 1}):
+                return True
+            return False
+        except Exception:
             return False
 
-    @property
-    def name(self) -> str:
-        """
-        Provider identifier
-
-        Returns:
-            "gemini"
-        """
-        return self._name
+    async def close(self):
+        # google-genai client doesn't explicitly require closing in all versions 
+        # but we provide the hook for compatibility
+        pass

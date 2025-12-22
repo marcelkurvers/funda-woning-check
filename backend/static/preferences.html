@@ -156,10 +156,12 @@
                 <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
                         <label class="block text-sm font-bold text-slate-700 mb-2">AI Leverancier</label>
-                        <select name="ai_provider"
+                        <select name="ai_provider" id="ai_provider_select"
                             class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 bg-white">
-                            <option value="Ollama">Ollama (Lokaal)</option>
-                            <option value="OpenAI" disabled>OpenAI (Cloud) - Binnenkort</option>
+                            <option value="openai">OpenAI (GPT-4o)</option>
+                            <option value="anthropic">Anthropic (Claude 3.5)</option>
+                            <option value="gemini">Google Gemini (Flash/Pro)</option>
+                            <option value="ollama">Ollama (Lokaal)</option>
                         </select>
                     </div>
                     <div>
@@ -168,7 +170,8 @@
                             class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 bg-white">
                             <option value="">Laden...</option>
                         </select>
-                        <p class="text-xs text-slate-400 mt-2">Alleen geïnstalleerde Ollama-modellen worden getoond.</p>
+                        <p id="ai_help_text" class="text-xs text-slate-400 mt-2">Aanbevolen modellen voor de
+                            geselecteerde provider.</p>
                     </div>
                 </div>
             </div>
@@ -291,10 +294,13 @@
             return wrapper;
         }
 
-        async function loadModels(currentModel) {
+        async function loadModels(currentModel, provider = null) {
             const select = document.getElementById('ai_model_select');
+            const providerSelect = document.getElementById('ai_provider_select');
+            const targetProvider = provider || providerSelect.value;
+
             try {
-                const res = await fetch('/api/ai/models');
+                const res = await fetch(`/api/ai/models?provider=${targetProvider}`);
                 const data = await res.json();
 
                 if (data.models && data.models.length > 0) {
@@ -311,7 +317,7 @@
                     if (currentModel) {
                         const opt = document.createElement('option');
                         opt.value = currentModel;
-                        opt.innerText = currentModel + " (Niet online?)";
+                        opt.innerText = currentModel + " (Handmatig)";
                         opt.selected = true;
                         select.appendChild(opt);
                     }
@@ -321,6 +327,18 @@
                 select.innerHTML = '<option value="">Fout bij laden modellen</option>';
             }
         }
+
+        // Listen for provider changes
+        document.getElementById('ai_provider_select').addEventListener('change', (e) => {
+            loadModels(null, e.target.value);
+
+            const help = document.getElementById('ai_help_text');
+            if (e.target.value === 'ollama') {
+                help.innerText = "Zorg dat Ollama draait en de modellen 'pulled' zijn.";
+            } else {
+                help.innerText = "Vereist een geldige API sleutel in de Systeem Instellingen.";
+            }
+        });
 
         async function loadPreferences() {
             try {
@@ -333,8 +351,9 @@
                 const p_all = p.priorities || [];
 
                 // Load AI Settings
-                document.querySelector('[name="ai_provider"]').value = data.ai_provider || 'Ollama';
-                await loadModels(data.ai_model || 'llama3');
+                const provider = (data.ai_provider || 'openai').toLowerCase();
+                document.getElementById('ai_provider_select').value = provider;
+                await loadModels(data.ai_model, provider);
 
                 // Render Marcel
                 const mContainer = document.getElementById('marcel-container');

@@ -31,22 +31,42 @@ class DynamicExtractor:
             return []
 
         # 1. Pipeline Stage: Request extraction from LLM
-        prompt = self._build_extraction_prompt(text)
+        system_prompt, user_prompt = self._build_extraction_prompts(text)
         
         try:
-            # We use a lower temperature for extraction to improve reliability
-            response = await self.provider.generate(prompt)
+            # We use a lower temperature for extraction to improve reliability and enable json_mode
+            response = await self.provider.generate(
+                user_prompt, 
+                system=system_prompt,
+                temperature=0.2, 
+                json_mode=True
+            )
             
             # 2. Pipeline Stage: Parse LLM output
-            # Look for JSON array in the response
-            json_match = re.search(r'\[\s*\{.*\}\s*\]', response, re.DOTALL)
-            if not json_match:
-                logger.warning("DynamicExtractor: No JSON array found in LLM response.")
-                # Fallback: simple regex for common fields if LLM fails? 
-                # (Skipped for now to maintain LLM-first strategy)
+            if not response:
+                logger.warning("DynamicExtractor: Empty response from LLM.")
                 return []
 
-            extracted_data = json.loads(json_match.group(0))
+            # Clean the response in case there's markdown or extra text
+            cleaned_response = response.strip()
+            if cleaned_response.startswith("```"):
+                # Handle markdown code blocks
+                lines = cleaned_response.splitlines()
+                if lines[0].startswith("```json"):
+                    cleaned_response = "\n".join(lines[1:-1])
+                elif lines[0].startswith("```"):
+                    cleaned_response = "\n".join(lines[1:-1])
+            
+            # Look for JSON array in the response if it's not a pure array
+            if not (cleaned_response.startswith("[") and cleaned_response.endswith("]")):
+                json_match = re.search(r'\[\s*\{.*\}\s*\]', cleaned_response, re.DOTALL)
+                if json_match:
+                    cleaned_response = json_match.group(0)
+                else:
+                    logger.warning("DynamicExtractor: No JSON array found in LLM response.")
+                    return []
+
+            extracted_data = json.loads(cleaned_response)
             
             # 3. Pipeline Stage: Validation and Post-processing
             valid_attributes = []
@@ -65,36 +85,35 @@ class DynamicExtractor:
             logger.error(f"DynamicExtractor: Extraction pipeline error: {e}")
             return []
 
-    def _build_extraction_prompt(self, text: str) -> str:
+    def _build_extraction_prompts(self, text: str) -> tuple[str, str]:
         """
-        Constructs a structured prompt for the LLM to perform NER and attribute creation.
+        Constructs structured prompts (system and user) for the LLM.
         """
-        return f"""
-        SYSTEM: Je bent een 'Property Data Extraction Agent' gespecialiseerd in de Nederlandse woningmarkt (Funda).
-        TAAK: Analyseer de onderstaande 'paste' data en extraheer alle gestructureerde informatie.
+        system_prompt = """
+        You are a 'Property Data Extraction Agent' specialized in the Dutch housing market (Funda).
+        Your task is to analyze the provided 'paste' data and extract all structured information.
         
-        FORMAAT: Retourneer ELK kenmerk als een object in een JSON array.
-        {{
-          "key": "Interne naam (bijv. woonoppervlakte, vve_kosten, bouwjaar)",
-          "name_nl": "Label zoals getoond (bijv. Woonoppervlakte, VvE bijdrage per maand)",
-          "value": "De geëxtraheerde waarde inclusief eenheden (bijv. 145 m2, € 150)",
-          "namespace": "Categorie (financial, energy, physical, technical, legal, location, features, narrative)",
-          "confidence": 0.0 - 1.0 (score hoe zeker je bent),
-          "source_snippet": "Het exacte tekstfragment (max 50 chars) waar dit vandaan komt"
-        }}
+        FORMAT: Return EVERY attribute as an object in a JSON array.
+        {
+          "key": "Internal name (e.g. woonoppervlakte, vve_kosten, bouwjaar)",
+          "name_nl": "Label as shown in Dutch (e.g. Woonoppervlakte, VvE bijdrage per maand)",
+          "value": "The extracted value including units (e.g. 145 m2, € 150)",
+          "namespace": "Category (financial, energy, physical, technical, legal, location, features, narrative)",
+          "confidence": 0.0 - 1.0 (score how sure you are),
+          "source_snippet": "The exact text fragment (max 50 chars) where this came from"
+        }
 
-        REGELS:
-        1. Wees uitputtend. Extraheer alles: van isolatie tot tuinligging.
-        2. Normaliseer de 'key' naar snake_case (bijv. 'soort_woning').
-        3. Behoud de oorspronkelijke eenheden in de 'value'.
-        4. Gebruik 'narrative' voor kwalitatieve beschrijvingen ('Lichte woonkamer').
-        5. Geef GEEN tekst buiten de JSON array.
-
-        INPUT DATA:
-        ---
-        {text[:4000]} 
-        ---
+        RULES:
+        1. Be exhaustive. Extract everything: from insulation to garden orientation.
+        2. Normalize the 'key' to snake_case (e.g. 'soort_woning').
+        3. Maintain original units in the 'value'.
+        4. Use 'narrative' for qualitative descriptions ('Bright living room').
+        5. Output MUST be a valid JSON array of objects.
         """
+
+        user_prompt = f"INPUT DATA:\n---\n{text[:4000]}\n---"
+        
+        return system_prompt, user_prompt
 
     def _process_item(self, item: Dict[str, Any], full_text: str) -> Optional[Dict[str, Any]]:
         """
