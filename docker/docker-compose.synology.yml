@@ -10,10 +10,17 @@
 
 services:
   app:
-    build:
-      context: ..
-      dockerfile: backend/Dockerfile
-    image: funda-woning-rapport:latest
+    # Pre-built image from GitHub Container Registry
+    # To build locally instead, uncomment the 'build:' section below
+    image: ghcr.io/marcelkurvers/funda-app:latest
+    pull_policy: always
+
+    # Uncomment to build locally instead of using pre-built image:
+    # build:
+    #   context: ..
+    #   dockerfile: backend/Dockerfile
+    # pull_policy: build
+
     container_name: funda-woning-rapport
     restart: unless-stopped
     ports:

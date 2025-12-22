@@ -47,7 +47,7 @@ Access the application at:
 
 ### Synology NAS Deployment
 
-Deploy on Synology NAS using Docker/Container Manager:
+Deploy on Synology NAS using **pre-built Docker image** (no build required):
 
 ```bash
 # SSH into your Synology NAS
@@ -57,11 +57,17 @@ cd /volume1/docker/funda-app
 cp docker/.env.synology .env
 nano .env  # Add your API keys
 
-# Deploy
+# Deploy (downloads pre-built image from GitHub)
 docker compose -f docker/docker-compose.synology.yml up -d
 ```
 
+**Pre-built image benefits:**
+- ✅ No build time (deploys in seconds)
+- ✅ Multi-architecture (works on Intel & ARM)
+- ✅ Auto-updated with each release
+
 📖 **See [Synology Deployment Guide](docs/SYNOLOGY_DEPLOYMENT.md) for detailed instructions**
+
 
 ### Browser Extension
 

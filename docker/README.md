@@ -7,7 +7,7 @@ This directory contains Docker Compose configurations for deploying AI Woning Ra
 ### 🖥️ Local Development
 **File:** `docker-compose.yml`
 
-For local development on Mac/Windows/Linux:
+For local development on Mac/Windows/Linux with local build:
 
 ```bash
 # From project root
@@ -18,10 +18,10 @@ Access at: http://localhost:8000
 
 ---
 
-### 🏠 Synology NAS
+### 🏠 Synology NAS (Pre-built Image - Recommended)
 **File:** `docker-compose.synology.yml`
 
-Production-ready configuration for Synology NAS with Container Manager:
+Production-ready configuration using **pre-built image from GitHub Container Registry**:
 
 ```bash
 # SSH into your Synology NAS
@@ -31,9 +31,33 @@ cd /volume1/docker/funda-app
 cp docker/.env.synology .env
 nano .env  # Add your API keys
 
-# Deploy
+# Deploy (downloads pre-built image)
 docker compose -f docker/docker-compose.synology.yml up -d
 ```
+
+**Benefits:**
+- ✅ Fast deployment (no build time)
+- ✅ Multi-architecture support (amd64/arm64)
+- ✅ Automatically updated with each release
+- ✅ No build dependencies needed
+
+---
+
+### 🔧 Local Build Version
+**File:** `docker-compose.build.yml`
+
+For users who want to build from source:
+
+```bash
+# Use this if you want to build locally instead of downloading
+docker compose -f docker/docker-compose.build.yml up -d --build
+```
+
+**When to use:**
+- You've modified the source code
+- You want to verify the build process
+- GHCR is unavailable in your region
+
 
 **See:** [`docs/SYNOLOGY_DEPLOYMENT.md`](../docs/SYNOLOGY_DEPLOYMENT.md) for detailed instructions
 
