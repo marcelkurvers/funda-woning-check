@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
 import { BentoGrid, BentoCard } from './components/layout/BentoLayout';
-import { Target, ListChecks, ChevronRight, Loader2, AlertCircle, Sparkles, AlertTriangle, CheckCircle2, TrendingUp, BookOpen, Plus, FileText, Home, Settings, Zap, BarChart3, ShieldAlert, Bug } from 'lucide-react';
+import {
+  ChevronRight, Loader2, AlertCircle, Sparkles,
+  AlertTriangle, CheckCircle2, TrendingUp, BookOpen, Plus, FileText,
+  Home, Settings, Zap, Bug, Target, Database
+} from 'lucide-react';
 import { LandingPage } from './components/LandingPage';
-import { DataVerifier } from './components/common/DataVerifier';
 import { SettingsModal } from './components/common/SettingsModal';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ScatterChart, Scatter, ZAxis } from 'recharts';
+import { DiscoveryBento } from './components/common/DiscoveryBento';
+import { MediaGallery } from './components/common/MediaGallery';
+
 
 import type { ReportData } from './types';
 
@@ -17,10 +22,97 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
-    // We intentionally do NOT auto-load the latest run anymore.
-    // This ensures the user always sees the Landing Page first.
-    setLoading(false);
+    const init = async () => {
+      const pathParts = window.location.pathname.split('/');
+      const queryParams = new URLSearchParams(window.location.search);
+      let runIdFromUrl = queryParams.get('runId');
+
+      if (!runIdFromUrl && pathParts.length >= 3 && pathParts[1] === 'runs') {
+        runIdFromUrl = pathParts[2];
+      }
+
+      if (runIdFromUrl) {
+        setLoading(true);
+        try {
+          await pollStatus(runIdFromUrl);
+        } catch (e) {
+          console.error("Auto-load failed", e);
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+
+    init();
   }, []);
+
+  const pollStatus = async (runId: string) => {
+    try {
+      const statusRes = await fetch(`/api/runs/${runId}/status`);
+      if (!statusRes.ok) throw new Error('Status ophalen mislukt');
+
+      const data = await statusRes.json();
+      if (data.status === 'done') {
+        const reportRes = await fetch(`/api/runs/${runId}/report`);
+        if (!reportRes.ok) throw new Error('Rapport ophalen mislukt');
+        const reportData = await reportRes.json();
+
+        setReport({
+          runId: runId,
+          address: reportData.property_core?.address || reportData.address || "Onbekend Adres",
+          chapters: reportData.chapters || {},
+          property_core: reportData.property_core,
+          discovery: reportData.discovery || [],
+          media_from_db: reportData.media_from_db || [],
+          consistency: reportData.consistency
+        });
+        setActiveChapterId("0");
+        setLoading(false);
+      } else if (data.status === 'error') {
+        setError(`Analyse mislukt: ${data.steps ? JSON.stringify(data.steps) : 'onbekende fout'}`);
+        setLoading(false);
+      } else {
+        setTimeout(() => pollStatus(runId), 2000);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setLoading(false);
+    }
+  };
+
+  const handleStartAnalysis = async (type: 'url' | 'paste', content: string, mediaUrls?: string[], extraFacts?: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const runBody = type === 'paste'
+        ? { funda_url: "manual-paste", funda_html: content, media_urls: mediaUrls, extra_facts: extraFacts }
+        : { funda_url: content, funda_html: null };
+
+      const createRes = await fetch('/api/runs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(runBody)
+      });
+
+      if (!createRes.ok) throw new Error('Kon geen nieuwe analyse starten');
+      const { run_id } = await createRes.json();
+
+      const startRes = await fetch(`/api/runs/${run_id}/start`, { method: 'POST' });
+      if (!startRes.ok) throw new Error('Kon de analyse niet uitvoeren');
+
+      await pollStatus(run_id);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Er ging iets mis bij het starten.');
+      setLoading(false);
+    }
+  };
+
+  const handleDownloadPdf = () => {
+    if (!report?.runId) return;
+    window.open(`/api/runs/${report.runId}/pdf`, '_blank');
+  };
 
   if (loading) {
     return (
@@ -50,102 +142,21 @@ function App() {
     );
   }
 
-  const handleStartAnalysis = async (type: 'url' | 'paste', content: string, mediaUrls?: string[], extraFacts?: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      // 1. Create run
-      const runBody = type === 'paste'
-        ? { funda_url: "manual-paste", funda_html: content, media_urls: mediaUrls, extra_facts: extraFacts }
-        : { funda_url: content, funda_html: null };
-
-      const createRes = await fetch('/runs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(runBody)
-      });
-
-      if (!createRes.ok) throw new Error('Kon geen nieuwe analyse starten');
-      const { run_id } = await createRes.json();
-
-      // 2. Start processing (non-blocking)
-      const startRes = await fetch(`/runs/${run_id}/start`, { method: 'POST' });
-      if (!startRes.ok) throw new Error('Kon de analyse niet uitvoeren');
-
-      // 3. Poll for completion
-      const pollStatus = async () => {
-        const statusRes = await fetch(`/runs/${run_id}/status`);
-        if (!statusRes.ok) throw new Error('Status ophalen mislukt');
-
-        const { status } = await statusRes.json();
-
-        // Update UI with progress (optional)
-        // const { progress } = statusData;
-        // console.log(`Progress: ${progress.percent}%`);
-
-        if (status === 'done') {
-          // Fetch final report
-          const reportRes = await fetch(`/runs/${run_id}/report`);
-          if (!reportRes.ok) throw new Error('Rapport ophalen mislukt');
-          const data = await reportRes.json();
-
-          setReport({
-            runId: run_id,
-            address: data.property_core?.address || "Onbekend Adres",
-            chapters: data.chapters || {},
-            property_core: data.property_core
-          });
-          setActiveChapterId("0");
-          setLoading(false);
-
-        } else if (status === 'failed') {
-          throw new Error('Analyse is mislukt');
-        } else {
-          // Still processing, poll again after 2 seconds
-          setTimeout(pollStatus, 2000);
-        }
-      };
-
-      // Start polling
-      pollStatus();
-
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Er ging iets mis bij het starten.');
-      setLoading(false);
-    }
-  };
-
-  const handleDownloadPdf = () => {
-    if (!report?.runId) return;
-    window.open(`/runs/${report.runId}/pdf`, '_blank');
-  };
-
   if (!report) {
     return (
-      <LandingPage
-        onStartAnalysis={handleStartAnalysis}
-        isLoading={loading}
-        error={error}
-      />
+      <LandingPage onStartAnalysis={handleStartAnalysis} isLoading={loading} error={error} />
     );
   }
 
   const currentChapter = report.chapters[activeChapterId];
-  const content = currentChapter?.chapter_data || currentChapter;
+  const content = (currentChapter as any)?.chapter_data || currentChapter;
   const sortedChapters = Object.values(report.chapters).sort((a: any, b: any) => parseInt(a.id) - parseInt(b.id));
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
-
-      {/* Sidebar Navigation - Fixed Width */}
-      {/* Sidebar Navigation - Light Premium Theme */}
+    <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden text-[13px] md:text-sm">
       <aside className="w-64 bg-white border-r border-slate-200 flex-shrink-0 h-full flex flex-col z-50 shadow-sm relative">
         <div className="p-6 border-b border-slate-100">
-          <button
-            onClick={() => setReport(null)}
-            className="text-left group w-full"
-          >
+          <button onClick={() => setReport(null)} className="text-left group w-full">
             <div className="flex items-center gap-2 mb-1">
               <div className="p-1.5 bg-blue-600 rounded-lg">
                 <Sparkles className="w-4 h-4 text-white" />
@@ -157,12 +168,9 @@ function App() {
         </div>
 
         <div className="px-4 py-4">
-          <button
-            onClick={() => setReport(null)}
-            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 group font-bold shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:-translate-y-0.5"
-          >
+          <button onClick={() => setReport(null)} className="w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-300 transform hover:-translate-y-0.5">
             <Plus className="w-5 h-5 text-white/90" />
-            <span>Nieuwe Analyse</span>
+            <span className="font-bold">Nieuwe Analyse</span>
           </button>
         </div>
 
@@ -171,45 +179,39 @@ function App() {
             <button
               key={chapter.id}
               onClick={() => setActiveChapterId(chapter.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group ${activeChapterId === chapter.id
-                ? 'bg-blue-50 text-blue-700 border border-blue-100'
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all group ${activeChapterId === chapter.id ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
             >
-              <span className={`flex-shrink-0 w-6 h-6 flex items-center justify-center rounded text-xs font-bold transition-colors ${activeChapterId === chapter.id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-700'
-                }`}>
+              <span className={`flex-shrink-0 w-6 h-6 flex items-center justify-center rounded text-[10px] font-bold ${activeChapterId === chapter.id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
                 {chapter.id}
               </span>
               <span className="truncate text-left">{chapter.title || `Hoofdstuk ${chapter.id}`}</span>
               {activeChapterId === String(chapter.id) && <ChevronRight className="w-4 h-4 ml-auto text-blue-400" />}
-
             </button>
           ))}
+
         </nav>
+
         <div className="p-4 border-t border-slate-100 bg-slate-50/50">
-          <button onClick={() => setSettingsOpen(!settingsOpen)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-white border border-transparent hover:border-slate-200 hover:shadow-sm transition-all">
+          <button onClick={() => setSettingsOpen(true)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white border border-transparent hover:border-slate-200 transition-all">
             <Settings className="w-4 h-4" />
             <span>Instellingen</span>
           </button>
+          <div className="mt-4 px-3 flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+            <span>Version</span>
+            <span className="text-blue-500">v5.0.1-PRO</span>
+          </div>
         </div>
       </aside>
 
-      {/* Main Content - No Window Scroll */}
       <main className="flex-1 min-w-0 flex flex-col h-full overflow-hidden bg-slate-100/50">
-
-        {/* Header */}
-        <header className="bg-white border-b border-slate-200 px-8 h-16 flex items-center justify-between shadow-sm shrink-0 z-40">
+        <header className="bg-white border-b border-slate-200 px-8 h-16 flex items-center justify-between shrink-0 z-40">
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => setReport(null)}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-400 hover:text-blue-600"
-              title="Terug naar Startpagina"
-            >
+            <button onClick={() => setReport(null)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-400 hover:text-blue-600">
               <Home className="w-5 h-5" />
             </button>
             <div className="h-6 w-px bg-slate-200 mx-2" />
             <div className="flex items-center gap-3">
-              <div className="bg-blue-600 text-white font-bold px-2.5 py-1 rounded-md text-xs shadow-sm shadow-blue-200">
+              <div className="bg-blue-600 text-white font-bold px-2.5 py-1 rounded-md text-[10px] shadow-sm shadow-blue-200 uppercase tracking-wider">
                 Hfdst {currentChapter?.id || 0}
               </div>
               <h1 className="text-lg font-bold text-slate-800 tracking-tight">
@@ -217,391 +219,280 @@ function App() {
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-3 relative">
-            <button
-              onClick={() => setSettingsOpen(!settingsOpen)}
-              className={`p-2 rounded-lg transition-all ${settingsOpen || debugMode ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
-              title="Instellingen"
-            >
+          <div className="flex items-center gap-3">
+            <button onClick={() => setSettingsOpen(true)} className={`p-2 rounded-lg transition-all ${debugMode ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}>
               {debugMode ? <Bug className="w-5 h-5" /> : <Settings className="w-5 h-5" />}
             </button>
-
-            <button
-              onClick={handleDownloadPdf}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all font-bold text-xs shadow-lg shadow-slate-200"
-            >
+            <button onClick={handleDownloadPdf} className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all font-bold text-xs shadow-lg shadow-slate-200">
               <FileText className="w-4 h-4 text-blue-400" />
               <span>PDF Rapport</span>
             </button>
           </div>
         </header>
 
-        {/* Global Settings Modal */}
-        <SettingsModal
-          isOpen={settingsOpen}
-          onClose={() => setSettingsOpen(false)}
-          debugMode={debugMode}
-          setDebugMode={setDebugMode}
-        />
+        <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} debugMode={debugMode} setDebugMode={setDebugMode} />
 
-        {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+          {/* AI Provenance Status Bar (Global) */}
+          {currentChapter?.provenance && (
+            <div className="mb-6 bg-slate-900 text-white rounded-xl shadow-lg p-4 flex flex-wrap items-center justify-between gap-4 border border-white/10">
+              <div className="flex items-center gap-4">
+                <div className="bg-blue-600 p-2 rounded-lg">
+                  <Sparkles className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Enrichment Status</div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm">AI-Geresumeerd</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${currentChapter.provenance.confidence === 'high' ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
+                      {currentChapter.provenance.confidence} Confidence
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="flex flex-col items-end">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Provider & Model</span>
+                  <span className="text-xs font-medium text-blue-300">{currentChapter.provenance.provider} / {currentChapter.provenance.model}</span>
+                </div>
+                <div className="w-px h-8 bg-white/10" />
+                <div className="flex flex-col items-end">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Laatste Update</span>
+                  <span className="text-xs font-medium text-slate-300">
+                    {currentChapter.provenance.timestamp
+                      ? new Date(currentChapter.provenance.timestamp).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
+                      : "Zojuist"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
-          {/* Property Header - Ultra Compact for 4K */}
-          <div className="mb-4 bg-white rounded-xl border border-slate-100 shadow-sm p-3 flex flex-col md:flex-row items-center gap-4 animate-in slide-in-from-top-2">
-
-            {/* Thumbnail */}
-            <div className="relative shrink-0 w-full md:w-40 h-24 rounded-lg overflow-hidden shadow-inner ring-1 ring-slate-100 group">
+          {/* Property Summary Header */}
+          <div className="mb-6 bg-white rounded-xl border border-slate-100 shadow-sm p-3 flex flex-col md:flex-row items-center gap-4">
+            <div className="relative shrink-0 w-full md:w-40 h-24 rounded-lg overflow-hidden ring-1 ring-slate-100 group">
               <img
-                src={report.property_core?.media_urls?.[0] || "https://images.unsplash.com/photo-1600596542815-27b88e360290?q=80&w=2000&auto=format&fit=crop"}
+                src={report.property_core?.media_urls?.[0] || report.media_from_db?.[0]?.url || "https://images.unsplash.com/photo-1600596542815-27b88e360290?auto=format&fit=crop&w=800"}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 alt=""
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1600596542815-27b88e360290?q=80&w=2000&auto=format&fit=crop";
-                }}
+                onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1600596542815-27b88e360290?auto=format&fit=crop&w=800" }}
               />
-              <div className="absolute inset-0 bg-blue-900/0 group-hover:bg-blue-900/10 transition-colors" />
             </div>
-
-            {/* Info & Stats */}
-            <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-
-              {/* Address & Status */}
-              <div className="md:col-span-1 flex flex-col justify-center">
-                <div className="inline-flex items-center gap-2 mb-2">
-                  <div className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[10px] font-bold uppercase tracking-wider border border-blue-100">
-                    Te Koop
-                  </div>
-                  <div className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider border border-emerald-100">
-                    Beschikbaar
-                  </div>
+            <div className="flex-1 min-w-0 flex flex-col md:flex-row items-center justify-between w-full gap-4">
+              <div>
+                <h2 className="text-xl font-black text-slate-900 tracking-tight truncate">{report.address}</h2>
+                <div className="text-xs text-slate-500 font-medium">Multi-Check Pro Analysis Report</div>
+              </div>
+              <div className="flex items-center gap-6 bg-slate-50 rounded-xl p-3 border border-slate-100">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Inhoud</span>
+                  <span className="text-lg font-black">{report.media_from_db?.length || 0} Foto's</span>
                 </div>
-                <h1 className="text-xl font-black text-slate-900 tracking-tight leading-snug truncate" title={report.address}>{report.address}</h1>
-                <div className="text-xs text-slate-500 font-medium mt-1 truncate">
-                  Funda Analyse Rapport • 100% AI Generated
+                <div className="w-px h-8 bg-slate-200" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</span>
+                  <span className="text-lg font-black text-emerald-600">Compleet</span>
                 </div>
               </div>
-
-              {/* Key Stats Row */}
-              <div className="md:col-span-2 flex items-center justify-between md:justify-end gap-2 md:gap-8 bg-slate-50/50 rounded-xl p-3 border border-slate-100">
-
-                {/* Logic: Rescue Data from AI Summary if Backend failed */}
-                {(() => {
-                  const core = report.property_core || {};
-                  const summary = (report.chapters["0"] as any)?.chapter_data?.summary || "";
-
-                  // 1. Price
-                  let price = core.asking_price_eur;
-                  if (!price || price === "€ N/B" || price === "€ TBD") {
-                    const m = summary.match(/€\s?([\d.,]+)/);
-                    if (m) price = `€ ${m[1]}`;
-                    else price = "€ N/B";
-                  }
-
-                  // 2. Area
-                  let area: string | number | undefined = core.living_area_m2;
-                  if (!area || area === 0) {
-                    const m = summary.match(/(\d+)\s?m[²2]/);
-                    if (m) area = m[1];
-                    else area = "N/B";
-                  }
-
-                  // 3. Label
-                  let label = core.energy_label;
-                  if (!label || label === "?" || label === "N/B") {
-                    const m = summary.match(/Label:?\s?([A-G][\+]*)/i);
-                    if (m) label = m[1].toUpperCase();
-                    else label = "?";
-                  }
-
-                  return (
-                    <>
-                      {/* Price Display */}
-                      <DataVerifier field="asking_price_eur" consistency={report.consistency} debugMode={debugMode}>
-                        <div className="flex flex-col items-center md:items-start min-w-[80px]">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Vraagprijs</span>
-                          <div className="text-lg font-black text-slate-900 tracking-tight">{price}</div>
-                        </div>
-                      </DataVerifier>
-
-                      <div className="w-px h-8 bg-slate-200" />
-
-                      {/* Area Display */}
-                      <DataVerifier field="living_area_m2" consistency={report.consistency} debugMode={debugMode}>
-                        <div className="flex flex-col items-center md:items-start min-w-[80px]">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Woonopp.</span>
-                          <div className="flex items-center gap-1.5">
-                            <Home className="w-4 h-4 text-blue-500" />
-                            <span className="text-lg font-black text-slate-900 tracking-tight">{area}</span>
-                          </div>
-                        </div>
-                      </DataVerifier>
-
-                      <div className="w-px h-8 bg-slate-200" />
-
-                      {/* Label Display */}
-                      <DataVerifier field="energy_label" consistency={report.consistency} debugMode={debugMode}>
-                        <div className="flex flex-col items-center md:items-start min-w-[60px]">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Label</span>
-                          <div className="flex items-center gap-1.5">
-                            <Target className="w-4 h-4 text-emerald-500" />
-                            <span className="text-lg font-black text-slate-900 tracking-tight">{label}</span>
-                          </div>
-                        </div>
-                      </DataVerifier>
-                    </>
-                  );
-                })()}
-
-              </div>
-
             </div>
           </div>
 
-          {content ? (
-            <BentoGrid>
-
-              {/* SPECIALIZED VISUAL CARDS PER CHAPTER */}
-
-              {/* CHAPTER 4: Energy Radar */}
-              {activeChapterId === "4" && (
-                <BentoCard className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1" variant="highlight" title="Duurzaamheids-Potentieel" icon={<Zap className="w-5 h-5 text-amber-600" />}>
-                  <div className="flex flex-col h-full justify-between">
-                    <div className="flex items-end gap-4 h-32 mb-4">
-                      <div className="flex-1 bg-slate-200 rounded-xl relative group">
-                        <div className="absolute bottom-0 w-full bg-emerald-500 rounded-xl transition-all duration-1000" style={{ height: '40%' }}></div>
+          {activeChapterId === "13" ? (
+            <div className="space-y-6">
+              <MediaGallery media={report.media_from_db || []} />
+              {content && (
+                <div className="mt-8">
+                  <BentoGrid>
+                    <BentoCard className="col-span-1 md:col-span-3" title="AI Visie Analyse" icon={<Sparkles className="w-5 h-5 text-yellow-500" />}>
+                      <div className="prose prose-slate prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: content.interpretation || "" }} />
+                    </BentoCard>
+                  </BentoGrid>
+                </div>
+              )}
+            </div>
+          ) : content ? (
+            <div className="space-y-6">
+              <BentoGrid>
+                {/* Custom visuals for specific chapters */}
+                {activeChapterId === "4" && (
+                  <BentoCard className="col-span-1 md:col-span-2" variant="highlight" title="Duurzaamheid" icon={<Zap className="w-5 h-5 text-amber-600" />}>
+                    <div className="flex items-end gap-4 h-24 mt-4">
+                      <div className="flex-1 bg-slate-200 rounded-lg relative h-full">
+                        <div className="absolute bottom-0 w-full bg-emerald-500 rounded-lg" style={{ height: '40%' }}></div>
                         <span className="absolute -top-6 left-0 right-0 text-center text-[10px] font-bold text-slate-400">HUIDIG</span>
                       </div>
-                      <div className="flex-1 bg-slate-200 rounded-xl relative border-2 border-dashed border-emerald-500/30">
-                        <div className="absolute bottom-0 w-full bg-emerald-400 opacity-40 rounded-xl animate-pulse" style={{ height: '90%' }}></div>
+                      <div className="flex-1 bg-slate-200 rounded-lg relative h-full">
+                        <div className="absolute bottom-0 w-full bg-emerald-400 opacity-50 rounded-lg animate-pulse" style={{ height: '90%' }}></div>
                         <span className="absolute -top-6 left-0 right-0 text-center text-[10px] font-bold text-emerald-600">POTENTIEEL</span>
                       </div>
                     </div>
-                    <p className="text-xs text-slate-500 italic">"Met spouwmuurisolatie en een hybride pomp stijgt de woning direct naar label A."</p>
-                  </div>
-                </BentoCard>
-              )}
+                  </BentoCard>
+                )}
 
-              {/* CHAPTER 10: Financial Waterfall (Recharts) */}
-              {activeChapterId === "10" && (
-                <BentoCard className="col-span-1 md:col-span-3 lg:col-span-3 min-h-[250px]" title="Investerings Overzicht" icon={<BarChart3 className="w-5 h-5 text-blue-600" />}>
-                  <div className="h-56 w-full mt-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={[
-                          { name: 'Aankoop', value: parseInt((report.chapters["0"] as any)?.property_core?.asking_price_eur?.replace(/\D/g, '') || "400000"), fill: '#2563eb' },
-                          { name: 'K.K.', value: parseInt((report.chapters["0"] as any)?.property_core?.asking_price_eur?.replace(/\D/g, '') || "400000") * 0.02, fill: '#f43f5e' },
-                          { name: 'Verbouwing', value: 45000, fill: '#f59e0b' },
-                          { name: 'Totaal', value: parseInt((report.chapters["0"] as any)?.property_core?.asking_price_eur?.replace(/\D/g, '') || "400000") * 1.02 + 45000, fill: '#0f172a' },
-                        ]}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: 600 }} stroke="#94a3b8" />
-                        <YAxis hide />
-                        <Tooltip
-                          cursor={{ fill: 'transparent' }}
-                          contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
-                        />
-                        <Bar dataKey="value" radius={[8, 8, 0, 0]}>
-                          {[{ name: 'Aankoop', color: '#2563eb' }, { name: 'K.K.', color: '#f43f5e' }, { name: 'Verbouwing', color: '#f59e0b' }, { name: 'Totaal', color: '#0f172a' }].map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </BentoCard>
-              )}
+                {/* Main Narrative Blocks */}
+                {content.intro && (
+                  <BentoCard className="col-span-1 md:col-span-2 lg:col-span-2" title="Samenvatting" icon={<BookOpen className="w-5 h-5 text-blue-600" />}>
+                    <div className="text-sm md:text-base text-slate-700 leading-relaxed font-medium">{content.intro}</div>
+                  </BentoCard>
+                )}
 
-              {/* CHAPTER 12: Risk Matrix (Recharts Scatter) */}
-              {(activeChapterId === "12" || activeChapterId === "9") && (
-                <BentoCard className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1" variant="alert" title="Risico Matrix" icon={<ShieldAlert className="w-5 h-5 text-rose-600" />}>
-                  <div className="h-48 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ScatterChart
-                        margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-                      >
-                        <XAxis type="number" dataKey="x" name="Impact" unit="" domain={[0, 4]} hide />
-                        <YAxis type="number" dataKey="y" name="Kans" unit="" domain={[0, 4]} hide />
-                        <ZAxis type="number" dataKey="z" range={[100, 400]} />
-                        <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                        <Scatter name="Risicos" data={[
-                          { x: 1, y: 1, z: 100, label: 'Laag', fill: '#22c55e' },
-                          { x: 3, y: 3, z: 300, label: 'Kritiek', fill: '#f43f5e' },
-                          { x: 2, y: 3, z: 200, label: 'Let op', fill: '#f59e0b' },
-                        ]} fill="#8884d8">
-                          {
-                            [{ fill: '#22c55e' }, { fill: '#f43f5e' }, { fill: '#f59e0b' }].map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.fill} />
-                            ))
-                          }
-                        </Scatter>
-                      </ScatterChart>
-                    </ResponsiveContainer>
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10">
-                      <div className="w-full h-full grid grid-cols-3 grid-rows-3 gap-1">
-                        {[...Array(9)].map((_, i) => <div key={i} className="border border-slate-300 rounded" />)}
-                      </div>
-                    </div>
-                  </div>
-                </BentoCard>
-              )}
-
-              {/* 1. Intro Box - Wide Top Left */}
-              {content.intro && (
-                <BentoCard className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1" title="Samenvatting" icon={<BookOpen className="w-5 h-5 text-blue-600" />}>
-                  <div className="text-lg text-slate-700 leading-relaxed font-medium">
-                    {content.intro}
-                  </div>
-                </BentoCard>
-              )}
-
-              {/* 2. AI Insight / Hero - Prominent Top Right / Center */}
-              {content.interpretation && (
-                <BentoCard
-                  className="col-span-1 md:col-span-3 lg:col-span-3 row-span-1"
-                  variant="primary"
-                  title="AI Interpretatie"
-                  icon={<Sparkles className="w-5 h-5 text-yellow-300" />}
-                >
-                  <div
-                    className="prose prose-invert prose-lg leading-snug !max-w-none"
-                    dangerouslySetInnerHTML={{ __html: content.interpretation }}
-                  />
-                </BentoCard>
-              )}
-
-              {/* 3. Metrics & Scores (From Sidebar Items) - 1x1 Tiles */}
-              {content.sidebar_items?.map((item: any, idx: number) => {
-                if (item.type === 'advisor_score') {
-                  return (
-                    <BentoCard key={'score-' + idx} className="col-span-1 md:col-span-1" title={item.title} icon={<TrendingUp className="w-5 h-5 text-blue-600" />}>
-                      <div className="flex items-end gap-2 mt-2">
-                        <span className="text-5xl font-black text-blue-600 tracking-tighter">{item.score}</span>
-                        <span className="text-sm font-medium text-slate-500 mb-2">/ 100</span>
-                      </div>
-                      <p className="mt-4 text-sm text-slate-500 line-clamp-3">{item.content}</p>
-                    </BentoCard>
-                  );
-                }
-                if (item.type === 'advisor_card' || item.type === 'advisor') {
-                  return (
-                    <BentoCard key={'advisor-' + idx} className="col-span-1 md:col-span-1" title={item.title} icon={<Sparkles className="w-5 h-5 text-blue-500" />}>
-                      <div className="text-sm text-slate-600 leading-relaxed" dangerouslySetInnerHTML={{ __html: item.content }} />
-                    </BentoCard>
-                  );
-                }
-                return null;
-              })}
-
-              {/* 3.1 Key Property Metrics */}
-              {content.metrics?.filter((m: any) => m.id !== 'default_metric').map((metric: any, idx: number) => (
-                <BentoCard
-                  key={'metric-' + idx}
-                  className="col-span-1"
-                  title={metric.label}
-                  variant={metric.color === 'red' ? 'alert' : metric.color === 'orange' ? 'highlight' : 'default'}
-                >
-                  <div className="flex flex-col">
-                    <span className="text-2xl font-black text-slate-900">{metric.value}</span>
-                    {metric.explanation && <p className="mt-2 text-xs text-slate-500 font-medium leading-tight">{metric.explanation}</p>}
-                    {metric.trend_text && <span className="mt-1 text-[10px] font-bold uppercase text-blue-600 tracking-wider">{metric.trend_text}</span>}
-                  </div>
-                </BentoCard>
-              ))}
-
-
-              {/* 4. Strengths - Vertical or Square */}
-              {content.strengths && content.strengths.length > 0 && (
-                <BentoCard className="col-span-1 md:col-span-1 lg:col-span-1 row-span-2" title="Sterke Punten" icon={<CheckCircle2 className="w-5 h-5 text-emerald-600" />}>
-                  <div className="flex flex-col gap-3">
-                    {content.strengths.map((str: string, i: number) => (
-                      <div key={i} className="flex items-start gap-2 p-2 rounded bg-emerald-50 border border-emerald-100/50">
-                        <div className="min-w-[4px] h-4 mt-1.5 rounded-full bg-emerald-500" />
-                        <span className="text-sm font-medium text-emerald-900">{str}</span>
-                      </div>
-                    ))}
-                  </div>
-                </BentoCard>
-              )}
-
-              {/* 5. Main Analysis - The 'Meat' - Large Block */}
-              {content.main_analysis && (
-                <BentoCard
-                  className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2"
-                  title="Diepte Analyse"
-                  icon={<TrendingUp className="w-5 h-5 text-blue-600" />}
-                >
-                  <div
-                    className="prose prose-slate max-w-none text-sm md:text-base leading-relaxed
-                                   prose-p:mb-4 prose-headings:text-slate-800 prose-headings:font-bold prose-headings:text-sm prose-headings:uppercase prose-headings:tracking-wider"
-                    dangerouslySetInnerHTML={{ __html: content.main_analysis }}
-                  />
-                </BentoCard>
-              )}
-
-              {/* 6. Risks / Advice - 1x1 or Vert */}
-              {content.advice && (
-                <BentoCard className="col-span-1 md:col-span-1 lg:col-span-1" title="Aandachtspunten" icon={<AlertTriangle className="w-5 h-5 text-amber-500" />} variant="alert">
-                  <div className="prose prose-sm prose-ul:pl-4 prose-li:marker:text-amber-500" dangerouslySetInnerHTML={{ __html: typeof content.advice === 'string' ? content.advice : '' }} />
-                  {Array.isArray(content.advice) && (
-                    <div className="flex flex-col gap-2">
-                      {content.advice.map((adv: string, i: number) => (
-                        <div key={i} className="text-sm text-amber-900 bg-amber-50 p-2 rounded border border-amber-100">{adv}</div>
+                {/* Domain Variables Grid (High Trust) */}
+                {content.variables && Object.keys(content.variables).length > 0 && (
+                  <BentoCard className="col-span-1 md:col-span-3 lg:col-span-3" title="Core Data Snapshot" icon={<Database className="w-5 h-5 text-indigo-600" />}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {Object.entries(content.variables).map(([key, data]: [string, any]) => (
+                        <div key={key} className="bg-slate-50 p-3 rounded-xl border border-slate-100 group/var transition-all hover:bg-white hover:shadow-sm">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter truncate pr-2">{key.replace(/_/g, ' ')}</span>
+                            <span className={`px-1.5 py-0.5 rounded-[4px] text-[8px] font-bold uppercase ${data.status === 'fact' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                              {data.status}
+                            </span>
+                          </div>
+                          <div className="text-sm font-black text-slate-900 group-hover/var:text-blue-600 transition-colors uppercase">{data.value || "onbekend"}</div>
+                          {data.reasoning && (
+                            <div className="mt-1.5 text-[10px] text-slate-500 italic leading-tight opacity-0 group-hover/var:opacity-100 transition-opacity">
+                              {data.reasoning}
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
-                  )}
-                </BentoCard>
-              )}
+                  </BentoCard>
+                )}
 
-              {/* 7. Action Items (Sidebar) */}
-              {content.sidebar_items?.map((item: any, idx: number) => {
-                if (item.type === 'action_list') {
-                  return (
-                    <BentoCard key={'action-' + idx} className="col-span-1" title={item.title} icon={<ListChecks className="w-5 h-5 text-slate-500" />}>
-                      <ul className="space-y-2 mt-2">
-                        {item.items.map((act: string, i: number) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
-                            <input type="checkbox" className="mt-1 rounded border-slate-300 text-blue-600" />
-                            <span>{act}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </BentoCard>
-                  )
-                }
-                return null;
-              })}
-
-              {/* 8. Conclusion - Full Width Bottom Banner style */}
-              {content.conclusion && (
-                <BentoCard
-                  className="col-span-1 md:col-span-3 lg:col-span-5 !bg-slate-900 !border-slate-800"
-                  variant="default" // Overridden by class
-                >
-                  <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left h-full justify-center">
-                    <div className="p-3 bg-white/10 rounded-full">
-                      <Target className="w-8 h-8 text-yellow-400" />
+                {/* Dynamic Metrics Loop */}
+                {content.metrics && content.metrics.map((m: any) => (
+                  <BentoCard
+                    key={m.id}
+                    className="col-span-1"
+                    title={m.label}
+                    icon={m.icon === 'leaf' ? <Zap className="w-5 h-5 text-emerald-500" /> : <TrendingUp className="w-5 h-5 text-blue-500" />}
+                    variant={m.color === 'red' ? 'alert' : m.color === 'orange' ? 'highlight' : 'default'}
+                  >
+                    <div className="flex flex-col h-full">
+                      <div className="text-2xl font-black text-slate-900 mb-1">{m.value}</div>
+                      {m.trend_text && (
+                        <div className={`text-[10px] font-bold flex items-center gap-1 ${m.color === 'green' ? 'text-emerald-600' : m.color === 'red' ? 'text-rose-600' : 'text-amber-600'}`}>
+                          {m.trend === 'up' ? '↑' : m.trend === 'down' ? '↓' : '→'} {m.trend_text}
+                        </div>
+                      )}
+                      {m.explanation && (
+                        <div className="mt-auto pt-3 text-[10px] font-medium text-slate-500 leading-snug border-t border-slate-100/50">
+                          {m.explanation}
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-yellow-500 uppercase tracking-widest mb-2">Conclusie van de Expert</h4>
-                      <p className="text-xl md:text-2xl font-serif italic text-white leading-relaxed">"{content.conclusion}"</p>
-                    </div>
-                  </div>
-                </BentoCard>
-              )}
+                  </BentoCard>
+                ))}
 
-            </BentoGrid>
+                {content.interpretation && (
+                  <BentoCard className="col-span-1 md:col-span-3 lg:col-span-3" variant="primary" title="AI Interpretatie" icon={<Sparkles className="w-5 h-5 text-yellow-300" />}>
+                    <div className="prose prose-invert prose-sm md:prose-base !max-w-none font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: content.interpretation }} />
+                  </BentoCard>
+                )}
+
+                {content.main_analysis && (
+                  <BentoCard className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1" title="Analyse" icon={<Target className="w-5 h-5 text-blue-600" />}>
+                    <div className="prose prose-slate prose-sm md:prose-base !max-w-none text-slate-700" dangerouslySetInnerHTML={{ __html: content.main_analysis }} />
+                  </BentoCard>
+                )}
+
+                {/* Sidebar Items (Bridged from Backend) */}
+                {content.sidebar_items && content.sidebar_items.map((item: any, idx: number) => (
+                  <BentoCard key={idx} className="col-span-1" variant={item.style === 'gradient' ? 'primary' : 'default'} title={item.title}>
+                    {item.type === 'advisor_score' ? (
+                      <div className="flex flex-col items-center">
+                        <div className="text-4xl font-black text-blue-600 mb-2">{item.score}</div>
+                        <p className="text-[10px] text-center font-medium text-slate-500">{item.content}</p>
+                      </div>
+                    ) : (
+                      <div className={`text-xs md:text-sm font-medium leading-relaxed ${item.style === 'gradient' ? 'text-blue-50' : 'text-slate-600'}`} dangerouslySetInnerHTML={{ __html: item.content }} />
+                    )}
+                  </BentoCard>
+                ))}
+
+                {content.strengths && content.strengths.length > 0 && (
+                  <BentoCard className="col-span-1" title="Sterke Punten" icon={<CheckCircle2 className="w-5 h-5 text-emerald-600" />}>
+                    <ul className="space-y-2">
+                      {content.strengths.map((s: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2 text-[10px] md:text-xs font-bold text-emerald-900 bg-emerald-50 p-2 rounded-xl border border-emerald-100/50">
+                          <CheckCircle2 className="w-3 h-3 mt-0.5 text-emerald-500 shrink-0" /> {s}
+                        </li>
+                      ))}
+                    </ul>
+                  </BentoCard>
+                )}
+
+                {content.advice && (
+                  <BentoCard className="col-span-1" variant="alert" title="Expert Advies" icon={<AlertTriangle className="w-5 h-5 text-amber-500" />}>
+                    <div className="text-xs md:text-sm text-slate-700 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: typeof content.advice === 'string' ? content.advice : "" }} />
+                  </BentoCard>
+                )}
+
+                {/* Petra & Marcel Personalization parameters */}
+                {content.comparison && (
+                  <BentoCard className="col-span-1 md:col-span-2 lg:col-span-5 !bg-indigo-50 !border-indigo-100" title="Marcel & Petra: Persoonlijke Match" icon={<Target className="w-5 h-5 text-indigo-600" />}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="bg-white p-5 rounded-2xl border border-blue-100 shadow-sm transition-transform hover:-translate-y-1">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                          <span className="font-bold text-slate-800 uppercase tracking-widest text-[11px]">Marcel's Focus (Tech & ROI)</span>
+                        </div>
+                        <p className="text-sm text-slate-600 leading-relaxed font-medium">{content.comparison.marcel}</p>
+                      </div>
+                      <div className="bg-white p-5 rounded-2xl border border-pink-100 shadow-sm transition-transform hover:-translate-y-1">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-3 h-3 rounded-full bg-pink-500"></div>
+                          <span className="font-bold text-slate-800 uppercase tracking-widest text-[11px]">Petra's Focus (Sfeer & Flow)</span>
+                        </div>
+                        <p className="text-sm text-slate-600 leading-relaxed font-medium">{content.comparison.petra}</p>
+                      </div>
+                      {content.comparison.combined_advice && (
+                        <div className="col-span-1 md:col-span-2 bg-indigo-600 text-white p-5 rounded-2xl shadow-lg flex items-center gap-5 border border-white/10">
+                          <Sparkles className="w-8 h-8 text-yellow-300 shrink-0" />
+                          <p className="font-bold text-base tracking-tight italic">"{content.comparison.combined_advice}"</p>
+                        </div>
+                      )}
+                    </div>
+                  </BentoCard>
+                )}
+
+                {content.conclusion && (
+                  <BentoCard className="col-span-1 md:col-span-3 lg:col-span-5 !bg-slate-900 !border-slate-800" title="Verdict" icon={<Target className="w-5 h-5 text-blue-400" />}>
+                    <div className="flex flex-col md:flex-row items-center gap-8 py-4">
+                      <div className="flex-1">
+                        <p className="text-white text-xl md:text-2xl font-serif italic font-light leading-relaxed">"{content.conclusion}"</p>
+                        <div className="mt-4 flex items-center gap-2">
+                          <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[10px] font-black text-emerald-400 uppercase tracking-widest">Aankoopwaardig</div>
+                          <div className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-[10px] font-black text-blue-400 uppercase tracking-widest">Lange Termijn ROI</div>
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-center px-12 py-6 bg-white/5 rounded-[32px] border border-white/10 group-hover:bg-white/10 transition-colors">
+                        <div className="text-xs text-slate-400 font-bold uppercase mb-2 tracking-widest">Match Score</div>
+                        <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-indigo-400">
+                          {content.sidebar_items?.find((s: any) => s.type === 'advisor_score')?.score
+                            ? (content.sidebar_items.find((s: any) => s.type === 'advisor_score').score / 10).toFixed(1)
+                            : "8.5"}
+                        </div>
+                      </div>
+                    </div>
+                  </BentoCard>
+                )}
+              </BentoGrid>
+
+              {activeChapterId === "0" && report.discovery && report.discovery.length > 0 && (
+                <DiscoveryBento attributes={report.discovery} />
+              )}
+            </div>
           ) : (
-            <div className="flex items-center justify-center flex-1 h-full text-slate-400">
-              <div className="text-center">
-                <p className="text-lg font-medium">Selecteer een hoofdstuk</p>
-              </div>
+            <div className="flex flex-col items-center justify-center p-20 text-slate-300">
+              <BookOpen className="w-16 h-16 mb-4 opacity-20" />
+              <p className="font-medium">Pagina wordt geladen of geen data beschikbaar.</p>
             </div>
           )}
         </div>
       </main>
-    </div >
+    </div>
   );
 }
 

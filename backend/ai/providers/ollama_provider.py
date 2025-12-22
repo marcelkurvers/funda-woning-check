@@ -135,15 +135,20 @@ class OllamaProvider(AIProvider):
 
         if images:
             b64_images = []
-            for img_path in images:
-                try:
-                    if os.path.exists(img_path):
-                        with open(img_path, "rb") as f:
-                            b64_images.append(base64.b64encode(f.read()).decode('utf-8'))
-                    else:
-                        logger.warning(f"Ollama image path not found: {img_path}")
-                except Exception as e:
-                    logger.error(f"Failed to encode image for Ollama: {e}")
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                for img_path in images:
+                    try:
+                        if img_path.startswith(('http://', 'https://')):
+                            resp = await client.get(img_path)
+                            resp.raise_for_status()
+                            b64_images.append(base64.b64encode(resp.content).decode('utf-8'))
+                        elif os.path.exists(img_path):
+                            with open(img_path, "rb") as f:
+                                b64_images.append(base64.b64encode(f.read()).decode('utf-8'))
+                        else:
+                            logger.warning(f"Ollama image path not found: {img_path}")
+                    except Exception as e:
+                        logger.error(f"Failed to encode image {img_path} for Ollama: {e}")
             if b64_images:
                 payload["images"] = b64_images
 

@@ -48,7 +48,7 @@ class ExecutiveSummary(BaseChapter):
         label = ctx.get('label', '?').upper()
         
         # Logic: Valuation
-        market_avg_m2 = ctx.get('avg_m2_price', 4800) # National average fallback if local unavailable
+        market_avg_m2 = int(ctx.get('avg_m2_price', 4800) or 4800) 
         valuation_status = "Marktconform"
         trend = "neutral"
         if price_m2 > market_avg_m2 * 1.2:
@@ -117,7 +117,7 @@ class ExecutiveSummary(BaseChapter):
 
         hero = {
             "address": raw_address,
-            "price": ctx.get('prijs', 'Prijs op aanvraag'),
+            "price": f"€ {price_val:,}".replace(',', '.') if price_val > 0 else "Prijs op aanvraag",
             "status": "Te Koop" if price_val > 0 else "Analyse Mode",
             "labels": ["Woonhuis", f"{oppervlakte_clean} m² Wonen", f"{perceel_clean} m² Perceel"] 
         }
@@ -200,22 +200,11 @@ class ExecutiveSummary(BaseChapter):
         metrics.append({"id": "long_term_quality", "label": "Lange-termijn kwaliteit", "value": lt_quality, "icon": "shield", "trend": "neutral", "color": lt_quality_color, "explanation": lt_quality_explanation})
 
 
-
-
-
         # Strategic Main Content with Color Legend
-        # We use the text from the IntelligenceEngine (possibly AI generated)
-        # but wrap it in our rich HTML structure.
+        # We use the base class renderer to ensure consistency and the new comparison section.
+        # We inject the specific Dashboard elements (Construction alert, Valuation) as extra_html.
         
-        # If AI is used, narrative['main_analysis'] will contain the rich text.
-        # We preserve the detailed hardcoded structure as a "Strategic Dashboard" 
-        # but append the AI's narrative analysis below it or as the lead text.
-        
-        summary_html = f"""
-        <div class="lead-text" style="font-size: 1.1rem; line-height: 1.6; color: #334155; margin-bottom: 2rem;">
-            {narrative.get('intro', '')}
-        </div>
-
+        dashboard_extra_html = f"""
         <div class="analysis-grid" style="margin-bottom: 2rem;">
             <div class="analysis-item">
                 <div class="analysis-icon {'warning' if total_expected_invest > 0 else 'valid'}"><ion-icon name="construct"></ion-icon></div>
@@ -232,27 +221,23 @@ class ExecutiveSummary(BaseChapter):
                 </div>
             </div>
         </div>
-
-        <div class="ai-analysis-content" style="margin-bottom: 2rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border-left: 4px solid #6366f1;">
-            <h4 style="margin-top:0; color:#4f46e5;">AI Analyse</h4>
-            {narrative.get('main_analysis', 'Data niet beschikbaar.')}
-            {narrative.get('interpretation', '')}
-        </div>
-
-        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem;">
-            <h4 style="margin-top:0; color:#334155; margin-bottom: 1rem;">Sterke & Zwakke Punten</h4>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-                <div>
-                    <h5 style="color:#10b981; margin:0 0 0.5rem 0;">Voordelen</h5>
-                    <ul style="list-style:none; padding:0; margin:0; font-size: 0.95rem; color:#475569;">{pros_html}</ul>
-                </div>
-                <div>
-                    <h5 style="color:#ef4444; margin:0 0 0.5rem 0;">Aandachtspunten</h5>
-                    <ul style="list-style:none; padding:0; margin:0; font-size: 0.95rem; color:#475569;">{cons_html}</ul>
-                </div>
-            </div>
-        </div>
         """
+        
+        # Merge hardcoded pros/cons with AI narrative results
+        final_strengths = list(dict.fromkeys(pros + (narrative.get('strengths') or [])))
+        
+        # Ensure advice is a list before merging
+        raw_advice = narrative.get('advice') or []
+        if isinstance(raw_advice, str):
+            raw_advice = [raw_advice]
+        final_advice = list(dict.fromkeys(cons + raw_advice))
+        
+        narrative['strengths'] = final_strengths
+        narrative['advice'] = final_advice
+
+        # Render the rich narrative which now includes the comparison section
+        # We pass dashboard_extra_html into the lead area
+        final_content = self._render_rich_narrative(narrative, extra_html=dashboard_extra_html)
 
         # Expert Sidebar
         sidebar = [
@@ -293,7 +278,7 @@ class ExecutiveSummary(BaseChapter):
             "layout_type": "modern_dashboard",
             "hero": hero,
             "metrics": metrics,
-            "main": {"title": "Executive Property Assessment", "content": summary_html},
+            "main": {"title": "Executive Property Assessment", "content": final_content},
             "left_sidebar": left_sidebar,
             "sidebar": sidebar
         }
@@ -301,17 +286,26 @@ class ExecutiveSummary(BaseChapter):
         chapter_data = {
             "title": "Executive Summary",
             "intro": narrative.get('intro', ''),
-            "main_analysis": summary_html,
+            "main_analysis": final_content,
             "conclusion": narrative.get('conclusion', ''),
             "strengths": pros,
             "advice": cons,
             "interpretation": narrative.get('interpretation', ''),
-            "sidebar_items": sidebar
+            "sidebar_items": sidebar,
+            "comparison": narrative.get('comparison', {}) # Ensure it's passed through
         }
 
+        # Provenance mapping
+        prov_dict = narrative.get('_provenance')
+        from domain.models import AIProvenance
+        prov = AIProvenance(**prov_dict) if prov_dict else None
+
         return ChapterOutput(
+            id="0",
             title="0. Executive Summary",
             grid_layout=layout, 
             blocks=[],
-            chapter_data=chapter_data
+            chapter_data=chapter_data,
+            provenance=prov,
+            missing_critical_data=narrative.get('metadata', {}).get('missing_vars', [])
         )

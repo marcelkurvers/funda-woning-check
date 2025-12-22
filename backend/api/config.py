@@ -17,7 +17,8 @@ import json
 # Helper to get a DB connection using the configured database URL
 def _get_conn():
     settings = get_settings()
-    return sqlite3.connect(settings.database_url)
+    db_path = settings.database_url
+    return sqlite3.connect(db_path)
 
 router = APIRouter(prefix="/api/config", tags=["configuration"])
 
@@ -106,6 +107,14 @@ async def update_config_bulk(config: ConfigUpdateRequest):
         sections_updated.append("pipeline")
 
     reset_settings()
+    
+    # Trigger AI re-init if AI section was updated
+    if "ai" in sections_updated:
+        try:
+            from main import init_ai_provider
+            init_ai_provider()
+        except: pass
+        
     return {"status": "updated", "sections": sections_updated}
 
 

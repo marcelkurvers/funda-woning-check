@@ -4,9 +4,16 @@ This document outlines the strategic plan for evolving the **AI Woning Rapport**
 
 ---
 
-## 🚀 Phase 4: Vision & Interactive Intelligence (The Next Frontier)
+## ✅ Phase 4: Multi-Check Pro Link (Completed Dec 2024)
+Successfully transitioned from brittle server-side scraping to a user-mediated ingestion model.
+*   **Browser Extension**: One-click ingestion for Chrome/Edge.
+*   **Dynamic Interpretation Pipeline**: AI-driven attribute discovery (schema-agnostic).
+*   **User-Mediated Media**: Bulk image ingestion via browser context.
+*   **Category-Driven UI**: Bento dashboard that adapts to discovered data.
 
-Following the successful implementation of the core architecture and multi-provider AI engine, the following innovations are planned:
+---
+
+## 🚀 Phase 5: Vision & Interactive Intelligence (Next)
 
 ### 1. Multimodal "Vision" Audit
 Leverage Multimodal LLMs (GPT-4o, Gemini Pro Vision) to analyze uploaded and pasted images.
@@ -23,29 +30,24 @@ Move from a static report to a conversational consultant.
 Generate an actionable investment roadmap for every property.
 *   **Cost Estimator**: AI-driven price tags for common Dutch renovations (Spouwmuur, HR++, Warmtepomp).
 *   **Value-Add Prediction**: Estimate the increase in market value after specific upgrades.
-*   **Energy Label Migration**: Direct path from Label G to Label A with cost/benefit analysis.
 
 ### 4. Legal "Fine Print" Scanner (RAG)
 Automatic digestion of complex property dossiers.
 *   **Document Analysis**: Upload VvE minutes, title deeds, and environmental reports for instant risk extraction.
 *   **Hidden Risk Detection**: Highlight "Recht van Overpad," VvE contribution increases, or ground lease (erfpacht) traps.
 
-### 5. AI Portfolio Strategist
-Comparative intelligence across multiple generated reports.
-*   **Portfolio Pitch**: A summary comparing Woning A, B, and C to determine which one wins for Marcel vs. which one wins for Petra.
-*   **Neighborhood Forecasting**: Integration with local municipality news to predict future value based on planned infrastructure development.
-
 ---
 
 ## 🛠 Status & Deadlines
 
-| Innovation | Priority | Difficulty | Status |
-| :--- | :--- | :--- | :--- |
-| Multimodal Vision | 🔥 High | Medium | *Proposed* |
-| Interactive Advisor | ⚡ Medium | Low | *Proposed* |
-| Renovation ROI | 📈 Medium | Medium | *Proposed* |
-| Legal Scanner | ⚖️ High | High | *Proposed* |
-| Portfolio Strategist | 🏆 Low | High | *Proposed* |
+| Innovation | Priority | Status |
+| :--- | :--- | :--- |
+| **User-Mediated Ingestion** | 🔥 High | ✅ Done |
+| **Dynamic Attribute Discovery** | 🔥 High | ✅ Done |
+| Multimodal Vision | ⚡ High | *Proposed* |
+| Interactive Advisor | 💬 Medium | *Proposed* |
+| Renovation ROI | 📈 Medium | *Proposed* |
+| Legal Scanner | ⚖️ High | *Proposed* |
 
 ---
-*Last Updated: 2025-12-20*
+*Last Updated: 2025-12-21 | Version 4.0*

@@ -8,10 +8,14 @@ The **AI Woning Rapport** is designed to provide potential homebuyers with deep,
 
 ### Key Features
 
+- **AI Trust & Transparency Architecture**: Every insight is labeled as **Fact** (from data) or **Inferred** (AI analysis), complete with **AI Provenance** (model/provider tracking) and **Proof of Reasoning**.
+- **Domain Variable Authority**: Strict adherence to a domain-specific set of 14 variables per chapter, ensuring "Onbekend" states are explicitly detected and surfaced.
+- **Multi-Check Pro Link**: Chrome/Edge extension for one-click ingestion from any Funda listing, bypassing CAPTCHAs and anti-bot measures.
+- **Dynamic Interpretation Pipeline**: AI-driven attribute discovery that automatically extracts and classifies property facts with confidence scoring.
 - **Multi-Source Ingestion**: Parse data via Funda URLs or direct HTML/Text paste. Robust handling of image pasting with automated upload.
 - **AI Provider Factory**: Modular support for **Ollama** (Local), **OpenAI**, **Anthropic Claude**, and **Google Gemini**.
 - **Advanced Parser**: High-accuracy extraction with multi-line support, logical validation, and cross-consistency checks.
-- **Dynamic Bento Dashboard**: A premium, responsive interface optimized for any resolution, featuring interactive charts and real-time status tracking.
+- **Modern Magazine v2 Dashboard**: A premium, responsive interface featuring interactive charts, AI provenance headers, and a detailed domain variable grid.
 - **Intelligent Pipeline**: Asynchronous processing with data persistence and automated PDF generation.
 - **Runtime Configuration**: Granular control over AI models, market data, and user preferences via a dedicated Settings API.
 

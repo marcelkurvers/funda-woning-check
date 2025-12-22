@@ -13,10 +13,17 @@ from concurrent.futures import ThreadPoolExecutor
 import threading
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Response
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+import sys
 from pathlib import Path
+
+# Ensure backend directory is in path for internal imports
+BACKEND_DIR = Path(__file__).parent
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.append(str(BACKEND_DIR))
 
 from scraper import Scraper
 from parser import Parser
@@ -24,6 +31,7 @@ from consistency import ConsistencyChecker
 from chapters.registry import get_chapter_class
 from intelligence import IntelligenceEngine
 from ai.provider_factory import ProviderFactory
+from ai.dynamic_extractor import DynamicExtractor
 from config.settings import get_settings, reset_settings, AppSettings
 from jinja2 import Environment, FileSystemLoader
 try:
@@ -59,7 +67,7 @@ CHAPTER_TITLES = settings.chapters.titles
 
 STEPS = (
     "scrape_funda",           # Chapter 0, Chapter 1
-    "fetch_external_sources",  # Kadaster, bag, mapit
+    "dynamic_extraction",      # AI Attribute Discovery
     "compute_kpis",           # Calculations
     "generate_chapters",      # Intelligence Engine
     "render_pdf"              # Template & PDF
@@ -90,6 +98,35 @@ def init_db():
             artifacts_json TEXT,     -- references to PDF path, etc.
             created_at TEXT,
             updated_at TEXT
+        )
+    """)
+    # Attribute Discovery (Dynamic Interpretation Pipeline)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS attribute_discovery (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id TEXT,
+            namespace TEXT, -- e.g., 'financial', 'energy', 'physical'
+            key TEXT,
+            display_name TEXT,
+            value TEXT,
+            confidence REAL,
+            source_snippet TEXT,
+            created_at TEXT,
+            FOREIGN KEY (run_id) REFERENCES runs (id)
+        )
+    """)
+    # Media Table (User-Mediated Browser Context)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS media (
+            id TEXT PRIMARY KEY,
+            run_id TEXT,
+            url TEXT,
+            caption TEXT,
+            ordering INTEGER,
+            provenance TEXT, -- e.g., 'extension', 'paste'
+            local_path TEXT,
+            created_at TEXT,
+            FOREIGN KEY (run_id) REFERENCES runs (id)
         )
     """)
     # KV Store for preferences and configuration
@@ -203,40 +240,49 @@ class PasteIn(BaseModel):
 
 # --- FASTAPI APP ---
 app = FastAPI(title="AI Woning Rapport Pro v4")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # For dev; can be restricted to extension IDs later
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 init_db()
 
 # Background task executor
-executor = ThreadPoolExecutor(max_workers=settings.pipeline.max_workers)
+executor = ThreadPoolExecutor(max_workers=10) # Higher capacity for always-on service
 
 # Determine static directory
-base_dir = os.path.dirname(os.path.abspath(__file__))
-static_dir = os.path.join(base_dir, "frontend", "dist")
+base_dir = Path(__file__).resolve().parent
+static_dir_options = [
+    base_dir / "frontend" / "dist",             # Inside backend/ (Docker/Prod)
+    base_dir.parent / "frontend" / "dist",      # Sibling to backend/ (Local dev)
+    Path("/app/backend/frontend/dist"),         # Absolute Docker path
+    Path("/app/frontend/dist")                  # Alternative Docker path
+]
 
-if not os.path.exists(static_dir):
-    static_dir = "/app/frontend/dist"
-    if not os.path.exists(static_dir):
-        static_dir = os.path.join(os.path.dirname(base_dir), "frontend", "dist")
+static_dir = next((str(p) for p in static_dir_options if p.exists()), None)
+if static_dir:
+    logger.info(f"Serving static files from: {static_dir}")
+else:
+    logger.warning("No static directory found. Frontend will not be served.")
 
-# Mount static files
-if os.path.exists(static_dir):
-    app.mount("/static", StaticFiles(directory=static_dir, html=True), name="static")
-
-    @app.get("/", response_class=HTMLResponse)
-    def root():
-        with open(os.path.join(static_dir, "index.html"), "r", encoding="utf-8") as f:
-            return f.read()
-
+# --- MOUNTS ---
+if static_dir:
     assets_dir = os.path.join(static_dir, "assets")
     if os.path.exists(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
-else:
-    @app.get("/", response_class=HTMLResponse)
-    def root():
-        return "<html><body>Development Mode - Static assets not found.</body></html>"
 
 if UPLOAD_DIR.exists():
     app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
+# Mount static folder for styles and local assets
+static_assets = BACKEND_DIR / "static"
+if static_assets.exists():
+    app.mount("/static", StaticFiles(directory=str(static_assets)), name="static")
+
+# --- STARTUP ---
 @app.on_event("startup")
 def _startup():
     init_db()
@@ -255,11 +301,14 @@ def simulate_pipeline(run_id):
     row = get_run_row(run_id)
     if not row: return
     
+    logger.info(f"Pipeline [{run_id}]: Starting. Status: {row['status']}")
+    
     steps = json.loads(row["steps_json"]) if row["steps_json"] else {}
     core = json.loads(row["property_core_json"]) if row["property_core_json"] else {}
     funda_url = row["funda_url"]
     
     # 1. Scrape / Parse
+    logger.info(f"Pipeline [{run_id}]: Starting Scrape/Parse")
     steps["scrape_funda"] = "running"
     update_run(run_id, steps_json=json.dumps(steps))
     
@@ -269,32 +318,55 @@ def simulate_pipeline(run_id):
             scraped = scraper.derive_property_core(funda_url)
             core.update({k: v for k, v in scraped.items() if v})
         except Exception as e:
-            logger.error(f"Scrape failed: {e}")
+            logger.error(f"Pipeline [{run_id}]: Scrape failed: {e}")
             core["scrape_error"] = str(e)
             
     if row["funda_html"]:
         try:
             p = Parser().parse_html(row["funda_html"])
-            # Merge missing fields, but keep media_urls from the paste if present
             incoming_media = p.get("media_urls", [])
-            initial_media = core.get("media_urls", [])
-            
+            # For a truly clean re-scan, we trust the newest data from the parser/extension
+            # rather than indefinitely merging old state.
             core.update({k: v for k, v in p.items() if v})
+            core["media_urls"] = list(dict.fromkeys(incoming_media))[:50] 
             
-            # Smart merge media: prioritize user-uploaded if present
-            core["media_urls"] = list(dict.fromkeys(initial_media + incoming_media))
+            # Sync to media table
+            con = db()
+            cur = con.cursor()
+            for idx, m_url in enumerate(core["media_urls"]):
+                cur.execute("SELECT 1 FROM media WHERE run_id = ? AND url = ?", (run_id, m_url))
+                if not cur.fetchone():
+                    cur.execute(
+                        "INSERT INTO media (id, run_id, url, caption, ordering, provenance, created_at) VALUES (?,?,?,?,?,?,?)",
+                        (str(uuid.uuid4()), run_id, m_url, f"Foto {idx+1}", idx, "parser", now())
+                    )
+            con.commit()
+            con.close()
         except Exception as e:
-            logger.error(f"Parse failed: {e}")
+            logger.error(f"Pipeline [{run_id}]: Parse failed: {e}")
             
     steps["scrape_funda"] = "done"
     update_run(run_id, steps_json=json.dumps(steps), property_core_json=json.dumps(core))
     
+    # 1b. Dynamic Extraction (if HTML present)
+    if row["funda_html"]:
+        logger.info(f"Pipeline [{run_id}]: Starting Dynamic Extraction")
+        steps["dynamic_extraction"] = "running"
+        update_run(run_id, steps_json=json.dumps(steps))
+        run_dynamic_extraction(run_id, row["funda_html"])
+        steps["dynamic_extraction"] = "done"
+        update_run(run_id, steps_json=json.dumps(steps))
+
     # 2. KPIs
-    steps["compute_kpis"] = "done"
+    logger.info(f"Pipeline [{run_id}]: Computing KPIs")
+    steps["compute_kpis"] = "running"
+    update_run(run_id, steps_json=json.dumps(steps))
     kpis = build_kpis(core)
-    update_run(run_id, kpis_json=json.dumps(kpis))
+    steps["compute_kpis"] = "done"
+    update_run(run_id, steps_json=json.dumps(steps), kpis_json=json.dumps(kpis))
     
     # 3. Chapters
+    logger.info(f"Pipeline [{run_id}]: Generating Chapters")
     steps["generate_chapters"] = "running"
     update_run(run_id, steps_json=json.dumps(steps))
     
@@ -302,6 +374,7 @@ def simulate_pipeline(run_id):
     unknowns = build_unknowns(core)
     
     steps["generate_chapters"] = "done"
+    logger.info(f"Pipeline [{run_id}]: Complete")
     update_run(run_id, steps_json=json.dumps(steps), chapters_json=json.dumps(chapters), unknowns_json=json.dumps(unknowns), status="done")
 
 def build_chapters(core: Dict[str, Any]) -> Dict[str, Any]:
@@ -313,7 +386,7 @@ def build_chapters(core: Dict[str, Any]) -> Dict[str, Any]:
     prefs['ai_model'] = settings.ai.model
     core['_preferences'] = prefs
     
-    for i in range(13):
+    for i in range(14):
         # 1. Try Rich Chapter Generation via Chapter Classes
         cls = get_chapter_class(i)
         if cls:
@@ -351,6 +424,11 @@ def build_chapters(core: Dict[str, Any]) -> Dict[str, Any]:
         output["sidebar_items"] = output.get("sidebar_items", [])
         output["metrics"] = output.get("metrics", [])
         
+        # Map provenance from output if available
+        prov_dict = output.get('_provenance')
+        from domain.models import AIProvenance
+        prov = AIProvenance(**prov_dict) if prov_dict else None
+
         # Construct a backward-compatible dictionary matching ChapterOutput structure
         chapters[chapter_id] = {
             "id": chapter_id,
@@ -361,7 +439,9 @@ def build_chapters(core: Dict[str, Any]) -> Dict[str, Any]:
             },
             "blocks": [],
             "chapter_data": output,
-            "property_core": output.get("property_core") if i == 0 else None
+            "property_core": output.get("property_core") if i == 0 else None,
+            "provenance": prov_dict, # Pass raw dict for easier JSON serialization
+            "missing_critical_data": output.get('metadata', {}).get('missing_vars', [])
         }
     return chapters
 
@@ -392,7 +472,7 @@ def build_unknowns(core: Dict[str, Any]) -> List[str]:
     return [f for f in fields if not core.get(f)]
 
 # --- API ROUTES ---
-@app.get("/runs")
+@app.get("/api/runs")
 def list_runs():
     con = db()
     cur = con.cursor()
@@ -401,7 +481,19 @@ def list_runs():
     con.close()
     return [{"id": r[0], "funda_url": r[1], "status": r[2], "created_at": r[3]} for r in rows]
 
-@app.post("/runs")
+@app.get("/api/runs/active")
+def get_active_run():
+    con = db()
+    cur = con.cursor()
+    # Find the most recent run created in the last 15 minutes that is on the same URL
+    cur.execute("SELECT id, funda_url FROM runs WHERE created_at > datetime('now', '-15 minutes') ORDER BY created_at DESC LIMIT 1")
+    row = cur.fetchone()
+    con.close()
+    if row:
+        return {"id": row[0], "funda_url": row[1]}
+    return None
+
+@app.post("/api/runs")
 def create_run(inp: RunInput):
     run_id = str(uuid.uuid4())
     con = db()
@@ -419,12 +511,12 @@ def create_run(inp: RunInput):
     con.close()
     return {"run_id": run_id, "status": "queued"}
 
-@app.post("/runs/{run_id}/start")
+@app.post("/api/runs/{run_id}/start")
 def start_run(run_id: str):
     executor.submit(simulate_pipeline, run_id)
     return {"ok": True, "status": "processing"}
 
-@app.post("/runs/{run_id}/paste")
+@app.post("/api/runs/{run_id}/paste")
 def paste_funda_html(run_id: str, inp: Dict[str, Any]):
     html = inp.get("funda_html")
     if not html: raise HTTPException(400, "funda_html required")
@@ -445,25 +537,197 @@ def paste_funda_html(run_id: str, inp: Dict[str, Any]):
         
     return {"ok": True}
 
-@app.get("/runs/{run_id}/status")
+@app.get("/api/runs/{run_id}/status")
 def get_run_status(run_id: str):
     row = get_run_row(run_id)
     if not row: raise HTTPException(404)
     return run_to_overview(row)
 
-@app.get("/runs/{run_id}/report")
+@app.get("/api/runs/{run_id}/report")
 def get_run_report(run_id: str):
     row = get_run_row(run_id)
     if not row: raise HTTPException(404)
+    
+    # Fetch Discovery Attributes
+    con = db()
+    cur = con.cursor()
+    cur.execute("SELECT namespace, key, display_name, value, confidence, source_snippet FROM attribute_discovery WHERE run_id = ?", (run_id,))
+    discovery = [dict(r) for r in cur.fetchall()]
+    
+    # Fetch Media
+    cur.execute("SELECT url, caption, ordering, provenance FROM media WHERE run_id = ? ORDER BY ordering ASC", (run_id,))
+    media = [dict(r) for r in cur.fetchall()]
+    con.close()
+
     return {
         "runId": row["id"],
         "address": (json.loads(row["property_core_json"]) if row["property_core_json"] else {}).get("address", "Onbekend"),
         "property_core": json.loads(row["property_core_json"]) if row["property_core_json"] else {},
         "chapters": json.loads(row["chapters_json"]) if row["chapters_json"] else {},
-        "kpis": json.loads(row["kpis_json"]) if row["kpis_json"] else {}
+        "kpis": json.loads(row["kpis_json"]) if row["kpis_json"] else {},
+        "discovery": discovery,
+        "media_from_db": media
     }
 
-@app.get("/health")
+def normalize_funda_url(url: str) -> str:
+    """Extracts the base property ID or URL to ensure consistent matching"""
+    if not url: return ""
+    base = url.split('?')[0].split('#')[0]
+    # Extract ID if present (e.g., /43185766/)
+    id_match = re.search(r'/(\d{7,10})(/|$)', base)
+    if id_match:
+        return f"funda-id-{id_match.group(1)}"
+    
+    # Fallback to suffix removal
+    for suffix in ['/fotos/', '/plattegrond/', '/video/', '/kenmerken/', '/omschrijving/', '/overzicht/']:
+        if base.endswith(suffix): base = base[:-len(suffix)]
+        elif suffix in base: base = base.split(suffix)[0]
+    return base.rstrip('/')
+
+@app.post("/api/extension/ingest")
+def extension_ingest(data: Dict[str, Any]):
+    funda_url = data.get("url")
+    if not funda_url: raise HTTPException(400, "URL required")
+    
+    normalized = normalize_funda_url(funda_url)
+    html = data.get("html", "")
+    photos = data.get("photos", [])
+    
+    con = db()
+    cur = con.cursor()
+    
+    # 1. Search for a recent existing run for this property (within last 6 hours)
+    # Match by exact URL OR normalized ID
+    cur.execute(
+        "SELECT id, property_core_json, status, funda_url FROM runs WHERE (funda_url LIKE ? OR funda_url LIKE ?) AND created_at > datetime('now', '-6 hours') ORDER BY created_at DESC",
+        (funda_url + '%', '%' + normalized + '%')
+    )
+    existing_list = cur.fetchall()
+    
+    # Precise match on normalized ID if it's an ID-based normalization
+    existing = None
+    if existing_list:
+        if normalized.startswith("funda-id-"):
+            for row in existing_list:
+                if normalized in normalize_funda_url(row["funda_url"]):
+                    existing = row
+                    break
+        else:
+            existing = existing_list[0]
+
+    if existing:
+        run_id = existing["id"]
+        
+        if html:
+            # 1. FULL RESET (Voll. Analyse Starten)
+            logger.info(f"FULL RESET for existing run: {run_id}")
+            core_data = {}
+            try:
+                core_data = Parser().parse_html(html)
+            except Exception as e:
+                logger.error(f"Reset parse failed: {e}")
+            
+            if photos:
+                core_data["media_urls"] = [p["url"] for p in photos]
+
+            # Wipe related tables completely
+            cur.execute("DELETE FROM media WHERE run_id = ?", (run_id,))
+            cur.execute("DELETE FROM attribute_discovery WHERE run_id = ?", (run_id,))
+            
+            # Clear photos from the run object too
+            core_data["media_urls"] = []
+            
+            # Update the run: back to 'queued', clear chapters and KPIs
+            cur.execute(
+                "UPDATE runs SET status = 'queued', steps_json = ?, property_core_json = ?, chapters_json = '{}', kpis_json = '[]', funda_html = ?, updated_at = ? WHERE id = ?",
+                (json.dumps(default_steps()), json.dumps(core_data), html, now(), run_id)
+            )
+        else:
+            # 2. PHOTO ENRICHMENT (Alleen Foto's Inladen)
+            core_data = json.loads(existing["property_core_json"]) if existing["property_core_json"] else {}
+            logger.info(f"PHOTO OVERWRITE for existing run: {run_id}")
+            
+            if photos:
+                core_data["media_urls"] = [p["url"] for p in photos]
+                # Clear existing media in SQL to prevent orphans/duplicates
+                cur.execute("DELETE FROM media WHERE run_id = ?", (run_id,))
+            
+            # Just update property core and timestamp
+            cur.execute(
+                "UPDATE runs SET property_core_json = ?, updated_at = ? WHERE id = ?",
+                (json.dumps(core_data), now(), run_id)
+            )
+            # Important: return early to prevent the global photos loop from adding duplicates
+            con.commit()
+            con.close()
+            executor.submit(simulate_pipeline, run_id)
+            return {"run_id": run_id, "status": "processing"}
+    else:
+        # 3. Create NEW run
+        run_id = str(uuid.uuid4())
+        logger.info(f"Creating NEW run for {funda_url}. RunID: {run_id}")
+        core_data = {}
+        if html:
+            try:
+                core_data = Parser().parse_html(html)
+            except Exception as e:
+                logger.error(f"New parse failed: {e}")
+        
+        if photos:
+            core_data["media_urls"] = [p["url"] for p in photos]
+            
+        cur.execute(
+            "INSERT INTO runs (id, funda_url, funda_html, status, steps_json, property_core_json, chapters_json, kpis_json, unknowns_json, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            (run_id, funda_url, html, "queued", json.dumps(default_steps()), json.dumps(core_data), "{}", "[]", "[]", now(), now())
+        )
+
+    # 2. Add incoming photos to media table
+    for p in photos:
+        url = p.get("url")
+        m_id = str(uuid.uuid4())
+        cur.execute(
+            "INSERT INTO media (id, run_id, url, caption, ordering, provenance, created_at) VALUES (?,?,?,?,?,?,?)",
+            (m_id, run_id, url, p.get("caption"), p.get("order", 0), "extension", now())
+        )
+            
+    con.commit()
+    con.close()
+    
+    # 3. Always trigger/re-trigger pipeline to refresh analysis with new data
+    executor.submit(simulate_pipeline, run_id)
+        
+    return {"run_id": run_id, "status": "processing"}
+
+def run_dynamic_extraction(run_id: str, html: str):
+    try:
+        init_ai_provider()
+        provider = IntelligenceEngine._provider
+        if not provider: 
+            logger.warning("No AI Provider for dynamic extraction")
+            return
+            
+        extractor = DynamicExtractor(provider)
+        
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html, "html.parser")
+        main = soup.find('main') or soup.find('article') or soup.body or soup
+        text = main.get_text(separator="\n")
+        
+        attributes = extractor.extract_attributes(text)
+        
+        con = db()
+        cur = con.cursor()
+        for attr in attributes:
+            cur.execute(
+                "INSERT INTO attribute_discovery (run_id, namespace, key, display_name, value, confidence, source_snippet, created_at) VALUES (?,?,?,?,?,?,?,?)",
+                (run_id, attr["namespace"], attr["key"], attr["display_name"], attr["value"], attr["confidence"], attr["source_snippet"], now())
+            )
+        con.commit()
+        con.close()
+    except Exception as e:
+        logger.error(f"Background dynamic extraction failed: {e}")
+
+@app.get("/api/health")
 def health_check():
     return {"status": "ok", "backend": "ok", "db": "ok"}
 
@@ -520,7 +784,7 @@ def check_ai_status():
     success = init_ai_provider()
     return {"healthy": success, "provider": settings.ai.provider}
 
-@app.get("/runs/{run_id}/pdf")
+@app.get("/api/runs/{run_id}/pdf")
 async def get_run_pdf(run_id: str):
     if not HTML:
         logger.error("PDF: WeasyPrint not installed.")
@@ -567,3 +831,19 @@ async def get_run_pdf(run_id: str):
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=Funda_Rapport_{run_id[:8]}.pdf"}
     )
+
+# --- SPA CATCH-ALL ---
+@app.get("/{full_path:path}", response_class=HTMLResponse)
+def catch_all(full_path: str):
+    # If it looks like an API call or a static file, we shouldn't handle it here
+    if full_path.startswith("api/") or full_path.startswith("static/") or \
+       full_path.startswith("assets/") or full_path.startswith("uploads/"):
+        raise HTTPException(404)
+        
+    if os.path.exists(static_dir):
+        index_path = os.path.join(static_dir, "index.html")
+        if os.path.exists(index_path):
+            with open(index_path, "r", encoding="utf-8") as f:
+                return f.read()
+    
+    return "<html><body>Frontend not built or not found.</body></html>"

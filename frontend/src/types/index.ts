@@ -12,6 +12,15 @@ export interface ChapterData {
     hero?: any;      // Hero section data
     chapter_data?: ChapterData;
     grid_layout?: any;
+    provenance?: {
+        provider: string;
+        model: string;
+        timestamp: string;
+        confidence: 'low' | 'medium' | 'high';
+        inferred_variables?: string[];
+        factual_variables?: string[];
+    };
+    missing_critical_data?: string[];
 }
 
 export type SidebarItem =
@@ -38,10 +47,28 @@ export interface PropertyCore {
     [key: string]: any;
 }
 
+export interface DiscoveryAttribute {
+    namespace: string;
+    key: string;
+    display_name: string;
+    value: string;
+    confidence: number;
+    source_snippet?: string;
+}
+
+export interface MediaItem {
+    url: string;
+    caption?: string;
+    ordering: number;
+    provenance: string;
+}
+
 export interface ReportData {
     runId: string;
     address: string;
     chapters: Record<string, ChapterData>;
     consistency?: ConsistencyItem[];
     property_core?: PropertyCore;
+    discovery?: DiscoveryAttribute[];
+    media_from_db?: MediaItem[];
 }

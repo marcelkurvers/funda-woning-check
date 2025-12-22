@@ -63,13 +63,58 @@ class BaseChapter(ABC):
         )
 
     def _render_rich_narrative(self, narrative: Dict[str, Any], extra_html: str = "") -> str:
-        # --- MODERN MAGAZINE LAYOUT GENERATOR ---
+        # --- MODERN MAGAZINE LAYOUT GENERATOR v2 ---
         
-        # 1. VISUALIZE STRENGTHS (Green Grid)
+        # 0. PROVENANCE HEADER
+        provenance = narrative.get('_provenance', {})
+        prov_html = ""
+        if provenance:
+            conf_class = f"conf-{provenance.get('confidence', 'medium')}"
+            prov_html = f"""
+            <div class="mag-provenance-header">
+                <div class="prov-badge {conf_class}">
+                    <ion-icon name="shield-checkmark"></ion-icon>
+                    AI Vertrouwen: {provenance.get('confidence', 'not set').upper()}
+                </div>
+                <div class="prov-details">
+                    <span><ion-icon name="hardware-chip"></ion-icon> {provenance.get('model', 'Unknown Model')}</span>
+                    <span><ion-icon name="time"></ion-icon> {provenance.get('timestamp', '')[:16]}</span>
+                </div>
+            </div>
+            """
+
+        # 1. DOMAIN VARIABLES GRID
+        vars_dict = narrative.get('variables', {})
+        vars_html = ""
+        if vars_dict:
+            items_html = ""
+            for name, info in vars_dict.items():
+                status = info.get('status', 'unknown')
+                icon = "checkmark-circle" if status == "fact" else "help-circle" if status == "unknown" else "bulb"
+                items_html += f"""
+                <div class="mag-var-card status-{status}">
+                    <div class="mag-var-header">
+                        <ion-icon name="{icon}"></ion-icon>
+                        <span class="mag-var-label">{name}</span>
+                    </div>
+                    <div class="mag-var-value">{info.get('value', 'onbekend')}</div>
+                    <div class="mag-var-reasoning">{info.get('reasoning', '')}</div>
+                </div>
+                """
+            
+            vars_html = f"""
+            <div class="mag-domain-grid">
+                <h4 class="mag-section-header">Domein Variabelen Check</h4>
+                <div class="mag-var-container">
+                    {items_html}
+                </div>
+            </div>
+            """
+
+        # 2. VISUALIZE STRENGTHS (Green Grid)
         strengths_html = ""
         val_strengths = narrative.get('strengths')
         if val_strengths and isinstance(val_strengths, list) and len(val_strengths) > 0:
-            # Convert list to an Icon Grid
             items = "".join([f"""
                 <div class="mag-feature-item success">
                     <div class="mag-icon-box success"><ion-icon name="checkmark-circle"></ion-icon></div>
@@ -86,7 +131,7 @@ class BaseChapter(ABC):
             </div>
             """
 
-        # 2. VISUALIZE RISKS (Yellow Grid)
+        # 3. VISUALIZE RISKS (Yellow Grid)
         advice_html = ""
         val_advice = narrative.get('advice')
         if val_advice:
@@ -108,23 +153,43 @@ class BaseChapter(ABC):
             </div>
             """
 
-        # 3. AI INTERPRETATION (The "Hero" Insight)
-        interpretation_html = ""
-        val_interp = narrative.get('interpretation')
-        if val_interp:
-            interpretation_html = f"""
-            <div class="mag-hero-card gradient-blue">
-                <div class="mag-hero-header">
-                    <ion-icon name="analytics" class="mag-hero-icon"></ion-icon>
-                    <h4 class="mag-hero-title">AI Interpretatie</h4>
+        # 4. MARCEL & PETRA COMPARISON
+        comparison_html = ""
+        comp = narrative.get('comparison')
+        if comp:
+            m_text = comp.get('marcel', '')
+            p_text = comp.get('petra', '')
+            adv_text = comp.get('combined_advice', '')
+            
+            comparison_html = f"""
+            <div class="mag-comparison-section">
+                <h4 class="mag-section-header">
+                    <ion-icon name="people-circle"></ion-icon> Marcel & Petra Perspectief
+                </h4>
+                <div class="mag-comparison-grid">
+                    <div class="mag-persona-card marcel">
+                        <div class="mag-persona-header">
+                            <ion-icon name="hardware-chip" class="persona-icon"></ion-icon>
+                            <span>Marcel (ROI & TCO)</span>
+                        </div>
+                        <div class="mag-persona-content">{m_text}</div>
+                    </div>
+                    <div class="mag-persona-card petra">
+                        <div class="mag-persona-header">
+                            <ion-icon name="color-palette" class="persona-icon"></ion-icon>
+                            <span>Petra (Sfeer & Comfort)</span>
+                        </div>
+                        <div class="mag-persona-content">{p_text}</div>
+                    </div>
                 </div>
-                <div class="mag-hero-body">
-                    {val_interp}
+                <div class="mag-joint-advice">
+                    <ion-icon name="bulb" class="advice-icon"></ion-icon>
+                    <strong>Gezamenlijk Advies:</strong> {adv_text}
                 </div>
             </div>
             """
 
-        # 4. CONCLUSION (Bottom Bar)
+        # 5. CONCLUSION (Bottom Bar)
         conclusion_html = ""
         if narrative.get('conclusion'):
              conclusion_html = f"""
@@ -136,40 +201,31 @@ class BaseChapter(ABC):
             </div>
             """
 
-        # 5. ASSEMBLE THE MAGAZINE LAYOUT
-        # Structure:
-        # [   HEADER (Intro)   ]
-        # [ TEXT (L) | VIS (R) ]
-            
+        # 6. ASSEMBLE
         return f"""
         <div class="mag-layout-container">
+            {prov_html}
             
-            <!-- 1. HERO INTRO -->
             <div class="mag-intro-section">
                 <div class="mag-lead-text">
                     {narrative.get('intro', '')}
                 </div>
             </div>
 
-            <!-- 2. SPLIT CONTENT AREA -->
             <div class="mag-split-grid">
-                
-                <!-- LEFT COL: Narrative Text -->
                 <div class="mag-col-text">
+                    {vars_html}
                     <div class="mag-prose">
                         {narrative.get('main_analysis', '')}
                     </div>
-                    {extra_html} <!-- e.g. Verduurzamingskansen injected here -->
+                    {extra_html}
+                    {comparison_html}
                     {conclusion_html}
                 </div>
 
-                <!-- RIGHT COL: Visuals & Widgets -->
                 <div class="mag-col-visuals">
-                    {interpretation_html}
                     {strengths_html}
                     {advice_html}
-                    <!-- Right Sidebar items will be injected here by JS if possible, 
-                         or they sit in the sidebar. Ideally we merge them here. -->
                     <div id="mag-dynamic-sidebar-target"></div> 
                 </div>
 

@@ -1,19 +1,18 @@
 # AI Woning Rapport - API Specification
 
-**Version**: 2.0
-**Last Updated**: 2025-12-21
-**Base URL**: `http://localhost:8001` (Docker) or `http://localhost:8000` (local)
+**Version**: 5.0 (Trust & Transparency Update)
+**Last Updated**: 2025-12-22
+**Base URL**: `http://localhost:8000/api`
 
 ---
 
 ## 1. Run Management
 
 ### 1.1 Create Run
-
 Creates a new analysis run.
 
 ```http
-POST /runs
+POST /api/runs
 Content-Type: application/json
 
 {
@@ -24,42 +23,34 @@ Content-Type: application/json
 }
 ```
 
-**Request Body:**
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `funda_url` | string | Yes | Funda URL or `"manual-paste"` |
-| `funda_html` | string | No | Raw HTML content (for paste mode) |
-| `media_urls` | string[] | No | Uploaded image URLs |
-| `extra_facts` | string | No | Additional context |
-
-**Response:**
-```json
-{
-  "run_id": "uuid-string"
-}
-```
-
-### 1.2 Start Processing
-
-Triggers background pipeline processing.
+### 1.2 Extension Ingest (User-Mediated)
+Preferred route for browser extension ingestion. Directly triggers the full pipeline.
 
 ```http
-POST /runs/{run_id}/start
-```
+POST /api/extension/ingest
+Content-Type: application/json
 
-**Response:**
-```json
 {
-  "status": "processing"
+  "url": "https://www.funda.nl/koop/...",
+  "html": "<html>...</html>",
+  "photos": [
+    { "url": "...", "caption": "Living room", "order": 0 }
+  ]
 }
 ```
 
-### 1.3 Update HTML (Paste Mode)
+### 1.3 Start Processing
+Triggers background pipeline processing for manually created runs.
 
+```http
+POST /api/runs/{run_id}/start
+```
+
+### 1.4 Update HTML (Paste Mode)
 Allows manual submission of Funda HTML content for an existing run.
 
 ```http
-POST /runs/{run_id}/paste
+POST /api/runs/{run_id}/paste
 Content-Type: application/json
 
 {
@@ -67,19 +58,11 @@ Content-Type: application/json
 }
 ```
 
-**Response:**
-```json
-{
-  "ok": true
-}
-```
-
-### 1.4 Get Status
-
-Polls current processing status.
+### 1.5 Get Status
+Polls current processing status and progress.
 
 ```http
-GET /runs/{run_id}/status
+GET /api/runs/{run_id}/status
 ```
 
 **Response:**
@@ -89,362 +72,76 @@ GET /runs/{run_id}/status
   "status": "processing",
   "steps": {
      "scrape_funda": "done",
-     "fetch_external_sources": "running",
+     "dynamic_extraction": "running",
      "compute_kpis": "pending",
      "generate_chapters": "pending",
      "render_pdf": "pending"
   },
   "progress": {
-    "current": 1,
+    "current": 2,
     "total": 5,
-    "percent": 20
-  },
-  "updated_at": "2025-12-21 10:43:12"
+    "percent": 40
+  }
 }
 ```
 
-### 1.4 Get Report
-
-Fetches completed report data.
+### 1.6 Get Report
+Fetches completed report data, including dynamically discovered attributes and AI provenance.
 
 ```http
-GET /runs/{run_id}/report
+GET /api/runs/{run_id}/report
 ```
 
-**Response:**
+**Response Fields:**
+| Field | Description |
+|-------|-------------|
+| `property_core`| Core extracted fields (Price, Area, etc.) |
+| `chapters`     | AI chapters with `provenance` and `variables` grid |
+| `discovery`    | List of AI-discovered namespaced attributes |
+| `media_from_db`| Managed media items with provenance |
+
+**Chapter Provenance Structure:**
 ```json
 {
-  "property_core": {
-    "address": "Herengracht 100, Amsterdam",
-    "asking_price_eur": 495000,
-    "living_area_m2": 85,
-    "energy_label": "C",
-    "build_year": 1920,
-    "...": "..."
-  },
-  "chapters": {
-    "0": {
-      "id": "0",
-      "title": "Executive Summary",
-      "chapter_data": {
-        "intro": "...",
-        "interpretation": "...",
-        "main_analysis": "...",
-        "conclusion": "...",
-        "metrics": [...],
-        "sidebar_items": [...]
-      }
-    },
-    "1": { "..." },
-    "...": "..."
-  },
-  "kpis": {...},
-  "consistency": {...}
-}
-```
-
-### 1.5 Download PDF
-
-Generates and downloads PDF report.
-
-```http
-GET /runs/{run_id}/pdf
-```
-
-**Response:** PDF file download
-
----
-
-## 2. Configuration API
-
-### 2.1 Get All Configuration
-
-Returns the current application configuration.
-
-```http
-GET /api/config
-```
-
-**Response:**
-```json
-{
-  "ai": {
+  "provenance": {
     "provider": "ollama",
     "model": "llama3",
-    "timeout": 30,
-    "fallback_enabled": true,
-    ...
+    "timestamp": "2025-12-22T...",
+    "confidence": "high",
+    "inferred_variables": ["risk_factor"],
+    "factual_variables": ["m2_price"]
   },
-  "market": {
-    "avg_price_m2": 5200,
-    "energy_label_scores": {...}
-  },
-  "preferences": {...},
-  "validation": {...},
-  "pipeline": {...},
-  "database_url": "data/local_app.db"
+  "missing_critical_data": ["energy_bill"]
 }
 ```
 
-### 2.2 Bulk Update Configuration
-
-Partially update one or more configuration sections. Changes are persisted to the database.
-
-```http
-POST /api/config
-Content-Type: application/json
-
-{
-  "ai": {
-    "provider": "openai",
-    "model": "gpt-4"
-  },
-  "market": {
-    "avg_price_m2": 5500
-  }
-}
-```
-
-**Response:**
-```json
-{
-  "status": "updated",
-  "sections": ["ai", "market"]
-}
-```
-
-### 2.3 Get Configuration Section
+### 1.7 Download PDF
+Generates and downloads PDF report with Trust Header.
 
 ```http
-GET /api/config/{section}
-```
-
-**Example:** `GET /api/config/ai`
-
-### 2.4 Get Specific Configuration Value
-
-```http
-GET /api/config/{section}/{key}
-```
-
-**Example:** `GET /api/config/ai/provider` -> `{"provider": "ollama"}`
-
-### 2.5 Update Specific Configuration Value
-
-```http
-PUT /api/config/{section}/{key}
-Content-Type: application/json
-
-50
-```
-
-**Response:**
-```json
-{
-  "status": "updated",
-  "section": "ai",
-  "key": "timeout",
-  "new_value": 50
-}
+GET /api/runs/{run_id}/pdf
 ```
 
 ---
 
-## 3. AI Provider API
+## 2. Configuration & AI
 
-### 3.1 List Available Providers
+### 2.1 Get Configuration
+`GET /api/config`
 
-```http
-GET /api/ai/providers
-```
+### 2.2 List AI Providers
+`GET /api/ai/providers`
 
-**Response:**
-```json
-{
-  "providers": [
-    {
-      "name": "ollama",
-      "display_name": "Ollama (Local)",
-      "available": true,
-      "requires_api_key": false
-    },
-    {
-      "name": "openai",
-      "display_name": "OpenAI",
-      "available": true,
-      "requires_api_key": true
-    },
-    {
-      "name": "anthropic",
-      "display_name": "Anthropic Claude",
-      "available": false,
-      "requires_api_key": true
-    },
-    {
-      "name": "gemini",
-      "display_name": "Google Gemini",
-      "available": false,
-      "requires_api_key": true
-    }
-  ]
-}
-```
-
-### 3.2 List Models for Provider
-
-```http
-GET /api/ai/providers/{provider_name}/models
-```
-
-**Response:**
-```json
-{
-  "provider": "ollama",
-  "models": [
-    {
-      "id": "llama3",
-      "name": "Llama 3",
-      "context_length": 8192
-    },
-    {
-      "id": "qwen2.5-coder:7b",
-      "name": "Qwen 2.5 Coder 7B",
-      "context_length": 32768
-    }
-  ]
-}
-```
-
-### 3.3 Test Provider Connection
-
-```http
-POST /api/ai/providers/{provider_name}/test
-Content-Type: application/json
-
-{
-  "api_key": "sk-..." // Optional, for cloud providers
-}
-```
-
-**Response:**
-```json
-{
-  "status": "success" | "failed",
-  "message": "Connected successfully",
-  "latency_ms": 234
-}
-```
+### 2.3 Check AI Status
+`GET /api/ai/status`
 
 ---
 
-## 4. Image Upload API
-
-### 4.1 Upload Image
-
-```http
-POST /api/upload/image
-Content-Type: multipart/form-data
-
-file: <binary image data>
-```
-
-**Response:**
-```json
-{
-  "url": "/uploads/abc123-uuid.jpg",
-  "filename": "abc123-uuid.jpg",
-  "size": 245678,
-  "mime_type": "image/jpeg"
-}
-```
-
-**Constraints:**
-- Max file size: 10MB
-- Allowed types: image/jpeg, image/png, image/webp, image/gif
+## 3. Image Upload (Local)
+`POST /api/upload/image` (Multipart)
 
 ---
 
-## 5. Preferences API
-
-### 5.1 Get Preferences
-
-```http
-GET /api/preferences
-```
-
-**Response:**
-```json
-{
-  "marcel": {
-    "keywords": ["glasvezel", "zonnepanelen", "garage"],
-    "weights": {"tech": 0.4, "infrastructure": 0.3, "energy": 0.3}
-  },
-  "petra": {
-    "keywords": ["karakteristiek", "sfeer", "tuin"],
-    "weights": {"atmosphere": 0.4, "comfort": 0.3, "finish": 0.3}
-  }
-}
-```
-
-### 5.2 Update Preferences
-
-```http
-PUT /api/preferences
-Content-Type: application/json
-
-{
-  "marcel": {
-    "keywords": ["glasvezel", "zonnepanelen", "garage", "laadpaal"]
-  }
-}
-```
-
----
-
-## 6. Health & Status
-
-### 6.1 Health Check
-
-```http
-GET /health
-```
-
-**Response:**
-```json
-{
-  "status": "healthy",
-  "version": "2.0.0",
-  "ai_provider": {
-    "name": "ollama",
-    "healthy": true
-  },
-  "database": {
-    "healthy": true
-  }
-}
-```
-
----
-
-## 7. Error Responses
-
-All endpoints return errors in this format:
-
-```json
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Invalid provider name",
-    "details": {...}
-  }
-}
-```
-
-**Error Codes:**
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `NOT_FOUND` | 404 | Resource not found |
-| `VALIDATION_ERROR` | 400 | Invalid request data |
-| `PROVIDER_ERROR` | 502 | AI provider unavailable |
-| `PROCESSING_ERROR` | 500 | Pipeline processing failed |
-| `TIMEOUT` | 504 | AI generation timed out |
+## 4. Single Page Application (SPA)
+The backend includes a catch-all route that serves the React frontend for any non-API path.
+Example: Navigating to `http://localhost:8000/runs/{id}/status` will serve the UI, which then internally calls `/api/runs/{id}/status`.

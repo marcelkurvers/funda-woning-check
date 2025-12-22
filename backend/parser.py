@@ -90,40 +90,33 @@ class Parser:
         return None
 
     def _extract_address(self, soup) -> str:
-        # 1. Standard Title
-        title_el = soup.select_one(".object-header__title")
-        if title_el:
-            return title_el.get_text(strip=True)
-        
-        # 2. Page Title tag
-        if soup.title:
-            t = soup.title.text
-            if "Te koop:" in t:
-                # Clean up "Te koop: Adres | Funda"
-                addr = t.split("Te koop:")[1].split("|")[0].split("[")[0].strip()
+        # 1. Standard Property Title (Most specific)
+        selectors = [".object-header__title", ".listing-header__address", "h1.listing-header-title"]
+        for sel in selectors:
+            el = soup.select_one(sel)
+            if el:
+                addr = el.get_text(strip=True)
                 if addr: return addr
         
-        # 3. Postcode search with line cleaning
+        # 2. Page Title tag cleanup
+        if soup.title:
+            t = soup.title.text
+            # Remove common prefixes and suffixes
+            clean = t.replace("Huis te koop:", "").replace("Appartement te koop:", "")
+            clean = clean.replace("Te koop:", "").replace("Te huur:", "")
+            clean = clean.split("|")[0].split("[")[0].strip()
+            if clean and len(clean) > 5: return clean
+        
+        # 3. Postcode search (NL format)
         text = soup.get_text(separator="\n")
         lines = [l.strip() for l in text.splitlines() if l.strip()]
-        blocklist = ["menu", "navigation", "ga naar", "funda", "kaart", "lijst", "foto's"]
+        for i, line in enumerate(lines):
+            if re.search(r'\d{4}\s?[A-Z]{2}', line):
+                # If this line is just postcode + city, house number might be above
+                if i > 0 and len(lines[i-1]) < 50 and any(c.isdigit() for c in lines[i-1]):
+                    return f"{lines[i-1]} {line}"
+                return line
         
-        postcode_match = re.search(r'(\d{4}\s?[A-Z]{2})', text)
-        if postcode_match:
-            for i, line in enumerate(lines):
-                if postcode_match.group(1) in line:
-                    # Check if line is just the postcode (e.g. "1234 AB Stad")
-                    # If so, the address might be in the previous line
-                    if i > 0 and not any(b in lines[i-1].lower() for b in blocklist) and len(lines[i-1]) < 80:
-                         return f"{lines[i-1]} {line}"
-                    return line
-        
-        # 4. Filter blocklist from raw lines if we have something that looks like an address
-        for line in lines:
-            if any(char.isdigit() for char in line) and len(line) < 100:
-                if not any(b in line.lower() for b in blocklist):
-                     return line
-
         return "Adres onbekend"
 
     def _extract_spec(self, soup, keyword):
@@ -227,21 +220,80 @@ class Parser:
         return "?"
 
     def _extract_media_urls(self, soup) -> List[str]:
-        # Extract images from meta tags and standard img tags
+        # Extract images using ID-based deduplication
         urls = []
-        # Meta og:image is usually the main photo
-        meta_img = soup.find("meta", property="og:image")
-        if meta_img: urls.append(meta_img.get("content"))
+        seen_ids = set()
         
-        # First few large images
-        imgs = soup.find_all("img", src=True)
-        for img in imgs:
-            src = img["src"]
-            if "media.funda.nl" in src and "p2" in src: # p2 is usually high res
-                urls.append(src)
-            if len(urls) >= 10: break
+        def add_url(url, source_type):
+            if not url or not isinstance(url, str): return
             
-        return [u for u in urls if u]
+            # Ensure protocol
+            if url.startswith("//"): url = "https:" + url
+            
+            # 1. Deduplicate by Media ID (the 000/000/000 pattern)
+            id_match = re.search(r'(\d{3}/\d{3}/\d{3})', url)
+            dedup_key = id_match.group(1) if id_match else url.split('?')[0].split('#')[0]
+            
+            if dedup_key in seen_ids: return
+            seen_ids.add(dedup_key)
+
+            # 2. Reject technical variants (tiles, markers)
+            lower_url = url.lower()
+            if any(tech in lower_url for tech in ["/tile/", "marker.", "favicon", "logo", "applink", "funda_logo"]):
+                return
+                
+            # Reject clear placeholders (e.g. 000/000/000 or empty patterns)
+            if "000/000/000" in url:
+                return
+
+            # 3. Upsample to high-res
+            if "cloud.funda.nl" in url:
+                high_res = re.sub(r'width=\d+', 'width=1440', url)
+                if "width=" not in high_res:
+                    high_res += "?options=width=1440" if "?" not in high_res else "&width=1440"
+                urls.append(high_res)
+            else:
+                high_res = re.sub(r'_[0-9]+x[0-9]+', '_1440x960', url)
+                urls.append(high_res)
+
+        # 1. Meta og:image
+        meta_img = soup.find("meta", property="og:image")
+        if meta_img:
+            add_url(meta_img.get("content"), "meta")
+        
+        # 2. Nuxt 3 / JSON Patterns
+        # We look for the ID pattern in ALL scripts (common in Nuxt/Next)
+        scripts = soup.find_all("script")
+        for script in scripts:
+            if script.string:
+                matches = re.findall(r'(\d{3}/\d{3}/\d{3})', script.string)
+                for mid in matches:
+                    add_url(f"https://cloud.funda.nl/valentina_media/{mid}.jpg", "json")
+
+        # 3. DOM Image Scan
+        potential_tags = soup.find_all(["img", "source"])
+        for tag in potential_tags:
+            src_candidates = [
+                tag.get("src"), 
+                tag.get("data-src"), 
+                tag.get("data-lazy"),
+                tag.get("srcset", "").split(" ")[0] if tag.get("srcset") else None
+            ]
+            
+            for src in src_candidates:
+                if not src: continue
+                # Basic domain check
+                if "media.funda.nl" in src or "cloud.funda.nl" in src:
+                    # Filter branding via alt/class
+                    alt = str(tag.get("alt") or "").lower()
+                    className = str(tag.get("class") or "").lower()
+                    if any(word in alt or word in className for word in ["logo", "branding", "funda", "avatar"]):
+                        continue
+                    add_url(src, "dom")
+                    
+            if len(urls) >= 80: break # Increased limit for large villas
+
+        return urls
 
     def _extract_bedrooms(self, soup):
         text = soup.get_text()

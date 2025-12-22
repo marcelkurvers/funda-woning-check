@@ -16,6 +16,7 @@ from chapters.chapter_9 import LegalAspects
 from chapters.chapter_10 import FinancialAnalysis
 from chapters.chapter_11 import MarketPosition
 from chapters.chapter_12 import AdviceConclusion
+from chapters.chapter_13 import MediaLibraryChapter
 
 def standard_generation(chapter: BaseChapter, id: int, title: str):
     # This function is now only a fallback for unexpected IDs or debugging
@@ -43,4 +44,5 @@ Chapter9 = LegalAspects
 Chapter10 = FinancialAnalysis
 Chapter11 = MarketPosition
 Chapter12 = AdviceConclusion
+Chapter13 = MediaLibraryChapter
 

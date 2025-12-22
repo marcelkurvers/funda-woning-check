@@ -1,5 +1,15 @@
 from typing import List, Optional, Any, Dict, Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from datetime import datetime
+
+class AIProvenance(BaseModel):
+    provider: str
+    model: str
+    timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
+    confidence: Literal["low", "medium", "high"] = "medium"
+    inferred_variables: List[str] = []
+    factual_variables: List[str] = []
+    reasoning_summary: Optional[str] = None
 
 class PropertyCore(BaseModel):
     address: str = "onbekend (handmatig te vullen)"
@@ -10,23 +20,19 @@ class PropertyCore(BaseModel):
     build_year: Optional[str] = None
     energy_label: str = "onbekend"
     scrape_error: Optional[str] = None
-    # Extra fields can be stored in a dict if needed, but these are core
-    price_deviation_percent: Optional[float] = None
-    energy_future_score: Optional[float] = None
-    maintenance_intensity: Optional[str] = None
-    family_suitability: Optional[str] = None
-    long_term_quality: Optional[str] = None
+    # Meta fields
+    source_stats: Dict[str, Literal["fact", "inferred", "unknown"]] = {}
     extra_data: Dict[str, Any] = {}
 
 class UIComponent(BaseModel):
     type: str
-    # Common fields
     label: Optional[str] = None
     value: Optional[str] = None
     title: Optional[str] = None
     content: Optional[str] = None
     trend: Optional[str] = None # up, down, neutral
     icon: Optional[str] = None
+    provenance: Optional[Literal["fact", "inferred", "unknown"]] = None
 
 class ChapterLayout(BaseModel):
     left: List[UIComponent] = []
@@ -36,8 +42,8 @@ class ChapterLayout(BaseModel):
 class ChapterOutput(BaseModel):
     id: Optional[str] = None
     title: str
-    grid_layout: Any # Was ChapterLayout, relaxed to Any to support Modern Dashboard dicts
-    # Legacy blocks for PDF if needed
+    grid_layout: Any 
     blocks: List[Dict[str, Any]] = []
-    # Raw data for frontend rendering
     chapter_data: Optional[Dict[str, Any]] = None
+    provenance: Optional[AIProvenance] = None
+    missing_critical_data: List[str] = []

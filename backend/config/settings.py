@@ -24,12 +24,17 @@ class SQLiteSettingsSource(PydanticBaseSettingsSource):
     def __call__(self) -> Dict[str, Any]:
         d: Dict[str, Any] = {}
         
-        # Get database path from environment or default
-        # We can't use get_settings() here as we are building the settings
-        db_path = os.environ.get("APP_DB", "data/local_app.db")
+        from pathlib import Path
+        base_dir = Path(__file__).resolve().parent.parent.parent
+        default_db = base_dir / "data" / "local_app.db"
+        db_path = os.environ.get("APP_DB", str(default_db))
         
         if not os.path.exists(db_path) and db_path != ":memory:":
-            return d
+            # Try once more with a fallback relative path for docker environments
+            if os.path.exists("data/local_app.db"):
+                db_path = "data/local_app.db"
+            else:
+                return d
 
         try:
             conn = sqlite3.connect(db_path)
@@ -234,7 +239,7 @@ class AppSettings(BaseSettings):
     chapters: ChapterSettings = ChapterSettings()
 
     # Database configuration
-    database_url: str = "data/local_app.db"  # Use :memory: for tests
+    database_url: str = str(Path(__file__).resolve().parent.parent.parent / "data" / "local_app.db")
 
     model_config = SettingsConfigDict(
         env_file=".env",

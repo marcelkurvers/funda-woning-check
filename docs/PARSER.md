@@ -4,7 +4,13 @@
 The Parser is a critical component of the **AI Woning Rapport** system. It is responsible for transforming raw HTML from Funda listings into a structured `PropertyCore` data model. It uses a multi-layered extraction strategy:
 1. **Semantic Selectors**: Primary CSS selectors targeting specific Funda elements.
 2. **Key-Value Pair Scanning**: Intelligent regex-based scanning of table rows and labels.
-3. **Raw Text Fallback**: Fuzzy keyword searching in text blocks for unstructured data.
+4. **Dynamic AI Extraction**: Schema-agnostic attribute discovery using local LLMs (Ollama) to find unknown fields from raw text.
+
+## Phase 4: Dynamic AI Extraction
+Starting with Version 4.0, the parser is augmented by the **Dynamic Interpretation Pipeline**. While traditional parsing handles core metrics with high precision, the AI extractor identifies hundreds of unstructured facts (e.g., "Parketvloer", "Quooker", "Zuid-ligging") without requiring predefined CSS selectors.
+- **Input**: Raw text/HTML from user paste or browser extension.
+- **Method**: Named Entity Recognition (NER) via specialized Dutch-language prompts.
+- **Output**: Namespaced attributes with confidence scores and source snippets.
 
 ## Key Features
 

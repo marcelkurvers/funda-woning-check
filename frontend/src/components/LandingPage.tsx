@@ -98,6 +98,11 @@ export function LandingPage({ onStartAnalysis, isLoading, error }: LandingPagePr
                         <span className="text-blue-500">Direct Gedecodeerd.</span>
                     </h1>
 
+                    {/* CRITICAL VERIFICATION BADGE */}
+                    <div className="mt-4 inline-block px-6 py-2 bg-amber-500 text-black font-black text-sm rounded-lg shadow-2xl animate-bounce">
+                        BUILD v5.0.0-PRO LIVE | REFRESH (SHIFT+F5) IF NOT VISIBLE
+                    </div>
+
                     <p className="text-lg md:text-xl text-slate-400 font-medium max-w-2xl mx-auto leading-relaxed">
                         Plak de broncode van een Funda.nl pagina en voeg foto's toe voor een diepgaande AI analyse van de woning, de buurt en de waarde.
                     </p>
@@ -317,12 +322,12 @@ export function LandingPage({ onStartAnalysis, isLoading, error }: LandingPagePr
                 <div className="mt-20 flex flex-wrap justify-center gap-8 text-slate-600 text-[10px] font-black uppercase tracking-[0.3em]">
                     <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
-                        <span>Phase 4 Vision Active</span>
+                        <span>Trust Architecture Active</span>
                     </div>
                     <span>•</span>
-                    <span>AI Model: Local Mistral / GPT-4o</span>
+                    <span>AI Model: Hybrid Cloud/Edge v5.0</span>
                     <span>•</span>
-                    <span>Kurvers Property Consulting v3.0</span>
+                    <span>v5.0.0-PRO • Full Transparency Update</span>
                 </div>
             </main>
         </div>
