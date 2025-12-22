@@ -1,20 +1,70 @@
-data/*.db
-data/*.json
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-.pytest_cache/
-.DS_Store
-node_modules/
-build/
+*.so
+.Python
+*.egg-info/
 dist/
+build/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.venv/
+venv/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
 .env
+.env.local
+
+# Data & Uploads
+data/*.db
+data/*.json
+data/uploads/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+.pnpm-debug.log
+
+# Build artifacts
+backend/.docker_build_hash
+frontend/dist/
+frontend/build/
+
+# Testing & MCP
 .mcp_scan_snapshot.json
 .mcp_test_report.json
-backend/.docker_build_hash
 
-# Temporary and backup directories
-ai-woning-rapport-WERKEND-local/
-ai-woning-rapport-HANDOVER-PACKAGE/
-backup_untracked/
-data/uploads/
+# Temporary files
+tmp/
+tmp_*/
+*.tmp
+*.bak
+*.log
+
+# Archives & Backups
+*.zip
+*.tar.gz
+backup_*/
+.archive/
+
+# AI Agent directories (optional - can be removed if you want to track them)
+.claude/
+.agent/
+
+# OS
+Thumbs.db
+Desktop.ini

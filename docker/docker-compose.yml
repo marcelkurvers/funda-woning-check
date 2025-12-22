@@ -1,0 +1,42 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: funda-woning-rapport
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      # Use host.docker.internal to talk to Ollama running on Mac host
+      # Or use the 'ollama' service below if you want everything in Docker
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - APP_DB=/app/data/local_app.db
+    volumes:
+      - ../data:/app/data
+    networks:
+      - funda-network
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: always
+    ports:
+      - "11435:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - funda-network
+
+volumes:
+  ollama_data:
+
+
+networks:
+  funda-network:
+    driver: bridge
