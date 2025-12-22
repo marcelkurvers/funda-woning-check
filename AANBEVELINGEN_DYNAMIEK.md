@@ -1,6 +1,6 @@
 # Expert Analyse: Dynamisch Vermogen (Per Hoofdstuk)
 
-**Datum:** Sun Dec 21 10:17:08 CET 2025
+**Datum:** Mon Dec 22 20:35:57 CET 2025
 **Score Model:** v3.0 (Granular Chapter Analysis)
 
 ## Strategisch Inzicht
@@ -11,21 +11,21 @@ Dit bevestigt dat de nieuwe aanpak werkt en uitgerold moet worden.
 
 | ID | Titel | Content Dynamiek (0-10) | Structuur Dynamiek | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | 1. Algemene Woningkenmerken | **4.1** | 10.0 | ⚠️ Moderate |
-| 2 | 2. Persoonlijke eisen & matchanalyse | **0.1** | 0.0 | 🛑 Static |
-| 3 | 3. Bouwkundige Staat | **3.0** | 0.0 | ⚠️ Moderate |
-| 4 | 4. Energie & Duurzaamheid | **2.5** | 0.0 | 🛑 Static |
-| 5 | 5. Indeling & Ruimtegebruik | **1.2** | 0.0 | 🛑 Static |
-| 6 | 6. Onderhoud & Afwerking | **1.6** | 0.0 | 🛑 Static |
-| 7 | 7. Tuin & Buitenruimte | **1.0** | 0.0 | 🛑 Static |
-| 8 | 8. Parkeren & Bereikbaarheid | **0.3** | 0.0 | 🛑 Static |
+| 1 | 1. Algemene Woningkenmerken | **2.4** | 0.0 | 🛑 Static |
+| 2 | 2. Persoonlijke eisen & matchanalyse | **0.0** | 0.0 | 🛑 Static |
+| 3 | 3. Bouwkundige Staat | **2.2** | 0.0 | 🛑 Static |
+| 4 | 4. Energie & Duurzaamheid | **1.8** | 0.0 | 🛑 Static |
+| 5 | 5. Indeling & Ruimtegebruik | **2.7** | 0.0 | 🛑 Static |
+| 6 | 6. Onderhoud & Afwerking | **3.0** | 0.0 | 🛑 Static |
+| 7 | 7. Tuin & Buitenruimte | **2.4** | 0.0 | 🛑 Static |
+| 8 | 8. Parkeren & Bereikbaarheid | **0.4** | 0.0 | 🛑 Static |
 | 9 | 9. Juridische Aspecten | **0.5** | 0.0 | 🛑 Static |
-| 10 | 10. Financiële Analyse | **1.6** | 0.0 | 🛑 Static |
+| 10 | 10. Financiële Analyse | **1.1** | 0.0 | 🛑 Static |
 | 11 | 11. Marktpositie | **0.5** | 0.0 | 🛑 Static |
 | 12 | 12. Advies & Conclusie | **0.6** | 0.0 | 🛑 Static |
 
 ## Totaalscore
-**Gemiddelde Content Dynamiek:** 1.4 / 10
+**Gemiddelde Content Dynamiek:** 1.5 / 10
 
 ## Aanbevelingen & Roadmap
 1. **Rol de 'Logic Engine' uit naar H2-H12:** Implementeer de `_narrative_chX` sentence builders voor de overige hoofdstukken.
