@@ -69,8 +69,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         msg.textContent = "Verzenden naar Multi-Check Pro...";
+
+        // Get API URL from settings (default to localhost)
+        const settings = await chrome.storage.sync.get(['apiUrl']);
+        const apiUrl = (settings.apiUrl || 'http://localhost:8000').replace(/\/$/, '');
+
         try {
-            const resp = await fetch("http://localhost:8000/api/extension/ingest", {
+            const resp = await fetch(`${apiUrl}/api/extension/ingest`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -84,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 msg.className = "hover:underline";
 
                 msg.onclick = () => {
-                    window.open(`http://localhost:8000/runs/${result.run_id}/status`, '_blank');
+                    window.open(`${apiUrl}/runs/${result.run_id}/status`, '_blank');
                 };
             } else {
                 const errData = await resp.json().catch(() => ({}));
@@ -92,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 msg.style.color = "#fb7185";
             }
         } catch (e) {
-            msg.textContent = "Verbinding mislukt: Draait de backend?";
+            msg.textContent = "Verbinding mislukt: Check instellingen (klik ⚙️)";
             msg.style.color = "#fb7185";
         }
     }

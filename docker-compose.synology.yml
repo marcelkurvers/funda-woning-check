@@ -1,0 +1,89 @@
+# Docker Compose for Synology NAS Deployment
+# ============================================
+# This configuration is optimized for running on Synology NAS with Container Manager.
+#
+# Usage:
+#   1. Copy .env.synology to .env and configure your API keys
+#   2. Run: docker compose -f docker-compose.synology.yml up -d
+#
+# See docs/SYNOLOGY_DEPLOYMENT.md for detailed instructions.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: funda-woning-rapport:latest
+    container_name: funda-woning-rapport
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - APP_DB=/app/data/local_app.db
+    volumes:
+      # Persistent data storage - adjust path for your Synology shared folder
+      - ${DATA_PATH:-./data}:/app/data
+    networks:
+      - funda-network
+    depends_on:
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # Resource limits - adjust based on your Synology's available resources
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      # Persistent Ollama models storage
+      - ${OLLAMA_DATA_PATH:-ollama_data}:/root/.ollama
+    networks:
+      - funda-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:11434/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    # Resource limits for Ollama - adjust based on available RAM
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 2G
+    # Uncomment below for GPU passthrough (if your Synology supports it)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+volumes:
+  ollama_data:
+    name: funda-ollama-data
+
+networks:
+  funda-network:
+    driver: bridge
+    name: funda-network

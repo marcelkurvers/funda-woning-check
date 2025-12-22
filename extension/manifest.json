@@ -16,8 +16,11 @@
     "host_permissions": [
         "https://*.funda.nl/*",
         "https://funda.nl/*",
-        "http://localhost:8000/*"
+        "http://localhost:8000/*",
+        "http://*/*",
+        "https://*/*"
     ],
+    "options_page": "settings.html",
     "action": {
         "default_popup": "popup.html",
         "default_icon": {

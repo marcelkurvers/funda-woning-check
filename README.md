@@ -38,12 +38,47 @@ The **AI Woning Rapport** is designed to provide potential homebuyers with deep,
 ### Quick Start (Docker)
 
 ```bash
-docker compose up --build
+docker compose -f docker/docker-compose.yml up --build
 ```
 
 Access the application at:
 - **Application**: [http://localhost:8000](http://localhost:8000)
 - **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+### Synology NAS Deployment
+
+Deploy on Synology NAS using Docker/Container Manager:
+
+```bash
+# SSH into your Synology NAS
+cd /volume1/docker/funda-app
+
+# Configure environment
+cp docker/.env.synology .env
+nano .env  # Add your API keys
+
+# Deploy
+docker compose -f docker/docker-compose.synology.yml up -d
+```
+
+📖 **See [Synology Deployment Guide](docs/SYNOLOGY_DEPLOYMENT.md) for detailed instructions**
+
+### Browser Extension
+
+Install the Chrome/Edge extension for one-click data extraction from Funda.nl:
+
+```bash
+# 1. Load extension in browser
+# Chrome: chrome://extensions/ → Enable Developer mode → Load unpacked
+# Select: extension/ folder
+
+# 2. Configure server (for remote/NAS)
+# Right-click extension → Options → Enter your server URL
+```
+
+📖 **See [Extension Installation Guide](docs/EXTENSION_INSTALLATION.md) for detailed setup**
+
+
 
 ## 📁 Project Structure
 
