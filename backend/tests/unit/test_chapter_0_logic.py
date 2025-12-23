@@ -35,7 +35,7 @@ class TestChapter0Logic:
         
         html = output.chapter_data['main_analysis']
         assert "€ 0" not in html
-        assert "geen directe investering" in html or "minimale investering" in html
+        assert "Geen directe investering" in html or "minimale investering" in html
 
     def test_maintenance_consistency(self):
         """Test that old houses with asbestos risks don't get 'Low' maintenance rating."""

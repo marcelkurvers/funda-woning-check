@@ -1,6 +1,6 @@
 # Test Coverage Map
 
-**Generated**: 2025-12-22 22:40:28 UTC
+**Generated**: 2025-12-22 23:19:31 UTC
 **Project**: `/Users/marcelkurvers/Development/funda-app`
 
 ## Executive Summary

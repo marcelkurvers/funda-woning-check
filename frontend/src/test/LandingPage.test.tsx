@@ -21,7 +21,7 @@ describe('LandingPage Component', () => {
       />
     );
 
-    expect(screen.getByText(/Vastgoed Intelligentie/i)).toBeInTheDocument();
+    expect(screen.getByText(/Vastgoed Inzichten/i)).toBeInTheDocument();
     expect(screen.getByText(/Start Analyse/i)).toBeInTheDocument();
   });
 
@@ -265,7 +265,7 @@ describe('LandingPage - Advanced Options', () => {
     );
 
     // Find and click advanced options toggle
-    const advancedButton = screen.getByRole('button', { name: /Extra Opties/i });
+    const advancedButton = screen.getByRole('button', { name: /Geavanceerd/i });
     await user.click(advancedButton);
 
     // Advanced fields should be visible
@@ -286,11 +286,11 @@ describe('LandingPage - Advanced Options', () => {
     await user.type(textarea, '<html>Test property</html>');
 
     // Open advanced options
-    const advancedButton = screen.getByRole('button', { name: /Extra Opties/i });
+    const advancedButton = screen.getByRole('button', { name: /Geavanceerd/i });
     await user.click(advancedButton);
 
     // Add media URL
-    const mediaInput = screen.getByPlaceholderText(/https:\/\/.../i);
+    const mediaInput = screen.getByPlaceholderText(/Handmatige URLs/i);
     await user.type(mediaInput, 'https://example.com/image.jpg');
 
     // Submit

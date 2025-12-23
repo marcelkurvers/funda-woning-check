@@ -26,9 +26,20 @@ class TestComprehensive(unittest.TestCase):
             self.assertIn(str_i, chapters, f"Chapter {i} missing")
             # Check for grid layout main content
             layout = chapters[str_i]["grid_layout"]
-            if isinstance(layout, dict) and "main" in layout:
-                 content = layout["main"]["content"]
+            if isinstance(layout, dict):
+                 if "main" in layout:
+                     content = layout["main"]["content"]
+                 elif "center" in layout and layout["center"]:
+                     # Rich Chapter support (center column)
+                     # Assuming center is a list of dicts/components
+                     first_comp = layout["center"][0]
+                     content = first_comp.get("content", "")
+                 else:
+                     content = ""
             else:
+                 content = ""
+            
+            if not content:
                  # Legacy fallback
                  content = chapters[str_i]["blocks"][0]["data"]["text"] if chapters[str_i]["blocks"] else ""
             

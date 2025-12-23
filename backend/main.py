@@ -250,7 +250,7 @@ app.add_middleware(
 init_db()
 
 # Background task executor
-executor = ThreadPoolExecutor(max_workers=10) # Higher capacity for always-on service
+executor = ThreadPoolExecutor(max_workers=settings.pipeline.max_workers) # Higher capacity for always-on service
 
 # Determine static directory
 base_dir = Path(__file__).resolve().parent

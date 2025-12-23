@@ -13,9 +13,26 @@ class ExecutiveSummary(BaseChapter):
     def generate(self) -> ChapterOutput:
         ctx = self.context
         
+        # Smart Address Display - MOVED UP to affect AI Narrative
+        raw_address = str(ctx.get('adres', 'Adres Onbekend'))
+        generic_titles = ['mijn huis', 'te koop', 'woning', 'object', 'huis', 'appartement']
+        is_generic = raw_address.lower().strip() in generic_titles
+        display_address = raw_address if not is_generic else "dit object"
+        intro_address_text = f"aan de {raw_address}" if not is_generic else "op deze locatie"
+        
+        # Ensure AI uses the cleaned address
+        if is_generic:
+            ctx['address'] = display_address
+            # Also update the key AI might look for if different
+            ctx['adres'] = display_address
+        
         # --- 1. INTELLIGENCE ENGINE ---
         # Generate Narrative (This triggers the AI Backend if available)
         narrative = IntelligenceEngine.generate_chapter_narrative(0, ctx)
+        
+        # Polish intro grammar if generic replacement occurred
+        if is_generic and narrative.get('intro'):
+             narrative['intro'] = narrative['intro'].replace("van de dit object", "van dit object")
 
         # Parse inputs
         # Parse inputs
@@ -115,6 +132,11 @@ class ExecutiveSummary(BaseChapter):
         is_generic = raw_address.lower().strip() in generic_titles
         display_address = raw_address if not is_generic else "dit object"
         intro_address_text = f"aan de {raw_address}" if not is_generic else "op deze locatie"
+        
+        # Ensure AI uses the cleaned address
+        if is_generic:
+            ctx['address'] = display_address
+            ctx['adres'] = display_address
 
         hero = {
             "address": raw_address,
@@ -219,6 +241,13 @@ class ExecutiveSummary(BaseChapter):
                 <div class="analysis-text">
                     <strong>Waardering</strong><br>
                     {valuation_status} ({delta_str})
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="analysis-icon {'valid' if total_expected_invest == 0 else 'warning'}"><ion-icon name="hammer"></ion-icon></div>
+                <div class="analysis-text">
+                    <strong>Investering</strong><br>
+                    {inv_text}
                 </div>
             </div>
         </div>

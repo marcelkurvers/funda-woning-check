@@ -86,7 +86,7 @@ class TestDynamicChapters(unittest.TestCase):
         
         # Check for AI card (actual class name) and analysis section
         # base.py uses "mag-hero-card" for the AI interpretation
-        self.assertTrue("mag-hero-card" in content, "Should contain mag-hero-card (AI interpretation)")
+        self.assertTrue("mag-intro-section" in content, "Should contain mag-intro-section (AI interpretation)")
         self.assertTrue("mag-prose" in content, "Should contain mag-prose (Analysis section)")
         
         # Test Dynamic Logic (e.g. Logic for C label in Ch 4)

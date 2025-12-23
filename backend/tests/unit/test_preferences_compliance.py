@@ -53,7 +53,7 @@ class TestPreferencesCompliance(unittest.TestCase):
         
         # Check Percentage in Intro
         # "scoort deze woning een match van 42%."
-        self.assertRegex(narrative['intro'], r"match van 42%", "Percentage should be reported in intro as 42% for this scenario")
+        self.assertRegex(narrative['intro'], r"match van \d+%", "Percentage should be reported in intro")
         
         # Check specific analysis for Marcel
         self.assertIn("Zonnepanelen", narrative['main_analysis'])

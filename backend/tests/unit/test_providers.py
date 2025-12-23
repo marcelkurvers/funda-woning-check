@@ -334,26 +334,28 @@ class TestOpenAIProvider:
     @pytest.mark.anyio
     async def test_openai_check_health_success(self):
         """Test OpenAI health check returns True when accessible"""
-        provider = OpenAIProvider(api_key="test-key")
-
-        provider.client.models.list = AsyncMock(return_value=Mock())
-
-        health = await provider.check_health()
-
-        assert health is True
+        with patch("sys.modules", new={**sys.modules}):
+            provider = OpenAIProvider(api_key="test-key")
+            provider.client = AsyncMock() # Fully replace client with mock
+            
+            # Setup successful list return
+            provider.client.models.list.return_value = Mock()
+            
+            health = await provider.check_health()
+            assert health is True
 
     @pytest.mark.anyio
     async def test_openai_check_health_failure(self):
         """Test OpenAI health check returns False on error"""
-        provider = OpenAIProvider(api_key="test-key")
+        with patch("sys.modules", new={**sys.modules}):
+            provider = OpenAIProvider(api_key="test-key")
+            provider.client = AsyncMock() # Fully replace client with mock
+            
+            # Setup failure
+            provider.client.models.list.side_effect = Exception("Connection failed")
 
-        provider.client.models.list = AsyncMock(
-            side_effect=Exception("Connection failed")
-        )
-
-        health = await provider.check_health()
-
-        assert health is False
+            health = await provider.check_health()
+            assert health is False
 
 
 # ============================================================================
@@ -572,11 +574,12 @@ class TestGeminiProvider:
         with patch("google.genai.Client"):
             provider = GeminiProvider(api_key="test-key")
             
-            # Mock the async iterator for list models
-            async def mock_async_iterator(*args, **kwargs):
-                yield Mock()
+            # Create a mock that is properly an AsyncMock for the list call
+            mock_list = AsyncMock()
+            mock_list.__aiter__.return_value = [Mock()]
             
-            provider.client.aio.models.list.side_effect = mock_async_iterator
+            # Correctly attach to the expected call chain
+            provider.client.aio.models.list = Mock(return_value=mock_list)
 
             health = await provider.check_health()
             assert health is True
@@ -596,7 +599,8 @@ class TestGeminiProvider:
         """Test Gemini health check returns False on error"""
         with patch("google.genai.Client"):
             provider = GeminiProvider(api_key="test-key")
-            provider.client.aio.models.list.side_effect = Exception("Error")
+            # Mock raising an exception when called
+            provider.client.aio.models.list = Mock(side_effect=Exception("Error"))
             
             health = await provider.check_health()
             assert health is False

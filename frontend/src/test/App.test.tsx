@@ -17,7 +17,7 @@ describe('App Component', () => {
 
   it('renders landing page initially', () => {
     render(<App />);
-    expect(screen.getByText(/Vastgoed Intelligentie/i)).toBeInTheDocument();
+    expect(screen.getByText(/Vastgoed Inzichten/i)).toBeInTheDocument();
   });
 
   it('shows loading state during analysis', async () => {

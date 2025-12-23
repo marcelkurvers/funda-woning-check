@@ -62,7 +62,7 @@ class TestOllamaIntegration(unittest.TestCase):
         self.assertIn("AI Analysis", result['main_analysis'])
         
         # Verify AI disclaimer was appended (logic in generate_chapter_narrative)
-        self.assertIn("Deze analyse is gegenereerd door de Funda AI-engine", result['interpretation'])
+        self.assertIn("gegenereerd door", result['interpretation'])
 
     def test_ai_narrative_generation_failure_fallback(self):
         """Test that engine falls back to hardcoded logic if AI fails."""

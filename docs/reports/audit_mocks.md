@@ -34,7 +34,7 @@ Found **31** potential issues.
 ### 📄 `chapters/chapter_0.py`
 | Line | Type | Content |
 | :--- | :--- | :--- |
-| 227 | **Hardcoded Item** | `# Merge hardcoded pros/cons with AI narrative results` |
+| 256 | **Hardcoded Item** | `# Merge hardcoded pros/cons with AI narrative results` |
 
 ### 📄 `chapters/base.py`
 | Line | Type | Content |

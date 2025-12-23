@@ -160,7 +160,7 @@ class PipelineSettings(BaseSettings):
     - App.tsx:103 (poll_interval_ms - frontend reference only)
     """
 
-    max_workers: int = 2  # ThreadPoolExecutor max workers
+    max_workers: int = 10  # ThreadPoolExecutor max workers
     image_max_size_mb: int = 10  # Maximum upload file size
     poll_interval_ms: int = 2000  # Frontend status poll interval (reference)
 

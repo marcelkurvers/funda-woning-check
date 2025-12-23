@@ -52,7 +52,11 @@ class TestIntegration(unittest.TestCase):
         resp = client.get(f"/api/runs/{run_id}/report")
         data = resp.json()
         
-        kpis = data["kpis"].get("dashboard_cards", [])
+        kpis = data.get("kpis", [])
+        # If accessing dashboard_cards directly failed, check if kpis is the list
+        if isinstance(kpis, dict):
+             kpis = kpis.get("dashboard_cards", [])
+        
         kpi_values = {k['title']: k['value'] for k in kpis}
         
         print(f"[Test] KPIs Found: {kpi_values}")
