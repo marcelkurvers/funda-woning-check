@@ -122,16 +122,22 @@ class ConsistencyChecker:
                             status = "mismatch"
                             msg = f"Veld '{key}' niet gevonden in brontekst."
                     else:
-                        if str_val.lower() in flat_text_lower:
+                        # Use better word boundary pattern for short boolean values
+                        safe_val = re.escape(str_val.lower())
+                        pattern = rf'(?:^|[\s,.\-])({safe_val})(?:[\s,.\-]|$)'
+                        if re.search(pattern, flat_text_lower):
                             status = "ok"
                         else:
                             status = "mismatch"
                             msg = f"Waarde '{str_val}' niet gevonden als losstaand woord."
                 
                 # If short string (non-boolean), enforce word boundary
+                # Use lookahead/lookbehind for better boundary detection with short words
                 elif len(str_val) < 4:
                     safe_val = re.escape(str_val.lower())
-                    if re.search(rf'\b{safe_val}\b', flat_text_lower):
+                    # Pattern: word boundary OR start/end of string, with optional punctuation
+                    pattern = rf'(?:^|[\s,.\-])({safe_val})(?:[\s,.\-]|$)'
+                    if re.search(pattern, flat_text_lower):
                         status = "ok"
                     else:
                         status = "mismatch"

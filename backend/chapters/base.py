@@ -54,10 +54,19 @@ class BaseChapter(ABC):
         pass
     
     def _create_layout(self, left=[], center=[], right=[]) -> ChapterLayout:
+        l_comps = [UIComponent(**x) if isinstance(x, dict) else x for x in left]
+        c_comps = [UIComponent(**x) if isinstance(x, dict) else x for x in center]
+        r_comps = [UIComponent(**x) if isinstance(x, dict) else x for x in right]
+        
         return ChapterLayout(
-            left=[UIComponent(**x) if isinstance(x, dict) else x for x in left],
-            center=[UIComponent(**x) if isinstance(x, dict) else x for x in center],
-            right=[UIComponent(**x) if isinstance(x, dict) else x for x in right]
+            left=l_comps,
+            center=c_comps,
+            right=r_comps,
+            # Semantic mapping for Modern 4K compliance
+            metrics=l_comps,
+            # Main expects a dict with content
+            main={"title": self.get_title(), "content": c_comps},
+            sidebar=r_comps
         )
 
     def get_segment_name(self) -> str:

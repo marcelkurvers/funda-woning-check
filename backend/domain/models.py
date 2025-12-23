@@ -35,9 +35,15 @@ class UIComponent(BaseModel):
     provenance: Optional[Literal["fact", "inferred", "unknown"]] = None
 
 class ChapterLayout(BaseModel):
+    layout_type: str = "modern_dashboard"
+    # Legacy / Directional
     left: List[UIComponent] = []
     center: List[UIComponent] = []
     right: List[UIComponent] = []
+    # Semantic (Modern 4K) - These alias to directional in usage logic usually
+    metrics: List[UIComponent] = []
+    main: Dict[str, Any] = {} # Content often is complex, or UIComponent list. Test expects dict with 'content' or list.
+    sidebar: List[UIComponent] = []
 
 class ChapterOutput(BaseModel):
     id: Optional[str] = None

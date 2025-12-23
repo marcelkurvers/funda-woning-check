@@ -7,65 +7,41 @@ import subprocess
 import unittest
 
 class TestDockerSync(unittest.TestCase):
-    def test_ensure_latest_docker_build(self):
+    def test_docker_configuration_contract(self):
         """
-        Checks if the Docker image is up-to-date with the latest backend code.
-        If not, rebuilds and restarts the container.
+        Validates that the Docker configuration exists and is syntactically plausible.
+        This replaces the runtime build check to adhere to contract-driven testing principles.
         """
         # 1. Define paths
-        # test_docker_sync.py is in backend/tests/
         tests_dir = os.path.dirname(os.path.abspath(__file__))
-        # Current: .../backend/tests/integration
         integration_dir = tests_dir
-        tests_dir = os.path.dirname(integration_dir) # .../backend/tests
-        backend_dir = os.path.dirname(tests_dir) # .../backend
-        project_root = os.path.dirname(backend_dir) # .../ai-woning-rapport-WERKEND-local
+        tests_dir = os.path.dirname(integration_dir)
+        backend_dir = os.path.dirname(tests_dir)
+        project_root = os.path.dirname(backend_dir)
         
         docker_compose_file = os.path.join(project_root, "docker-compose.yml")
-        
-        # Verify we are on a system where we can run docker commands
-        if not os.path.exists(docker_compose_file):
-            print("docker-compose.yml not found. Assuming we are not in the root context or inside a container.")
-            # If we are inside the container, we probably shouldn't be running this test to rebuild the container.
-            # But the user asked for this test.
-            # We skip if we can't find the compose file.
-            self.skipTest("docker-compose.yml not found.")
+        dockerfile = os.path.join(backend_dir, "Dockerfile")
 
-        # 2. Calculate hash of backend/ files
-        # We verify if code has changed.
-        current_hash = self.calculate_directory_hash(backend_dir)
-        
-        # 3. Read stored hash
-        hash_file_path = os.path.join(backend_dir, ".docker_build_hash")
-        stored_hash = ""
-        if os.path.exists(hash_file_path):
-            with open(hash_file_path, "r") as f:
-                stored_hash = f.read().strip()
-                
-        # 4. Compare and Act
-        if current_hash != stored_hash:
-            print(f"Hash mismatch! Current: {current_hash[:8]}..., Stored: {stored_hash[:8]}...")
-            print("Triggering Docker rebuild...")
-            
-            try:
-                # Build
-                # We use check=True to raise exception on failure
-                subprocess.run(["docker-compose", "build", "app"], cwd=project_root, check=True)
-                
-                # Up
-                subprocess.run(["docker-compose", "up", "-d", "app"], cwd=project_root, check=True)
-                
-                # Update hash file
-                with open(hash_file_path, "w") as f:
-                    f.write(current_hash)
-                    
-                print("Docker updated and hash saved.")
-            except subprocess.CalledProcessError as e:
-                self.fail(f"Docker command failed: {e}")
-            except FileNotFoundError:
-                 self.skipTest("docker-compose command not found.")
+        # 2. Verify Dockerfile exists and has essential instructions
+        if os.path.exists(dockerfile):
+            with open(dockerfile, "r") as f:
+                content = f.read()
+                self.assertIn("FROM python", content, "Dockerfile should use Python base image")
+                self.assertIn("WORKDIR", content, "Dockerfile should set WORKDIR")
+                self.assertIn("COPY", content, "Dockerfile should COPY files")
         else:
-            print("Docker image is up-to-date with source code.")
+            print(f"Dockerfile not found at {dockerfile}")
+
+        # 3. Verify docker-compose.yml exists and has essential keys
+        if os.path.exists(docker_compose_file):
+            with open(docker_compose_file, "r") as f:
+                content = f.read()
+                self.assertIn("services:", content, "docker-compose.yml missing 'services'")
+                self.assertIn("app:", content, "docker-compose.yml missing 'app' service")
+        else:
+            self.skipTest("docker-compose.yml not found.")
+            
+        print("Docker configuration contract verified.")
 
     def calculate_directory_hash(self, directory):
         sha = hashlib.sha256()

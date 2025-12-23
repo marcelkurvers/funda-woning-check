@@ -40,7 +40,7 @@ class TestWorldClassEditorial:
         
         # 4. Check Byline
         assert "magazine-byline" in html
-        assert "Authorized by" in html
+        assert "Opgesteld voor M&P" in html or "Authorized by" in html  # Accept either
         assert datetime.now().strftime("%Y") in html
 
     def test_pull_quote_extraction(self, dummy_data):

@@ -77,12 +77,17 @@ class TestChapterRoutines(unittest.TestCase):
             self.assertIsInstance(output, ChapterOutput)
             self.assertIsNotNone(output.grid_layout, f"Chapter {chapter_id} returned None for grid_layout")
             
-            # Verify it uses the modern dashboard layout system (ChapterLayout Pydantic model)
+            # Verify it uses the modern dashboard layout system
             layout = output.grid_layout
-            # ChapterLayout has left, center, right attributes
-            # Accept both dict and Pydantic layouts
-            has_center = hasattr(layout, 'center') or isinstance(layout, dict)
-            self.assertTrue(has_center, f"Chapter {chapter_id} layout is invalid")
+            # Accept both dict layouts and Pydantic models
+            if isinstance(layout, dict):
+                # Dict layout - check for modern_dashboard keys
+                has_valid_structure = 'layout_type' in layout or 'hero' in layout or 'metrics' in layout or 'main' in layout
+                self.assertTrue(has_valid_structure, f"Chapter {chapter_id} dict layout missing expected keys")
+            else:
+                # Pydantic model - check for center attribute
+                has_center = hasattr(layout, 'center')
+                self.assertTrue(has_center, f"Chapter {chapter_id} Pydantic layout is invalid")
             
             # Check Title specificity
             title = output.title
@@ -94,11 +99,20 @@ class TestChapterRoutines(unittest.TestCase):
             generated_titles.append(title)
             
             # Check that content is defined and not just empty/generic
-            # ChapterLayout.center is a list of UIComponents
-            if hasattr(layout, 'center') and layout.center and len(layout.center) > 0:
-                 # Check that at least one component has content
-                 has_content = any(comp.content and len(str(comp.content)) > 10 for comp in layout.center)
-                 self.assertTrue(has_content, f"Chapter {chapter_id} center content is suspiciously empty")
+            if isinstance(layout, dict):
+                # Dict layout - check main content
+                main_content = layout.get('main', {}).get('content', '') if isinstance(layout.get('main'), dict) else ''
+                if not main_content:
+                    # Try chapter_data as fallback
+                    main_content = output.chapter_data.get('main_analysis', '') if hasattr(output, 'chapter_data') and output.chapter_data else ''
+                self.assertTrue(
+                    len(str(main_content)) > 10,
+                    f"Chapter {chapter_id} main content is suspiciously empty"
+                )
+            elif hasattr(layout, 'center') and layout.center and len(layout.center) > 0:
+                # Pydantic layout - check center components
+                has_content = any(comp.content and len(str(comp.content)) > 10 for comp in layout.center)
+                self.assertTrue(has_content, f"Chapter {chapter_id} center content is suspiciously empty")
 
     
     def test_z_generate_design_compliance_report(self):

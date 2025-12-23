@@ -1,7 +1,7 @@
 # AI Woning Rapport - API Specification
 
 **Version**: 5.0 (Trust & Transparency Update)
-**Last Updated**: 2025-12-22
+**Last Updated**: 2025-12-23
 **Base URL**: `http://localhost:8000/api`
 
 ---

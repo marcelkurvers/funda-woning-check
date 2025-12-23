@@ -191,12 +191,16 @@ class IntelligenceEngine:
     @staticmethod
     def _parse_int(val):
         try:
-            # Only keep standard ASCII digits
-            digits = re.sub(r'[^\d]', '', str(val))
-            # Filter out superscripts if any remain (though \d matches them in some python versions depending on flags)
-            # Safest is [0-9]
-            digits = re.sub(r'[^0-9]', '', str(val))
-            return int(digits) if digits else 0
+            # Convert to string and remove common thousand separators (dots, commas)
+            # This handles: "€ 1.500.000" → "€ 1500000" and "150 m2" → "150 m2"
+            s = str(val).replace('.', '').replace(',', '')
+            
+            # Extract only the first contiguous sequence of digits
+            # This prevents "150 m2" from becoming "1502"
+            match = re.search(r'\d+', s)
+            if match:
+                return int(match.group())
+            return 0
         except:
             return 0
 

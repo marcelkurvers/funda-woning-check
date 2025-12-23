@@ -10,7 +10,9 @@ import os
 os.environ["APP_DB"] = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../data/test_integration.db"))
 
 from fastapi.testclient import TestClient
-from main import app, init_db
+from unittest.mock import patch
+from main import app, init_db, update_run
+from intelligence import IntelligenceEngine
 
 client = TestClient(app)
 
@@ -28,6 +30,21 @@ SAMPLE_HTML = """
 class TestIntegration(unittest.TestCase):
     def setUp(self):
         init_db()
+        # Prevent init_ai_provider from running in the background thread and resetting our configuration
+        self.patcher = patch('main.init_ai_provider')
+        self.mock_init = self.patcher.start()
+        
+        # Patch Scraper to avoid network calls and timeouts
+        self.patcher_scraper = patch('main.Scraper')
+        self.mock_scraper = self.patcher_scraper.start()
+        self.mock_scraper.return_value.derive_property_core.return_value = {}
+
+        # Force fallback
+        IntelligenceEngine.set_provider(None)
+
+    def tearDown(self):
+        self.patcher.stop()
+        self.patcher_scraper.stop()
 
     def test_full_flow_with_paste(self):
         # 1. Start Run
@@ -39,13 +56,30 @@ class TestIntegration(unittest.TestCase):
         # 2. Start Pipeline
         client.post(f"/api/runs/{run_id}/start")
         
-        # Wait for "scrape" to finish (simulated)
-        time.sleep(1)
+        # Poll for completion (max 2 seconds)
+        for _ in range(20):
+            status_resp = client.get(f"/api/runs/{run_id}/status")
+            if status_resp.json()["status"] == "done":
+                break
+            time.sleep(0.1)
         
         # 3. Paste HTML
         print("[Test] Pasting HTML content...")
         resp = client.post(f"/api/runs/{run_id}/paste", json={"funda_html": SAMPLE_HTML})
         self.assertEqual(resp.status_code, 200)
+
+        # Reset status to queued so we can reliably poll for the NEXT done state
+        update_run(run_id, status="queued")
+        
+        # Trigger Re-Run to update KPIs and Chapters with pasted data
+        client.post(f"/api/runs/{run_id}/start") 
+        
+        # Poll for completion AGAIN
+        for _ in range(20):
+            status_resp = client.get(f"/api/runs/{run_id}/status")
+            if status_resp.json()["status"] == "done":
+                break
+            time.sleep(0.1)
         
         # 4. Verify Data is updated in property_core (via Report)
         print("[Test] Fetching Report...")

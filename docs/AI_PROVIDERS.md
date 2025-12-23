@@ -1,7 +1,7 @@
 # AI Woning Rapport - AI Provider Integration Guide
 
 **Version**: 2.1
-**Last Updated**: 2025-12-22
+**Last Updated**: 2025-12-23
 
 ---
 

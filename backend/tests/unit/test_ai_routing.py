@@ -1,0 +1,303 @@
+"""
+Routing & Orchestration Tests for AI System
+
+These tests validate provider selection logic, fallback mechanisms, and state management.
+They DO NOT test runtime availability or execute real AI calls.
+
+ARCHITECTURAL PRINCIPLE:
+Tests verify routing correctness and state transitions, not execution outcomes.
+"""
+
+import unittest
+from intelligence import IntelligenceEngine
+from ai.provider_factory import ProviderFactory
+from ai.providers.ollama_provider import OllamaProvider
+from ai.provider_interface import AIProvider
+
+
+class TestProviderRouting(unittest.TestCase):
+    """Verify provider selection and routing logic"""
+
+    def setUp(self):
+        """Reset provider state before each test"""
+        IntelligenceEngine.set_provider(None)
+
+    def tearDown(self):
+        """Clean up provider state after each test"""
+        IntelligenceEngine.set_provider(None)
+
+    def test_factory_creates_ollama_provider(self):
+        """Verify factory creates Ollama provider correctly"""
+        provider = ProviderFactory.create_provider("ollama")
+        
+        self.assertIsNotNone(provider)
+        self.assertIsInstance(provider, AIProvider)
+        self.assertEqual(provider.name, "ollama")
+
+    def test_factory_creates_openai_provider_with_key(self):
+        """Verify factory creates OpenAI provider with API key"""
+        provider = ProviderFactory.create_provider("openai", api_key="test_key")
+        
+        self.assertIsNotNone(provider)
+        self.assertIsInstance(provider, AIProvider)
+        self.assertEqual(provider.name, "openai")
+
+    def test_factory_creates_anthropic_provider_with_key(self):
+        """Verify factory creates Anthropic provider with API key"""
+        provider = ProviderFactory.create_provider("anthropic", api_key="test_key")
+        
+        self.assertIsNotNone(provider)
+        self.assertIsInstance(provider, AIProvider)
+        self.assertEqual(provider.name, "anthropic")
+
+    def test_factory_creates_gemini_provider_with_key(self):
+        """Verify factory creates Gemini provider with API key"""
+        provider = ProviderFactory.create_provider("gemini", api_key="test_key")
+        
+        self.assertIsNotNone(provider)
+        self.assertIsInstance(provider, AIProvider)
+        self.assertEqual(provider.name, "gemini")
+
+    def test_factory_rejects_unknown_provider(self):
+        """Verify factory raises error for unknown provider"""
+        with self.assertRaises(ValueError) as context:
+            ProviderFactory.create_provider("unknown_provider")
+        
+        self.assertIn("unsupported", str(context.exception).lower())
+
+    def test_factory_passes_configuration_to_provider(self):
+        """Verify factory passes configuration parameters correctly"""
+        provider = ProviderFactory.create_provider(
+            "ollama",
+            base_url="http://custom:11434",
+            timeout=60
+        )
+        
+        self.assertEqual(provider.base_url, "http://custom:11434")
+        self.assertEqual(provider.timeout, 60)
+
+    def test_factory_lists_all_registered_providers(self):
+        """Verify factory can list all registered providers"""
+        providers = ProviderFactory.list_providers()
+        
+        self.assertIsInstance(providers, dict)
+        self.assertIn("ollama", providers)
+        self.assertIn("openai", providers)
+        self.assertIn("anthropic", providers)
+        self.assertIn("gemini", providers)
+
+    def test_provider_registry_contains_metadata(self):
+        """Verify provider registry contains required metadata"""
+        providers = ProviderFactory.list_providers()
+        
+        for provider_name, metadata in providers.items():
+            self.assertIn("name", metadata)
+            self.assertIn("label", metadata)
+            self.assertIn("models", metadata)
+            self.assertIsInstance(metadata["models"], list)
+
+
+class TestIntelligenceEngineProviderManagement(unittest.TestCase):
+    """Verify IntelligenceEngine manages provider state correctly"""
+
+    def setUp(self):
+        """Reset provider state before each test"""
+        IntelligenceEngine.set_provider(None)
+
+    def tearDown(self):
+        """Clean up provider state after each test"""
+        IntelligenceEngine.set_provider(None)
+
+    def test_can_set_provider(self):
+        """Verify engine accepts provider injection"""
+        provider = OllamaProvider()
+        IntelligenceEngine.set_provider(provider)
+        
+        self.assertIsNotNone(IntelligenceEngine._provider)
+        self.assertEqual(IntelligenceEngine._provider, provider)
+
+    def test_can_clear_provider(self):
+        """Verify engine can clear provider (set to None)"""
+        provider = OllamaProvider()
+        IntelligenceEngine.set_provider(provider)
+        self.assertIsNotNone(IntelligenceEngine._provider)
+        
+        IntelligenceEngine.set_provider(None)
+        self.assertIsNone(IntelligenceEngine._provider)
+
+    def test_can_replace_provider(self):
+        """Verify engine can replace existing provider"""
+        provider1 = OllamaProvider()
+        IntelligenceEngine.set_provider(provider1)
+        self.assertEqual(IntelligenceEngine._provider, provider1)
+        
+        provider2 = OllamaProvider()
+        IntelligenceEngine.set_provider(provider2)
+        self.assertEqual(IntelligenceEngine._provider, provider2)
+        self.assertNotEqual(IntelligenceEngine._provider, provider1)
+
+    def test_provider_persists_across_calls(self):
+        """Verify provider state persists across multiple calls"""
+        provider = OllamaProvider()
+        IntelligenceEngine.set_provider(provider)
+        
+        # Multiple accesses should return same provider
+        self.assertEqual(IntelligenceEngine._provider, provider)
+        self.assertEqual(IntelligenceEngine._provider, provider)
+        self.assertEqual(IntelligenceEngine._provider, provider)
+
+
+class TestFallbackBehavior(unittest.TestCase):
+    """Verify system provides fallback when no AI provider is available"""
+
+    def setUp(self):
+        """Reset provider state before each test"""
+        IntelligenceEngine.set_provider(None)
+
+    def tearDown(self):
+        """Clean up provider state after each test"""
+        IntelligenceEngine.set_provider(None)
+
+    def test_generates_fallback_when_no_provider_set(self):
+        """Verify system returns fallback data when no provider configured"""
+        # Explicitly set no provider
+        IntelligenceEngine.set_provider(None)
+        
+        ctx = {
+            "address": "Teststraat 1, Amsterdam",
+            "price": 500000,
+            "area": 120,
+            "year": 2010
+        }
+        
+        # Should not crash, should return fallback
+        result = IntelligenceEngine.generate_chapter_narrative(1, ctx)
+        
+        self.assertIsInstance(result, dict)
+        self.assertIn('title', result)
+        self.assertIn('intro', result)
+        self.assertIn('main_analysis', result)
+
+    def test_fallback_has_required_schema_fields(self):
+        """Verify fallback data conforms to expected schema"""
+        IntelligenceEngine.set_provider(None)
+        
+        ctx = {"address": "Test", "price": 500000, "area": 120}
+        result = IntelligenceEngine.generate_chapter_narrative(1, ctx)
+        
+        # Required fields for Bento Grid
+        required_fields = ['title', 'intro', 'main_analysis', 'interpretation', 
+                          'conclusion', 'strengths', 'advice']
+        
+        for field in required_fields:
+            self.assertIn(field, result, f"Missing required field: {field}")
+
+    def test_fallback_data_is_realistic(self):
+        """Verify fallback data is realistic and data-driven"""
+        IntelligenceEngine.set_provider(None)
+        
+        ctx = {
+            "address": "Kalverstraat 1, Amsterdam",
+            "price": 750000,
+            "area": 150,
+            "year": 1995
+        }
+        
+        result = IntelligenceEngine.generate_chapter_narrative(1, ctx)
+        
+        # Fallback should use actual data, not generic placeholders
+        intro = result['intro'].lower()
+        
+        # Should reference actual property data
+        self.assertTrue(
+            any(term in intro for term in ["kalverstraat", "amsterdam", "150", "m²", "1995"]),
+            "Fallback should reference actual property data"
+        )
+
+    def test_fallback_does_not_claim_ai_generation(self):
+        """Verify fallback data doesn't claim to be AI-generated"""
+        IntelligenceEngine.set_provider(None)
+        
+        ctx = {"address": "Test", "price": 500000}
+        result = IntelligenceEngine.generate_chapter_narrative(1, ctx)
+        
+        # Should not have AI disclaimer
+        full_text = str(result).lower()
+        self.assertNotIn("gegenereerd door", full_text)
+        self.assertNotIn("ai-gegenereerd", full_text)
+
+    def test_fallback_works_for_all_chapters(self):
+        """Verify fallback mechanism works for all chapter types"""
+        IntelligenceEngine.set_provider(None)
+        
+        ctx = {
+            "address": "Test",
+            "price": 500000,
+            "area": 120,
+            "year": 2000,
+            "label": "B"
+        }
+        
+        # Test chapters 0-5 (representative sample)
+        for chapter_id in range(6):
+            result = IntelligenceEngine.generate_chapter_narrative(chapter_id, ctx)
+            
+            self.assertIsInstance(result, dict, f"Chapter {chapter_id} should return dict")
+            self.assertIn('title', result, f"Chapter {chapter_id} should have title")
+
+
+class TestProviderStateTransitions(unittest.TestCase):
+    """Verify provider state transitions are handled correctly"""
+
+    def setUp(self):
+        """Reset provider state before each test"""
+        IntelligenceEngine.set_provider(None)
+
+    def tearDown(self):
+        """Clean up provider state after each test"""
+        IntelligenceEngine.set_provider(None)
+
+    def test_transition_from_no_provider_to_provider(self):
+        """Verify clean transition from no provider to provider"""
+        # Start with no provider
+        self.assertIsNone(IntelligenceEngine._provider)
+        
+        # Set provider
+        provider = OllamaProvider()
+        IntelligenceEngine.set_provider(provider)
+        
+        # Verify transition
+        self.assertIsNotNone(IntelligenceEngine._provider)
+        self.assertEqual(IntelligenceEngine._provider.name, "ollama")
+
+    def test_transition_from_provider_to_no_provider(self):
+        """Verify clean transition from provider to no provider"""
+        # Start with provider
+        provider = OllamaProvider()
+        IntelligenceEngine.set_provider(provider)
+        self.assertIsNotNone(IntelligenceEngine._provider)
+        
+        # Clear provider
+        IntelligenceEngine.set_provider(None)
+        
+        # Verify transition
+        self.assertIsNone(IntelligenceEngine._provider)
+
+    def test_transition_between_different_providers(self):
+        """Verify clean transition between different provider types"""
+        # Start with Ollama
+        provider1 = OllamaProvider()
+        IntelligenceEngine.set_provider(provider1)
+        self.assertEqual(IntelligenceEngine._provider.name, "ollama")
+        
+        # Switch to different provider instance
+        provider2 = OllamaProvider()
+        IntelligenceEngine.set_provider(provider2)
+        
+        # Verify transition
+        self.assertEqual(IntelligenceEngine._provider, provider2)
+        self.assertNotEqual(IntelligenceEngine._provider, provider1)
+
+
+if __name__ == '__main__':
+    unittest.main()

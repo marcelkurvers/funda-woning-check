@@ -35,9 +35,13 @@ class TestChapter0Logic:
         chapter = ExecutiveSummary(ctx)
         output = chapter.generate()
         
-        html = output.chapter_data['main_analysis']
-        assert "€ 0" not in html
-        assert "Geen directe investering" in html or "minimale investering" in html
+        # Check metrics for investment display (not main_analysis)
+        metrics = output.grid_layout['metrics']
+        investment_metric = next((m for m in metrics if m['id'] == 'investment'), None)
+        
+        assert investment_metric is not None, "Investment metric should exist"
+        # Should show "Geen directe investering" for good energy label
+        assert "Geen directe investering" in investment_metric['value'] or investment_metric['value'] == "Geen directe investering"
 
     def test_maintenance_consistency(self):
         """Test that old houses with asbestos risks don't get 'Low' maintenance rating."""

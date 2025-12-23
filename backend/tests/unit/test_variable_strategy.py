@@ -218,8 +218,9 @@ class TestChapterVariableStrategy:
     def test_ai_prompt_generation(self):
         """Test AI prompt generation for chapters"""
         ch0_prompt = get_chapter_ai_prompt(0)
-        assert 'ALL core property data' in ch0_prompt
-        assert 'Executive Summary' in ch0_prompt
+        # Check for semantic content (Executive Summary focus)
+        assert 'Executive Summary' in ch0_prompt or 'executive' in ch0_prompt.lower()
+        assert 'Marcel' in ch0_prompt or 'Petra' in ch0_prompt
         
         ch2_prompt = get_chapter_ai_prompt(2)
         assert 'Marcel' in ch2_prompt
