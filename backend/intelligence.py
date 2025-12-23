@@ -317,7 +317,12 @@ class IntelligenceEngine:
             f"9. DATA SCOPE: {'Include all core data in the variables field' if show_core_data else 'Focus ONLY on chapter-specific variables in the variables field'}.\\n"
             "10. For EVERY variable in the 'variables' field, include Marcel & Petra preference relevance.\\n"
             "11. Provide actionable interpretation in the prose, not just data display.\\n"
-            "12. TONE: Premium Real Estate Magazine (Editorial, Sophisticated, Engaging). Avoid bullet-point only lists in main text.\\n"
+            "12. TONE & LENGTH: Premium Real Estate Magazine (Editorial, Sophisticated, Engaging). \n"
+            "    **CRITICAL REQUIREMENT**: The 'main_analysis' MUST be a continuous, immersive narrative of at least **500 words**.\n"
+            "    - Do NOT use bullet points in the main analysis.\n"
+            "    - Do NOT break the flow with headers.\n"
+            "    - Write in long, flowing paragraphs that tell the story of the home.\n"
+            "    - Weave facts into the story, do not list them.\n"
             "13. The 'comparison' feedback for Marcel & Petra MUST be narrative, advising, and conclusive. Provide real value by explaining WHY something matches or fails their specific priorities in the context of this chapter. Avoid fragments; use full, sophisticated sentences."
         )
 
