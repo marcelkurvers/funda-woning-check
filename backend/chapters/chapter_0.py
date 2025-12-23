@@ -223,35 +223,9 @@ class ExecutiveSummary(BaseChapter):
         metrics.append({"id": "long_term_quality", "label": "Lange-termijn kwaliteit", "value": lt_quality, "icon": "shield", "trend": "neutral", "color": lt_quality_color, "explanation": lt_quality_explanation})
 
 
-        # Strategic Main Content with Color Legend
-        # We use the base class renderer to ensure consistency and the new comparison section.
-        # We inject the specific Dashboard elements (Construction alert, Valuation) as extra_html.
-        
-        dashboard_extra_html = f"""
-        <div class="analysis-grid" style="margin-bottom: 2rem;">
-            <div class="analysis-item">
-                <div class="analysis-icon {'warning' if total_expected_invest > 0 else 'valid'}"><ion-icon name="construct"></ion-icon></div>
-                <div class="analysis-text">
-                    <strong>Bouwtechnische Staat</strong><br>
-                    {construction_alert}
-                </div>
-            </div>
-            <div class="analysis-item">
-                <div class="analysis-icon valid"><ion-icon name="cash"></ion-icon></div>
-                <div class="analysis-text">
-                    <strong>Waardering</strong><br>
-                    {valuation_status} ({delta_str})
-                </div>
-            </div>
-            <div class="analysis-item">
-                <div class="analysis-icon {'valid' if total_expected_invest == 0 else 'warning'}"><ion-icon name="hammer"></ion-icon></div>
-                <div class="analysis-text">
-                    <strong>Investering</strong><br>
-                    {inv_text}
-                </div>
-            </div>
-        </div>
-        """
+        # Strategic Main Content
+        # We use the base class renderer to ensure consistency.
+        # dashboard_extra_html is removed as it's now handled by the React Data Matrix.
         
         # Merge hardcoded pros/cons with AI narrative results
         final_strengths = list(dict.fromkeys(pros + (narrative.get('strengths') or [])))
@@ -266,8 +240,7 @@ class ExecutiveSummary(BaseChapter):
         narrative['advice'] = final_advice
 
         # Render the rich narrative which now includes the comparison section
-        # We pass dashboard_extra_html into the lead area
-        final_content = self._render_rich_narrative(narrative, extra_html=dashboard_extra_html)
+        final_content = self._render_rich_narrative(narrative)
 
         # Expert Sidebar
         sidebar = [
@@ -318,11 +291,14 @@ class ExecutiveSummary(BaseChapter):
             "intro": narrative.get('intro', ''),
             "main_analysis": final_content,
             "conclusion": narrative.get('conclusion', ''),
-            "strengths": pros,
-            "advice": cons,
+            "strengths": final_strengths,
+            "advice": final_advice,
             "interpretation": narrative.get('interpretation', ''),
+            "variables": narrative.get('variables', {}),
             "sidebar_items": sidebar,
-            "comparison": narrative.get('comparison', {}) # Ensure it's passed through
+            "comparison": narrative.get('comparison', {}),
+            "marcel_match_score": self.data.get('marcel_match_score', 0),
+            "petra_match_score": self.data.get('petra_match_score', 0)
         }
 
         # Provenance mapping

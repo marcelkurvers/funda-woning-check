@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,6 +11,178 @@
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply bg-slate-50 text-slate-900 antialiased font-sans;
   }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+@layer components {
+  .magazine-drop-cap::first-letter {
+    @apply text-6xl font-black font-serif mr-3 float-left text-slate-900 leading-none mt-2;
+  }
+
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+  }
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-500;
+}
+
+.persona-glow-blue {
+  box-shadow: 0 0 40px -10px rgba(59, 130, 246, 0.2);
+}
+
+.persona-glow-pink {
+  box-shadow: 0 0 40px -10px rgba(236, 72, 153, 0.2);
+}
+
+/* Magazine v6.0 Refinements */
+@keyframes ken-burns {
+  0% {
+    transform: scale(1.0);
+  }
+
+  100% {
+    transform: scale(1.15);
+  }
+}
+
+.animate-ken-burns {
+  animation: ken-burns 60s infinite alternate ease-in-out;
+}
+
+.magazine-drop-cap::first-letter {
+  @apply text-8xl font-black font-serif mr-4 float-left text-slate-900 leading-[0.8] mt-2;
+}
+
+::selection {
+  @apply bg-blue-100 text-slate-900;
+}
+
+/* Editorial Formatting Extension */
+.persona-mention {
+  @apply font-bold rounded-lg px-2 py-0.5 transition-all cursor-help;
+}
+
+.persona-mention.marcel {
+  @apply bg-blue-50 text-blue-700 hover:bg-blue-100;
+}
+
+.persona-mention.petra {
+  @apply bg-pink-50 text-pink-600 hover:bg-pink-100;
+}
+
+.editorial-signpost {
+  @apply inline-flex items-center gap-1.5 font-bold text-slate-900 border-b-2 border-slate-100 transition-all hover:border-blue-400;
+}
+
+.editorial-signpost::before {
+  content: attr(data-icon);
+  @apply text-base opacity-90;
+}
+
+.market-pulse-box {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  @apply transition-transform duration-700 hover:scale-[1.01];
+}
+
+.energy-ribbon {
+  @apply select-none;
+}
+
+.editorial-content {
+  @apply relative;
+}
+
+/* Ensure images in editorial content look premium */
+.editorial-content img {
+  @apply rounded-3xl shadow-2xl my-16 border border-slate-100 transition-all hover:scale-[1.02];
+}
+
+/* Editorial Formatting Extension - World Class Refinements */
+.magazine-lede {
+  @apply text-2xl md:text-3xl font-serif font-black text-slate-900 leading-[1.1] mb-12 tracking-tighter opacity-95;
+}
+
+.magazine-lede::first-letter {
+  @apply text-7xl font-black font-serif mr-4 float-left text-blue-600 leading-[0.75] mt-2;
+}
+
+.magazine-pull-quote {
+  @apply my-20 p-12 bg-slate-50 border-y-4 border-blue-600 relative text-center;
+}
+
+.magazine-pull-quote .quote-mark {
+  @apply block text-6xl font-serif text-blue-200 leading-none h-8 select-none;
+}
+
+.magazine-pull-quote {
+  @apply text-2xl md:text-3xl font-serif italic font-medium text-slate-800 leading-relaxed;
+}
+
+.magazine-section-marker {
+  @apply flex items-center gap-6 mb-12 select-none;
+}
+
+.magazine-section-marker::before {
+  content: '';
+  @apply h-px flex-1 bg-gradient-to-r from-transparent to-blue-600;
+}
+
+.magazine-section-marker span {
+  @apply text-[10px] font-black uppercase tracking-[0.8em] text-blue-600 whitespace-nowrap;
+}
+
+.magazine-byline {
+  @apply mt-24 pt-12 border-t border-slate-100 flex flex-col items-center gap-6;
+}
+
+.magazine-byline .byline-line {
+  @apply w-12 h-1 bg-blue-600 rounded-full;
+}
+
+.magazine-byline .byline-content {
+  @apply flex flex-col items-center text-center;
+}
+
+.magazine-byline .auth {
+  @apply text-[9px] font-black uppercase tracking-[0.4em] text-slate-400 mb-2;
+}
+
+.magazine-byline .role {
+  @apply text-sm font-bold text-slate-900 mb-1;
+}
+
+.magazine-byline .date {
+  @apply text-[10px] font-medium text-slate-400 font-mono;
+}
+
+.magazine-pacing p {
+  @apply mb-8 text-base leading-relaxed text-slate-700 max-w-2xl;
+}
+
+.magazine-pacing h4 {
+  @apply text-xs font-black uppercase tracking-[0.5em] text-blue-600 mb-6 mt-16;
 }

@@ -54,9 +54,11 @@ class TestIntelligenceEngine(unittest.TestCase):
         ctx_full = {'adres': 'Test', 'prijs': 500000, 'oppervlakte': 100, 'label': 'C'}
         nar = IntelligenceEngine.generate_chapter_narrative(0, ctx_full)
         print(f"DEBUG INTRO: {nar['intro']}")
-        self.assertIn("Test", nar['intro'])
-        # Fallback intro is generic, so we just check it exists and mentions strategy
-        self.assertIn("strategische analyse", nar['intro'])
+        
+        # In current version, Chapter 0 title is set in the dictate
+        self.assertEqual(nar['title'], "Executive Summary & Strategie")
+        self.assertIn("Analyse van Test", nar['intro'])
+        self.assertIn("100 m²", nar['intro'])
         
         # Missing Data
         ctx_missing = {'adres': 'Test'} # Price/Area missing

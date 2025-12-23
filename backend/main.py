@@ -27,6 +27,7 @@ BACKEND_DIR = Path(__file__).parent
 if str(BACKEND_DIR) not in sys.path:
     sys.path.append(str(BACKEND_DIR))
 
+from __version__ import __version__
 from scraper import Scraper
 from parser import Parser
 from consistency import ConsistencyChecker
@@ -238,7 +239,7 @@ class PasteIn(BaseModel):
     media_urls: Optional[List[str]] = []
 
 # --- FASTAPI APP ---
-app = FastAPI(title="AI Woning Rapport Pro v4")
+app = FastAPI(title=f"AI Woning Rapport Pro v{__version__}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -414,8 +415,11 @@ def build_chapters(core: Dict[str, Any]) -> Dict[str, Any]:
         cls = get_chapter_class(i)
         if cls:
             try:
-                obj = cls(core)
+                obj = cls(core, id=i)
                 output = obj.generate()
+                # Set segment name
+                output.segment = obj.get_segment_name()
+                
                 # Bridge: Ensure Chapter 0 contains property_core and metrics for frontend dashboard
                 if i == 0:
                     if output.chapter_data is None: output.chapter_data = {}
@@ -462,6 +466,7 @@ def build_chapters(core: Dict[str, Any]) -> Dict[str, Any]:
             },
             "blocks": [],
             "chapter_data": output,
+            "segment": {0: "EXECUTIVE / STRATEGIE", 1: "OBJECT / ARCHITECTUUR", 2: "SYNERGIE / MATCH", 3: "TECHNIEK / CONDITIE", 4: "ENERGETICA / AUDIT", 5: "LAYOUT / POTENTIE", 6: "AFWERKING / ONDERHOUD", 7: "EXTERIEUR / TUIN", 8: "MOBILITEIT / PARKEREN", 9: "JURIDISCH / KADASTER", 10: "FINANCIEEL / RENDEMENT", 11: "MARKT / POSITIE", 12: "VERDICT / STRATEGIE"}.get(i, f"DOSSIER / SEGMENT {i}"),
             "property_core": output.get("property_core") if i == 0 else None,
             "provenance": prov_dict, # Pass raw dict for easier JSON serialization
             "missing_critical_data": output.get('metadata', {}).get('missing_vars', [])

@@ -31,15 +31,15 @@ Found **31** potential issues.
 | 157 | **Hardcoded Item** | `Previously hardcoded in:` |
 | 197 | **Hardcoded Item** | `Previously hardcoded in:` |
 
+### 📄 `chapters/formatter.py`
+| Line | Type | Content |
+| :--- | :--- | :--- |
+| 312 | **Dummy Data** | `monthly = round(price * 0.005) # Dummy calculation` |
+
 ### 📄 `chapters/chapter_0.py`
 | Line | Type | Content |
 | :--- | :--- | :--- |
-| 256 | **Hardcoded Item** | `# Merge hardcoded pros/cons with AI narrative results` |
-
-### 📄 `chapters/base.py`
-| Line | Type | Content |
-| :--- | :--- | :--- |
-| 193 | **Generic Variable Name** | `# 5. CONCLUSION (Bottom Bar)` |
+| 230 | **Hardcoded Item** | `# Merge hardcoded pros/cons with AI narrative results` |
 
 ### 📄 `static/preferences.html`
 | Line | Type | Content |

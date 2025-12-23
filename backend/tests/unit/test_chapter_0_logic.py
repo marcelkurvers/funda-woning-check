@@ -1,6 +1,8 @@
-
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 import pytest
-from backend.chapters.chapter_0 import ExecutiveSummary
+from chapters.chapter_0 import ExecutiveSummary
 
 class TestChapter0Logic:
 

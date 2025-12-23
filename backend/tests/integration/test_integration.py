@@ -52,23 +52,34 @@ class TestIntegration(unittest.TestCase):
         resp = client.get(f"/api/runs/{run_id}/report")
         data = resp.json()
         
-        kpis = data.get("kpis", [])
-        # If accessing dashboard_cards directly failed, check if kpis is the list
-        if isinstance(kpis, dict):
-             kpis = kpis.get("dashboard_cards", [])
-        
-        kpi_values = {k['title']: k['value'] for k in kpis}
-        
-        print(f"[Test] KPIs Found: {kpi_values}")
-        
-        # Check if Paste Data is reflected
-        # Price check (using string search in entire dump for simplicity)
+        # Check if price is reflected in property_core or anywhere in data
+        # In current version, price matches on "950.000"
         self.assertIn("950.000", json.dumps(data))
         
-        # Completeness should be non-zero
-        completeness_card = next((c for c in kpis if c['id'] == 'completeness'), None)
-        if completeness_card:
-            self.assertNotEqual(completeness_card['value'], "0%", "Completeness should not be 0% after paste")
+        # Chapters check
+        chapters = data.get("chapters", {})
+        self.assertTrue(len(chapters) > 0)
+        
+        # Check Chapter 0
+        ch0 = chapters.get("0")
+        self.assertIsNotNone(ch0)
+        
+        # In modern dashboard, metrics are often called 'metrics' in the grid_layout
+        layout = ch0.get("grid_layout", {})
+        metrics = layout.get("metrics", [])
+        
+        # Check KPIs
+        kpi_data = data.get("kpis", {})
+        kpis = kpi_data.get("dashboard_cards", [])
+        
+        print(f"[Test] Found {len(kpis)} top-level KPIs")
+        
+        # Completeness should be non-zero if tracked
+        if kpis:
+            completeness_card = next((c for c in kpis if c.get('id') == 'completeness'), None)
+            if completeness_card:
+                self.assertIsNotNone(completeness_card.get('value'))
+                self.assertNotEqual(completeness_card.get('value'), "0%", "Completeness should not be 0% after paste")
 
 if __name__ == "__main__":
     unittest.main()

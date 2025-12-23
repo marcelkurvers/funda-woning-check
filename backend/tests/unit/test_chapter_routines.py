@@ -40,8 +40,8 @@ class TestChapterRoutines(unittest.TestCase):
         """
         Checks that Hoofdstuk x uses chapter_x.py as the routine.
         """
-        # We expect chapters 0 through 12
-        for chapter_id in range(13):
+        # We expect chapters 0 through 13
+        for chapter_id in range(14):
             with self.subTest(chapter_id=chapter_id):
                 self.assertIn(chapter_id, _REGISTRY, f"Chapter {chapter_id} is missing from registry")
                 

@@ -21,8 +21,8 @@ class TestModernDesignCompliance(unittest.TestCase):
         self.chapters = build_chapters(self.core_data)
 
     def test_all_chapters_exist(self):
-        """Verify we have the expected number of chapters (0-12)"""
-        for i in range(13):
+        """Verify we have the expected number of chapters (0-13)"""
+        for i in range(14):
             self.assertIn(str(i), self.chapters, f"Chapter {i} is missing from generation")
 
     def test_modern_4k_structure_compliance(self):
@@ -31,7 +31,7 @@ class TestModernDesignCompliance(unittest.TestCase):
         - grid_layout structure
         - Sections: metrics (Top/Left), main (Center), sidebar (Right/Advice)
         """
-        for i in range(13):
+        for i in range(14):
             ch_key = str(i)
             chapter = self.chapters[ch_key]
             

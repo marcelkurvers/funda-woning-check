@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 import sys
 import os
 import json
+import asyncio
 
 # Adjust path to include backend
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
@@ -30,16 +31,26 @@ class TestOllamaIntegration(unittest.TestCase):
     def test_ai_narrative_generation_success(self):
         """Test successful AI generation overrides hardcoded logic."""
         mock_provider = MagicMock(spec=AIProvider)
+        mock_provider.name = "ollama"
 
         # Mock successful JSON response (async)
+        # Matches the structure expected by IntelligenceEngine._generate_ai_narrative
         mock_response_data = {
             "title": "AI Title",
             "intro": "AI Intro",
             "main_analysis": "AI Analysis",
-            "interpretation": "AI Interpretation",
-            "advice": "AI Advice",
+            "variables": {
+                "var1": {"value": "val1", "status": "fact", "reasoning": "r1"}
+            },
+            "comparison": {"marcel": "m1", "petra": "p1"},
+            "strengths": ["AI Strength 1"],
+            "advice": ["AI Advice 1"],
             "conclusion": "AI Conclusion",
-            "strengths": ["AI Strength 1"]
+            "metadata": {
+                "confidence": "high",
+                "inferred_vars": [],
+                "missing_vars": []
+            }
         }
 
         # Create async mock
@@ -52,20 +63,23 @@ class TestOllamaIntegration(unittest.TestCase):
         
         ctx = {"address": "Teststraat 1", "price": 500000}
         
-        result = IntelligenceEngine.generate_chapter_narrative(1, ctx)
+        # We need to mock safe_execute_async if we are in a sync test context
+        import asyncio
+        with patch('ai.bridge.safe_execute_async', side_effect=lambda coro: asyncio.run(coro)):
+            result = IntelligenceEngine.generate_chapter_narrative(1, ctx)
 
         # Verify result content matches AI output
         self.assertEqual(result['title'], "AI Title")
         self.assertEqual(result['intro'], "AI Intro")
         
-        # Verify main analysis contains the AI part (it might have appended warnings)
+        # Verify main analysis contains the AI part
         self.assertIn("AI Analysis", result['main_analysis'])
         
         # Verify AI disclaimer was appended (logic in generate_chapter_narrative)
         self.assertIn("gegenereerd door", result['interpretation'])
 
-    def test_ai_narrative_generation_failure_fallback(self):
-        """Test that engine falls back to hardcoded logic if AI fails."""
+    def test_ai_narrative_generation_failure_raises(self):
+        """Test that engine raises exception if AI fails, as requested by current implementation."""
         mock_provider = MagicMock(spec=AIProvider)
 
         # Mock exception during generation
@@ -78,24 +92,22 @@ class TestOllamaIntegration(unittest.TestCase):
         
         ctx = {"adres": "Teststraat 1", "prijs": 500000, "oppervlakte": 100}
         
-        # Should not raise exception, but return fallback
-        result = IntelligenceEngine.generate_chapter_narrative(1, ctx)
-        
-        # Verify calling structure
-        # (Assuming Chapter 1 hardcoded returns something specific)
-        self.assertNotEqual(result['main_analysis'], "AI Analysis")
-        self.assertIn("100 m²", result['intro']) # Check hardcoded logic part
+        # Now it re-raises as requested in the current code
+        with patch('ai.bridge.safe_execute_async', side_effect=lambda coro: asyncio.run(coro)):
+            with self.assertRaises(Exception):
+                IntelligenceEngine.generate_chapter_narrative(1, ctx)
 
     def test_prompt_structure_contains_preferences(self):
         """Verify that user preferences are passed to the prompt."""
         mock_provider = MagicMock(spec=AIProvider)
+        mock_provider.name = "ollama"
 
         # Store call args for verification
         call_args_store = []
 
         async def mock_generate(*args, **kwargs):
             call_args_store.append((args, kwargs))
-            return '{"title": "Simple"}'
+            return '{"title": "Simple", "metadata": {"confidence": "high"}}'
 
         mock_provider.generate = mock_generate
 
@@ -109,7 +121,8 @@ class TestOllamaIntegration(unittest.TestCase):
             }
         }
         
-        IntelligenceEngine.generate_chapter_narrative(1, ctx)
+        with patch('ai.bridge.safe_execute_async', side_effect=lambda coro: asyncio.run(coro)):
+            IntelligenceEngine.generate_chapter_narrative(1, ctx)
 
         # Get the actual call arguments from our store
         if call_args_store:
@@ -118,8 +131,8 @@ class TestOllamaIntegration(unittest.TestCase):
 
             self.assertIn("Garage", prompt_text)
             self.assertIn("Tuin", prompt_text)
-            self.assertIn("marcel", prompt_text.lower())
-            self.assertIn("petra", prompt_text.lower())
+            self.assertIn("Marcel", prompt_text) # Prompt uses "Marcel" instead of "marcel" keys
+            self.assertIn("Petra", prompt_text)
 
 if __name__ == '__main__':
     unittest.main()

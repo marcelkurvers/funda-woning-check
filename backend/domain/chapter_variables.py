@@ -253,9 +253,10 @@ def enrich_variable_with_preferences(
 # AI Prompt templates for each chapter to ensure relevant variable extraction
 CHAPTER_AI_PROMPTS = {
     0: """
-    Extract and interpret ALL core property data for the Executive Summary.
-    Focus on: Identity, Pricing, Physical specs, Energy, Legal basics.
-    Provide Marcel & Petra match scores and interpretation.
+    Act as a high-end Real Estate Strategist giving an Executive Summary. 
+    You MUST provide a narrative that balances Marcel's strategic tech/ROI needs with Petra's atmospheric lifestyle needs.
+    Compare the property's core specs (price, area, label) against their combined long-term goals.
+    Extract Marcel & Petra match percentages and justify them.
     """,
     
     1: """
@@ -265,11 +266,11 @@ CHAPTER_AI_PROMPTS = {
     """,
     
     2: """
-    Deep-dive into Marcel & Petra preference matching.
-    For EACH preference, explicitly state: matched/partial/missing/unknown.
-    Provide specific recommendations for the viewing.
-    Marcel focuses on: Tech infrastructure, ROI, future-proofing.
-    Petra focuses on: Atmosphere, light, flow, finish quality.
+    Deep-dive into Marcel & Petra preference matching. This is the MOST IMPORTANT chapter.
+    Marcel (Profile: Strategic Investor/Tech Focus): Analyze energy systems, fiber connectivity, potential for value increase, and structural durability.
+    Petra (Profile: Lifestyle & Atmosphere): Analyze light quality, room flow ('gezelligheid'), historical charm or modern sleekness, and garden-to-indoor transition.
+    For EACH preference in their profile, explicitly state: matched/partial/missing/unknown with a narrative explanation of WHY.
+    Provide specific 'Viewing Missions' (what should they look for during the second visit?).
     """,
     
     3: """

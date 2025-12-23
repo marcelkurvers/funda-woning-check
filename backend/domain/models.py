@@ -45,5 +45,6 @@ class ChapterOutput(BaseModel):
     grid_layout: Any 
     blocks: List[Dict[str, Any]] = []
     chapter_data: Optional[Dict[str, Any]] = None
+    segment: Optional[str] = None
     provenance: Optional[AIProvenance] = None
     missing_critical_data: List[str] = []
