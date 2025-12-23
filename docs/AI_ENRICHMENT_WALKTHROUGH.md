@@ -11,7 +11,8 @@ We have transformed the AI report from a static narrative into a dynamic, transp
 
 ## Detailed Changes
 - **Backend Model**: Added `AIProvenance` and `source_stats` to the core data models.
-- **Intelligence Engine**: Refactored the prompt system to use an authoritative domain model. The AI now returns structured metadata for كل chapter.
+- **Intelligence Engine**: Refactored the prompt system to use an authoritative domain model. The AI now returns structured metadata for each chapter.
+- **Dynamic Key Resolution**: Implemented `_smart_get` in `EditorialEngine` to robustness against varying data keys (e.g., `price` vs `asking_price_eur`), eliminating brittle upstream normalization.
 - **Base Rendering**: The `BaseChapter` now generates a "Modern Magazine v2" layout which includes the provenance header and the variable grid.
 - **Frontend Integration**: Updated `App.tsx` to surface the global AI status bar for every chapter.
 

@@ -139,8 +139,23 @@ class EditorialEngine:
         
         # 1. Page 0: Market Pulse Gauge
         if chapter_id == 0:
-            price = data.get('price', 0)
-            area = data.get('area', 1)
+            price = EditorialEngine._smart_get(data, ['price', 'asking_price_eur', 'prijs', 'asking_price'], 0)
+            area = EditorialEngine._smart_get(data, ['area', 'living_area_m2', 'oppervlakte', 'woonoppervlakte'], 1)
+            
+            # Ensure safe numeric conversion
+            try:
+                # Robust extraction of the first number found
+                p_str = str(price).replace('.', '').replace(',', '')
+                a_str = str(area).replace('.', '').replace(',', '')
+                
+                p_match = re.search(r'(\d+)', p_str)
+                a_match = re.search(r'(\d+)', a_str)
+                
+                price = int(p_match.group(1)) if p_match else 0
+                area = int(a_match.group(1)) if a_match else 1
+            except: 
+                price, area = 0, 1
+                
             price_m2 = round(price / area) if area > 0 else 0
             infographic = f"""
             <div class="market-pulse-box my-12 p-8 bg-slate-900 border-l-8 border-blue-600 rounded-r-3xl shadow-2xl overflow-hidden relative">
@@ -161,19 +176,23 @@ class EditorialEngine:
 
         # 2. Page 1: Property DNA Bento
         elif chapter_id == 1:
+            year = EditorialEngine._smart_get(data, ['year', 'build_year', 'bouwjaar'], 'N/A')
+            volume = EditorialEngine._smart_get(data, ['volume_m3', 'inhoud', 'volume'], '—')
+            rooms = EditorialEngine._smart_get(data, ['num_rooms', 'rooms', 'aantal_kamers', 'kamers'], '—')
+            
             infographic = f"""
             <div class="grid grid-cols-3 gap-4 my-12">
                 <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
                     <span class="text-[9px] font-black uppercase text-slate-400 block mb-1">Bouwjaar</span>
-                    <span class="text-2xl font-black text-slate-900">{data.get('year', 'N/A')}</span>
+                    <span class="text-2xl font-black text-slate-900">{year}</span>
                 </div>
                 <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
                     <span class="text-[9px] font-black uppercase text-slate-400 block mb-1">Volume</span>
-                    <span class="text-2xl font-black text-slate-900">{data.get('volume_m3', '—')} m³</span>
+                    <span class="text-2xl font-black text-slate-900">{volume} m³</span>
                 </div>
                 <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
                     <span class="text-[9px] font-black uppercase text-slate-400 block mb-1">Kamers</span>
-                    <span class="text-2xl font-black text-slate-900">{data.get('num_rooms', '—')}</span>
+                    <span class="text-2xl font-black text-slate-900">{rooms}</span>
                 </div>
             </div>
             """
@@ -181,22 +200,25 @@ class EditorialEngine:
 
         # 3. Page 2: Synergy Match Meter
         elif chapter_id == 2:
-            infographic = """
+            m_score = EditorialEngine._smart_get(data, ['marcel_match_score', 'marcel_confidence', 'match_marcel'], 84)
+            p_score = EditorialEngine._smart_get(data, ['petra_match_score', 'petra_confidence', 'match_petra'], 92)
+            
+            infographic = f"""
             <div class="synergy-meter my-12 flex items-center gap-8 bg-slate-900 p-8 rounded-3xl text-white">
                 <div class="flex-1">
                     <div class="flex justify-between mb-4">
                         <span class="text-[10px] font-black uppercase tracking-widest text-blue-400">Marcel Tech-Fit</span>
-                        <span class="text-lg font-black">{int(data.get('marcel_match_score', 84))}%</span>
+                        <span class="text-lg font-black">{int(m_score)}%</span>
                     </div>
-                    <div class="h-1 bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-blue-500" style="width: {int(data.get('marcel_match_score', 84))}%"></div></div>
+                    <div class="h-1 bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-blue-500" style="width: {int(m_score)}%"></div></div>
                 </div>
                 <div class="w-px h-12 bg-white/10 hidden md:block"></div>
                 <div class="flex-1">
                     <div class="flex justify-between mb-4">
                         <span class="text-[10px] font-black uppercase tracking-widest text-pink-400">Petra Style-Fit</span>
-                        <span class="text-lg font-black">{int(data.get('petra_match_score', 92))}%</span>
+                        <span class="text-lg font-black">{int(p_score)}%</span>
                     </div>
-                    <div class="h-1 bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-pink-500" style="width: {int(data.get('petra_match_score', 92))}%"></div></div>
+                    <div class="h-1 bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-pink-500" style="width: {int(p_score)}%"></div></div>
                 </div>
             </div>
             """
@@ -217,7 +239,9 @@ class EditorialEngine:
 
         # 5. Page 4: Energy Scale
         elif chapter_id == 4:
-            label = data.get('label', 'G')
+            label = EditorialEngine._smart_get(data, ['label', 'energy_label', 'energie_label'], 'G')
+            if not label or label == '?': label = 'G'
+            label = label.upper()
             infographic = f"""
             <div class="energy-ribbon my-12 p-4 bg-slate-50 rounded-2xl border-y border-slate-100 flex items-center justify-between gap-4">
                 <div class="flex gap-1">
@@ -308,7 +332,11 @@ class EditorialEngine:
 
         # 11. Page 10: Financial Insight Card
         elif chapter_id == 10:
-            price = data.get('price', 0)
+            price_val = EditorialEngine._smart_get(data, ['price', 'asking_price_eur', 'prijs', 'asking_price'], 0)
+            try:
+                price = int(str(price_val).replace('.', '').replace(',', '').replace('€', '').strip() or 0)
+            except: price = 0
+            
             monthly = round(price * 0.005) # Dummy calculation
             infographic = f"""
             <div class="financial-card my-12 p-10 bg-emerald-900 rounded-3xl text-white shadow-2xl relative overflow-hidden">
@@ -340,15 +368,32 @@ class EditorialEngine:
 
         # 13. Page 12: Final Verdict Scoreboard
         elif chapter_id == 12:
-            infographic = """
+            score = EditorialEngine._smart_get(data, ['combined_match_score', 'match_score'], 85)
+            # Normalize score to 0-10 or 0-100 logic
+            display_score = round(score / 10, 1) if score > 10 else (score or 8.5)
+            
+            infographic = f"""
             <div class="verdict-scoreboard my-12 p-1 bg-slate-900 rounded-full flex items-center justify-between overflow-hidden shadow-2xl">
                  <div class="px-10 py-6 text-white font-black text-2xl uppercase italic">Strategic Score</div>
-                 <div class="h-20 w-20 bg-blue-600 rounded-full flex items-center justify-center text-white text-3xl font-black shadow-inner m-1">{data.get('combined_match_score', 8.5) if data.get('combined_match_score', 0) > 10 else round(data.get('combined_match_score', 0)/10, 1) or 8.5}</div>
+                 <div class="h-20 w-20 bg-blue-600 rounded-full flex items-center justify-center text-white text-3xl font-black shadow-inner m-1">{display_score}</div>
             </div>
             """
             processed_analysis = EditorialEngine._inject_at_p(processed_analysis, infographic, 1)
 
         return processed_analysis
+
+    @staticmethod
+    def _smart_get(data: Dict[str, Any], keys: List[str], default: Any = None) -> Any:
+        """
+        Dynamic Key Resolver:
+        Tries multiple potential keys to find a value. 
+        Robust against schema divergences (e.g., 'price' vs 'asking_price_eur').
+        """
+        for key in keys:
+            val = data.get(key)
+            if val is not None and val != "":
+                return val
+        return default
 
     @staticmethod
     def _inject_at_p(text: str, component: str, p_index: int) -> str:

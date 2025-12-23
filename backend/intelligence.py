@@ -56,7 +56,13 @@ class IntelligenceEngine:
             "description": ctx.get('description', ''),
             "features": ctx.get('features', []),
             "media_urls": ctx.get('media_urls', []),
-            "_preferences": ctx.get('_preferences', {})
+            "_preferences": ctx.get('_preferences', {}),
+            # Missing fields added for AI context:
+            "volume_m3": ctx.get('volume_m3') or ctx.get('inhoud'),
+            "rooms": ctx.get('rooms'),
+            "num_rooms": ctx.get('rooms'), # Alias
+            "bedrooms": ctx.get('bedrooms'),
+            "bathrooms": ctx.get('bathrooms')
         }
 
         result = {}
