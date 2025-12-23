@@ -101,7 +101,7 @@ export function LandingPage({ onStartAnalysis, isLoading, error }: LandingPagePr
                     {/* CRITICAL VERIFICATION BADGE & PREFS LINK */}
                     <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
                         <div className="px-6 py-2 bg-amber-500 text-black font-black text-sm rounded-lg shadow-2xl animate-bounce">
-                            BUILD v5.0.0-PRO LIVE
+                            BUILD v6.0.0-PRO LIVE
                         </div>
                         <button
                             onClick={() => window.location.href = '/static/preferences.html'}
@@ -334,9 +334,9 @@ export function LandingPage({ onStartAnalysis, isLoading, error }: LandingPagePr
                         <span>Trust Architecture Active</span>
                     </div>
                     <span>•</span>
-                    <span>AI Model: Hybrid Cloud/Edge v5.0</span>
+                    <span>AI Model: Hybrid Cloud/Edge v6.0</span>
                     <span>•</span>
-                    <span>v5.0.0-PRO • Full Transparency Update</span>
+                    <span>v6.0.0-PRO • Full Transparency Update</span>
                 </div>
             </main>
         </div>
