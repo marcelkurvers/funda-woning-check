@@ -61,10 +61,12 @@ class TestSystemArchitecture:
         chapter_id = 7 # Garden
         registry_ctx = {"asking_price_eur": 500000}
         
-        # CASE A: Good output
+        # CASE A: Good output (includes required fields id and title)
         output_good = {
+            "id": "7",
+            "title": "Garden Analysis",
             "variables": {"tuin_grootte": "50m2"}, # assuming allowed
-            "main_analysis": "Mooie tuin.",
+            "main_analysis": "Mooie tuin met veel privacy.",
             "comparison": {"marcel": "Prima tuin. Dit is top.", "petra": "Fijne tuin. Ik hou ervan."}
         }
         
@@ -73,22 +75,26 @@ class TestSystemArchitecture:
             
         # CASE B: Duplicate Fact in Output (Ownership Violation)
         output_bad_var = {
+            "id": "7",
+            "title": "Garden",
             "variables": {"asking_price_eur": "500000"}, # NOT allowed in Ch 7
-            "main_analysis": "Duur grapje.",
-            "comparison": {"marcel": "x", "petra": "y"}
+            "main_analysis": "Duur grapje met mooie tuin.",
+            "comparison": {"marcel": "x-short-text", "petra": "y-short-text"}
         }
         
         errors = ValidationGate.validate_chapter_output(chapter_id, output_bad_var, registry_ctx)
-        assert any("Ownership Violation" in e for e in errors), "Failed to catch Ownership Violation"
+        assert any("Ownership Violation" in e for e in errors), f"Failed to catch Ownership Violation: {errors}"
             
         # CASE C: Missing Preference Reasoning
         output_bad_pref = {
+            "id": "7",
+            "title": "Garden",
             "variables": {},
-            "main_analysis": "...",
+            "main_analysis": "Some analysis here.",
             "comparison": {"marcel": "", "petra": ""} # Too short/empty
         }
         errors = ValidationGate.validate_chapter_output(chapter_id, output_bad_pref, registry_ctx)
-        assert any("preference reasoning" in e.lower() for e in errors), "Failed to catch missing preferences"
+        assert any("preference reasoning" in e.lower() for e in errors), f"Failed to catch missing preferences: {errors}"
 
 if __name__ == "__main__":
     pytest.main([__file__])

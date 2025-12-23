@@ -138,6 +138,8 @@ def test_invariant_ownership_enforcement(populated_registry):
     registry_ctx = populated_registry.to_legacy_dict()
     
     bad_output = {
+        "id": "7",
+        "title": "Garden",
         "variables": {"price": 500000}, # Violation
         "main_analysis": "Expensive garden.",
         "comparison": {"marcel": "ok", "petra": "ok"}
@@ -149,8 +151,10 @@ def test_invariant_ownership_enforcement(populated_registry):
         
     # Scenario: Chapter 7 outputs 'tuin_grootte' (Owned by Ch 7)
     good_output = {
+        "id": "7",
+        "title": "Garden Analysis",
         "variables": {"tuin_grootte": 50},
-        "main_analysis": "Big garden.",
+        "main_analysis": "Big garden with excellent outdoor space.",
         "comparison": {
             "marcel": "Marcel vindt de tuin groot genoeg voor zijn hobby.", 
             "petra": "Petra geniet van de zon in deze ruime tuin."

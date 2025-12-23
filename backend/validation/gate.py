@@ -1,63 +1,259 @@
-from typing import Dict, Any, List
+"""
+Validation Gate - The Final Enforcement Layer
+
+This module validates chapter output BEFORE it can be rendered.
+It is called by PipelineSpine after EVERY chapter generation.
+
+INVARIANTS ENFORCED:
+1. Ownership: Chapters may not display variables they don't own
+2. Raw Fact Restatement: AI may not restate raw numbers outside owned chapters
+3. Preference Reasoning: Marcel & Petra analysis must be substantive
+4. Completeness: Required fields must be present
+
+If validation fails, the chapter CANNOT be rendered.
+This is not advisory - this is a hard gate.
+"""
+
+from typing import Dict, Any, List, Set
+import re
 import logging
 from backend.domain.ownership import OwnershipMap
-from backend.domain.registry import CanonicalRegistry
+from backend.domain.chapter_variables import get_chapter_variables
 
 logger = logging.getLogger(__name__)
+
 
 class ValidationGate:
     """
     Layer 4: Validation Gate.
+    
     Ensures nothing low-quality ever reaches the UI.
+    This is the FINAL enforcement layer before rendering.
     """
     
+    # Chapters that own financial data and may display prices
+    PRICE_OWNER_CHAPTERS = {0, 10}  # Executive Summary, Financial Analysis
+    
+    # Chapters that own area/size data
+    AREA_OWNER_CHAPTERS = {0, 1, 5, 7}  # Executive, General, Layout, Garden
+    
+    # Minimum length for preference reasoning (characters)
+    MIN_PREFERENCE_LENGTH = 10
+    
+    # Fields that are considered "raw facts" and must not be restated verbatim
+    RAW_FACT_FIELDS = ['asking_price_eur', 'living_area_m2', 'plot_area_m2', 'build_year']
+    
     @staticmethod
-    def validate_chapter_output(chapter_id: int, output: Dict[str, Any], registry_context: Dict[str, Any]) -> List[str]:
+    def validate_chapter_output(
+        chapter_id: int, 
+        output: Dict[str, Any], 
+        registry_context: Dict[str, Any]
+    ) -> List[str]:
         """
-        Validates AI output against the Registry and Ownership rules.
-        Returns a list of error strings. If empty, validation passed.
+        Validates chapter output against Registry and Ownership rules.
+        
+        Args:
+            chapter_id: The chapter number (0-13)
+            output: The chapter output dict to validate
+            registry_context: The full registry as a dict (for cross-reference)
+        
+        Returns:
+            List of error strings. Empty list = validation passed.
         """
         errors = []
         
-        # 1. Validation: No Duplicate Registry IDs on Page
-        # We check if the 'variables' returned by AI are allowed for this chapter.
-        # This prevents the AI from inventing new variables or moving variables to the wrong chapter.
+        # =====================================================================
+        # VALIDATION 1: OWNERSHIP - Variables must be owned by this chapter
+        # =====================================================================
+        errors.extend(ValidationGate._check_ownership(chapter_id, output, registry_context))
         
-        allowed_vars = OwnershipMap.get_owned_variables(chapter_id)
-        returned_vars = output.get('variables', {})
+        # =====================================================================
+        # VALIDATION 2: RAW FACT RESTATEMENT - No verbatim numbers in wrong chapters
+        # =====================================================================
+        errors.extend(ValidationGate._check_raw_fact_restatement(chapter_id, output, registry_context))
         
-        for key in returned_vars.keys():
-            if key not in allowed_vars:
-                # Allow 'status' or 'confidence' meta-keys if they sneak in, but strictly check content keys
-                # We relax this slightly: if it's NOT in the registry context at all, it might be a new AI-inferred variable
-                # which IS allowed if it's purely interpretive.
-                # BUT if it is a known Registry Key (e.g. 'asking_price_eur') and NOT allowed here, FAIL.
-                
-                # Check if it's a known system variable being misplaced
-                # (Simple check: is it in the full registry context?)
-                if key in registry_context and key not in allowed_vars:
-                     errors.append(f"Ownership Violation: Variable '{key}' is not allowed in Chapter {chapter_id}.")
+        # =====================================================================
+        # VALIDATION 3: PREFERENCE REASONING - Marcel & Petra must be substantive
+        # =====================================================================
+        errors.extend(ValidationGate._check_preference_reasoning(chapter_id, output))
         
-        # 2. Validation: AI Text Contains No Raw Facts (Hard to check perfectly without NLP, but we can search for exact numbers)
-        # Strategy: Scan main_analysis for price/area IF this chapter doesn't own them.
-        main_text = output.get('main_analysis', '')
+        # =====================================================================
+        # VALIDATION 4: REQUIRED FIELDS - Minimum structure must be present
+        # =====================================================================
+        errors.extend(ValidationGate._check_required_fields(chapter_id, output))
         
-        # Example check: Don't mention price in "Garden" chapter
-        if chapter_id != 0 and chapter_id != 10: # 0=Executive, 10=Finance
-            price = registry_context.get('asking_price_eur')
-            if price and str(price) in main_text:
-                 # Allow strict exceptions? No, user says "AI may not restate the fact"
-                 # heuristic: "1500000" might appear. "1.500.000" might appear.
-                 pass # We skip this aggressive check for now to avoid false positives on small numbers like "4 bedrooms"
+        if errors:
+            logger.warning(f"ValidationGate: Chapter {chapter_id} failed with {len(errors)} errors")
         
-        # 3. Validation: Preference Reasoning Present
-        # User rule: "preference reasoning present where applicable"
-        # We check the 'comparison' block
-        if 'comparison' in output:
-             comp = output['comparison']
-             if not comp.get('marcel') or len(comp.get('marcel')) < 10:
-                 errors.append("Validation Failure: Marcel preference reasoning missing or too short.")
-             if not comp.get('petra') or len(comp.get('petra')) < 10:
-                 errors.append("Validation Failure: Petra preference reasoning missing or too short.")
-                 
         return errors
+    
+    @staticmethod
+    def _check_ownership(
+        chapter_id: int, 
+        output: Dict[str, Any], 
+        registry_context: Dict[str, Any]
+    ) -> List[str]:
+        """Check that chapter only displays variables it owns."""
+        errors = []
+        
+        allowed_vars = get_chapter_variables(chapter_id)
+        
+        # Also allow common meta-variables
+        meta_vars = {'status', 'confidence', 'object_focus', 'vertrouwen'}
+        allowed_with_meta = allowed_vars | meta_vars
+        
+        # Check variables in output
+        returned_vars = output.get('variables', {})
+        if isinstance(returned_vars, dict):
+            for key in returned_vars.keys():
+                if key not in allowed_with_meta:
+                    # Is this a known registry variable being misplaced?
+                    if key in registry_context:
+                        errors.append(
+                            f"Ownership Violation: Variable '{key}' is not owned by Chapter {chapter_id}. "
+                            f"Check chapter_variables.py for ownership rules."
+                        )
+        
+        # Check chapter_data.variables if present
+        chapter_data = output.get('chapter_data', {})
+        if isinstance(chapter_data, dict):
+            cd_vars = chapter_data.get('variables', {})
+            if isinstance(cd_vars, dict):
+                for key in cd_vars.keys():
+                    if key not in allowed_with_meta and key in registry_context:
+                        errors.append(
+                            f"Ownership Violation: Variable '{key}' in chapter_data is not owned by Chapter {chapter_id}."
+                        )
+        
+        return errors
+    
+    @staticmethod
+    def _check_raw_fact_restatement(
+        chapter_id: int,
+        output: Dict[str, Any],
+        registry_context: Dict[str, Any]
+    ) -> List[str]:
+        """Check that raw facts are not restated verbatim in text."""
+        errors = []
+        
+        # Get main analysis text
+        main_text = str(output.get('main_analysis', ''))
+        chapter_data = output.get('chapter_data', {})
+        if isinstance(chapter_data, dict):
+            main_text += " " + str(chapter_data.get('main_analysis', ''))
+        
+        # Check price restatement (only in non-owner chapters)
+        if chapter_id not in ValidationGate.PRICE_OWNER_CHAPTERS:
+            price = registry_context.get('asking_price_eur')
+            if price and isinstance(price, (int, float)) and price > 10000:
+                price_str = str(int(price))
+                # Check for exact number (avoiding small numbers like "4" which could be "4 rooms")
+                if len(price_str) >= 5 and price_str in main_text:
+                    errors.append(
+                        f"Raw Fact Violation: Price '{price}' appears verbatim in Chapter {chapter_id} text. "
+                        f"Only Chapters {ValidationGate.PRICE_OWNER_CHAPTERS} may display prices."
+                    )
+        
+        # Check living area restatement
+        if chapter_id not in ValidationGate.AREA_OWNER_CHAPTERS:
+            area = registry_context.get('living_area_m2')
+            if area and isinstance(area, (int, float)) and area > 50:
+                area_str = str(int(area))
+                # Pattern: area followed by m2/m²
+                pattern = rf'\b{area_str}\s*m[²2]'
+                if re.search(pattern, main_text, re.IGNORECASE):
+                    errors.append(
+                        f"Raw Fact Violation: Living area '{area} m²' appears verbatim in Chapter {chapter_id} text."
+                    )
+        
+        return errors
+    
+    @staticmethod
+    def _check_preference_reasoning(chapter_id: int, output: Dict[str, Any]) -> List[str]:
+        """Check that Marcel & Petra reasoning is substantive."""
+        errors = []
+        
+        # Get comparison block
+        comparison = output.get('comparison', {})
+        
+        # Also check in chapter_data
+        chapter_data = output.get('chapter_data', {})
+        if isinstance(chapter_data, dict) and 'comparison' in chapter_data:
+            comparison = chapter_data.get('comparison', comparison)
+        
+        if not isinstance(comparison, dict):
+            # No comparison block is allowed for some chapters
+            return errors
+        
+        marcel_text = comparison.get('marcel', '') or ''
+        petra_text = comparison.get('petra', '') or ''
+        
+        # If comparison exists, it must be substantive
+        if comparison:
+            if len(str(marcel_text)) < ValidationGate.MIN_PREFERENCE_LENGTH:
+                errors.append(
+                    f"Preference Reasoning Missing: Marcel analysis in Chapter {chapter_id} "
+                    f"is too short ({len(str(marcel_text))} chars, minimum {ValidationGate.MIN_PREFERENCE_LENGTH})."
+                )
+            
+            if len(str(petra_text)) < ValidationGate.MIN_PREFERENCE_LENGTH:
+                errors.append(
+                    f"Preference Reasoning Missing: Petra analysis in Chapter {chapter_id} "
+                    f"is too short ({len(str(petra_text))} chars, minimum {ValidationGate.MIN_PREFERENCE_LENGTH})."
+                )
+        
+        return errors
+    
+    @staticmethod
+    def _check_required_fields(chapter_id: int, output: Dict[str, Any]) -> List[str]:
+        """Check that required fields are present."""
+        errors = []
+        
+        # Must have an id
+        if not output.get('id'):
+            errors.append(f"Required Field Missing: 'id' not present in Chapter {chapter_id} output.")
+        
+        # Must have title
+        if not output.get('title'):
+            errors.append(f"Required Field Missing: 'title' not present in Chapter {chapter_id} output.")
+        
+        # Must have main_analysis OR chapter_data.main_analysis
+        main = output.get('main_analysis', '')
+        chapter_data = output.get('chapter_data', {})
+        cd_main = chapter_data.get('main_analysis', '') if isinstance(chapter_data, dict) else ''
+        
+        if not main and not cd_main:
+            errors.append(
+                f"Required Field Missing: 'main_analysis' not present in Chapter {chapter_id}. "
+                f"Every chapter must have content."
+            )
+        
+        return errors
+    
+    @staticmethod
+    def validate_full_report(
+        chapters: Dict[int, Dict[str, Any]],
+        registry_context: Dict[str, Any]
+    ) -> Dict[int, List[str]]:
+        """
+        Validate all chapters in a report.
+        
+        Returns:
+            Dict mapping chapter_id to list of errors. Empty lists = passed.
+        """
+        results = {}
+        
+        for chapter_id, output in chapters.items():
+            errors = ValidationGate.validate_chapter_output(
+                int(chapter_id), 
+                output, 
+                registry_context
+            )
+            results[int(chapter_id)] = errors
+        
+        passed = sum(1 for errs in results.values() if not errs)
+        failed = len(results) - passed
+        
+        logger.info(f"ValidationGate: Full report validation - {passed} passed, {failed} failed")
+        
+        return results

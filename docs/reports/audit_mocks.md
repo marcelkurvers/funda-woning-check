@@ -62,17 +62,17 @@ Found **55** potential issues.
 ### 📄 `chapters/formatter.py`
 | Line | Type | Content |
 | :--- | :--- | :--- |
-| 312 | **Dummy Data** | `monthly = round(price * 0.005) # Dummy calculation` |
+| 340 | **Dummy Data** | `monthly = round(price * 0.005) # Dummy calculation` |
 
 ### 📄 `chapters/chapter_0.py`
 | Line | Type | Content |
 | :--- | :--- | :--- |
-| 230 | **Hardcoded Item** | `# Merge hardcoded pros/cons with AI narrative results` |
+| 181 | **Hardcoded Item** | `# Merge hardcoded pros/cons with AI narrative results` |
 
 ### 📄 `static/preferences.html`
 | Line | Type | Content |
 | :--- | :--- | :--- |
-| 179 | **Generic Variable Name** | `<!-- Sticky Action Bar -->` |
+| 180 | **Generic Variable Name** | `<!-- Sticky Action Bar -->` |
 
 ### 📄 `static/styles.css`
 | Line | Type | Content |

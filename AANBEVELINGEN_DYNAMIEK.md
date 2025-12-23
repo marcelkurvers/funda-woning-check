@@ -1,6 +1,6 @@
 # Expert Analyse: Dynamisch Vermogen (Per Hoofdstuk)
 
-**Datum:** Tue Dec 23 14:29:15 CET 2025
+**Datum:** Tue Dec 23 22:54:08 CET 2025
 **Score Model:** v3.0 (Granular Chapter Analysis)
 
 ## Strategisch Inzicht
@@ -11,10 +11,10 @@ Dit bevestigt dat de nieuwe aanpak werkt en uitgerold moet worden.
 
 | ID | Titel | Content Dynamiek (0-10) | Structuur Dynamiek | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | 1. Algemene Woningkenmerken | **3.2** | 0.0 | ⚠️ Moderate |
-| 2 | 2. Persoonlijke eisen & matchanalyse | **0.0** | 0.0 | 🛑 Static |
-| 3 | 3. Bouwkundige Staat | **3.8** | 0.0 | ⚠️ Moderate |
-| 4 | 4. Energie & Duurzaamheid | **2.5** | 0.0 | 🛑 Static |
+| 1 | 1. Algemene Woningkenmerken | **2.6** | 0.0 | 🛑 Static |
+| 2 | 2. Persoonlijke eisen & matchanalyse | **0.1** | 0.0 | 🛑 Static |
+| 3 | 3. Bouwkundige Staat | **3.1** | 0.0 | ⚠️ Moderate |
+| 4 | 4. Energie & Duurzaamheid | **5.8** | 0.0 | ⚠️ Moderate |
 | 5 | 5. Indeling & Ruimtegebruik | **2.4** | 0.0 | 🛑 Static |
 | 6 | 6. Onderhoud & Afwerking | **2.8** | 0.0 | 🛑 Static |
 | 7 | 7. Tuin & Buitenruimte | **2.0** | 0.0 | 🛑 Static |
@@ -22,10 +22,10 @@ Dit bevestigt dat de nieuwe aanpak werkt en uitgerold moet worden.
 | 9 | 9. Juridische Aspecten | **1.5** | 0.0 | 🛑 Static |
 | 10 | 10. Financiële Analyse | **2.8** | 0.0 | 🛑 Static |
 | 11 | 11. Marktpositie | **1.5** | 0.0 | 🛑 Static |
-| 12 | 12. Advies & Conclusie | **1.7** | 0.0 | 🛑 Static |
+| 12 | 12. Advies & Conclusie | **1.8** | 0.0 | 🛑 Static |
 
 ## Totaalscore
-**Gemiddelde Content Dynamiek:** 2.1 / 10
+**Gemiddelde Content Dynamiek:** 2.3 / 10
 
 ## Aanbevelingen & Roadmap
 1. **Rol de 'Logic Engine' uit naar H2-H12:** Implementeer de `_narrative_chX` sentence builders voor de overige hoofdstukken.

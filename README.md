@@ -1,4 +1,4 @@
-# AI Woning Rapport v6.1.0
+# AI Woning Rapport v7.0.0
 
 [![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue?logo=docker)](https://ghcr.io/marcelkurvers/funda-app)
 [![Build Status](https://github.com/marcelkurvers/funda-app/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/marcelkurvers/funda-app/actions/workflows/docker-publish.yml)
@@ -13,10 +13,11 @@ The **AI Woning Rapport** is designed to provide potential homebuyers with deep,
 
 ### Key Features
 
+- **🔒 Pipeline Spine Architecture (v7.0)**: Structural enforcement of all quality guarantees. Single canonical registry, mandatory validation gates, and locked immutable truth. Every report flows through one unavoidable execution path.
 - **AI Trust & Transparency Architecture**: Every insight is labeled as **Fact** (from data) or **Inferred** (AI analysis), complete with **AI Provenance** (model/provider tracking) and **Proof of Reasoning**.
 - **Smart Variable Display Strategy**: Core property data shown ONLY once (Chapter 0), with each chapter displaying only relevant, domain-specific variables. No repetition, maximum clarity.
 - **Marcel & Petra Preference Matching**: Automatic calculation and visual indication of how each property variable matches personal preferences, with color-coded indicators (blue for Marcel, pink for Petra, purple for both).
-- **Domain Variable Authority**: Strict adherence to a domain-specific set of 14 variables per chapter, ensuring "Onbekend" states are explicitly detected and surfaced.
+- **Ownership Enforcement**: Strict ownership rules per chapter - validation gate blocks chapters from displaying data they don't own.
 - **Multi-Check Pro Link**: Chrome/Edge extension for one-click ingestion from any Funda listing, bypassing CAPTCHAs and anti-bot measures.
 - **Dynamic Interpretation Pipeline**: AI-driven attribute discovery that automatically extracts and classifies property facts with confidence scoring.
 - **Multi-Source Ingestion**: Parse data via Funda URLs or direct HTML/Text paste. Robust handling of image pasting with automated upload.

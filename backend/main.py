@@ -303,6 +303,12 @@ app.include_router(config_router.router)
 
 # --- PIPELINE ---
 def simulate_pipeline(run_id):
+    """
+    Main pipeline execution function.
+    
+    CRITICAL: This function now uses PipelineSpine for chapter generation.
+    All chapters pass through ValidationGate before being stored.
+    """
     logger.info(f"Pipeline: Starting run {run_id}")
     # Refresh AI at start of pipeline to ensure latest settings are used
     init_ai_provider()
@@ -390,39 +396,59 @@ def simulate_pipeline(run_id):
             update_run(run_id, status="error", steps_json=json.dumps(steps))
             return # Stop pipeline on failure
 
-    # 2. KPIs
-    logger.info(f"Pipeline [{run_id}]: Computing KPIs & Enriching Data")
+    # =========================================================================
+    # SPINE-BASED EXECUTION (Gravity Installed)
+    # =========================================================================
+    # From here, we use PipelineSpine which enforces:
+    # - Single canonical registry
+    # - Locked immutable truth
+    # - Mandatory validation for every chapter
+    # =========================================================================
     
-    # ENRICHMENT STEP (Single Source of Truth)
-    # This ensures consistency across all chapters and metrics
-    try:
-        core = DataEnricher.enrich(core)
-    except Exception as e:
-        logger.error(f"Enrichment failed: {e}")
-        # Continue with best effort
-    
+    logger.info(f"Pipeline [{run_id}]: Starting Spine-Based Execution")
     steps["compute_kpis"] = "running"
     update_run(run_id, steps_json=json.dumps(steps))
-    kpis = build_kpis(core)
-    steps["compute_kpis"] = "done"
-    # Update property_core_json in DB so frontend gets the enriched values (e.g. AI Score)
-    update_run(run_id, steps_json=json.dumps(steps), kpis_json=json.dumps(kpis), property_core_json=json.dumps(core))
     
-    # 3. Chapters
-    logger.info(f"Pipeline [{run_id}]: Generating Chapters")
+    try:
+        # Get preferences
+        prefs = get_kv("preferences", {})
+        if 'ai_model' not in prefs or not prefs['ai_model']:
+            prefs['ai_model'] = settings.ai.model
+        if 'ai_provider' not in prefs or not prefs['ai_provider']:
+            prefs['ai_provider'] = settings.ai.provider
+        
+        # Execute through the spine - THIS IS THE CRITICAL PATH
+        from pipeline.bridge import execute_report_pipeline
+        chapters, kpis, enriched_core = execute_report_pipeline(
+            run_id=run_id,
+            raw_data=core,
+            preferences=prefs
+        )
+        
+        # Update core with enriched data for database storage
+        core = enriched_core
+        
+        steps["compute_kpis"] = "done"
+        update_run(run_id, steps_json=json.dumps(steps), kpis_json=json.dumps(kpis), property_core_json=json.dumps(core))
+        
+    except Exception as e:
+        logger.error(f"Pipeline [{run_id}]: Spine execution failed: {e}")
+        update_run(run_id, status="error", steps_json=json.dumps(steps))
+        return
+    
+    # 3. Finalize
+    logger.info(f"Pipeline [{run_id}]: Finalizing Chapters")
     steps["generate_chapters"] = "running"
     update_run(run_id, steps_json=json.dumps(steps))
     
     try:
-        chapters = build_chapters(core)
         unknowns = build_unknowns(core)
     except Exception as e:
-        logger.error(f"Pipeline [{run_id}]: Chapter generation failed: {e}")
-        update_run(run_id, status="error", steps_json=json.dumps(steps))
-        return # Stop pipeline as requested
+        logger.error(f"Pipeline [{run_id}]: Build unknowns failed: {e}")
+        unknowns = []
     
     steps["generate_chapters"] = "done"
-    logger.info(f"Pipeline [{run_id}]: Complete")
+    logger.info(f"Pipeline [{run_id}]: Complete - Validation: {kpis.get('validation_passed', 'unknown')}")
     update_run(run_id, steps_json=json.dumps(steps), chapters_json=json.dumps(chapters), unknowns_json=json.dumps(unknowns), status="done")
 
 def build_chapters(core: Dict[str, Any]) -> Dict[str, Any]:
