@@ -11,7 +11,7 @@
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 antialiased font-sans;
+    @apply bg-emerald-50 text-emerald-900 antialiased font-sans;
   }
 
   h1,
@@ -26,7 +26,7 @@
 
 @layer components {
   .magazine-drop-cap::first-letter {
-    @apply text-6xl font-black font-serif mr-3 float-left text-slate-900 leading-none mt-2;
+    @apply text-6xl font-black font-serif mr-3 float-left text-emerald-900 leading-none mt-2;
   }
 
   .glass-card {
@@ -47,7 +47,7 @@
 }
 
 .text-gradient {
-  @apply bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-500;
+  @apply bg-clip-text text-transparent bg-gradient-to-br from-emerald-900 to-emerald-500;
 }
 
 .persona-glow-blue {
@@ -74,11 +74,11 @@
 }
 
 .magazine-drop-cap::first-letter {
-  @apply text-8xl font-black font-serif mr-4 float-left text-slate-900 leading-[0.8] mt-2;
+  @apply text-8xl font-black font-serif mr-4 float-left text-emerald-900 leading-[0.8] mt-2;
 }
 
 ::selection {
-  @apply bg-blue-100 text-slate-900;
+  @apply bg-emerald-100 text-emerald-900;
 }
 
 /* Editorial Formatting Extension */

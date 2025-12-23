@@ -31,6 +31,7 @@ from __version__ import __version__
 from scraper import Scraper
 from parser import Parser
 from consistency import ConsistencyChecker
+from enrichment import DataEnricher
 from chapters.registry import get_chapter_class
 from intelligence import IntelligenceEngine
 from ai.provider_factory import ProviderFactory
@@ -353,8 +354,25 @@ def simulate_pipeline(run_id):
         except Exception as e:
             logger.error(f"Pipeline [{run_id}]: Parse failed: {e}")
             
+
     steps["scrape_funda"] = "done"
     update_run(run_id, steps_json=json.dumps(steps), property_core_json=json.dumps(core))
+    
+    # 1a. Consistency Validation
+    if row["funda_html"] and core:
+        try:
+             checker = ConsistencyChecker()
+             # Extract text for validation scanning
+             from bs4 import BeautifulSoup
+             soup = BeautifulSoup(row["funda_html"], "html.parser")
+             text_body = soup.get_text(separator="\n")
+             
+             issues = checker.check(text_body, core)
+             if issues:
+                 core["_validation_issues"] = [i for i in issues if i['status'] == 'mismatch']
+                 logger.info(f"Pipeline [{run_id}]: Found {len(core.get('_validation_issues', []))} validation mismatches.")
+        except Exception as e:
+            logger.error(f"Validation failed: {e}")
     
     # 1b. Dynamic Extraction (if HTML present)
     if row["funda_html"]:
@@ -373,12 +391,22 @@ def simulate_pipeline(run_id):
             return # Stop pipeline on failure
 
     # 2. KPIs
-    logger.info(f"Pipeline [{run_id}]: Computing KPIs")
+    logger.info(f"Pipeline [{run_id}]: Computing KPIs & Enriching Data")
+    
+    # ENRICHMENT STEP (Single Source of Truth)
+    # This ensures consistency across all chapters and metrics
+    try:
+        core = DataEnricher.enrich(core)
+    except Exception as e:
+        logger.error(f"Enrichment failed: {e}")
+        # Continue with best effort
+    
     steps["compute_kpis"] = "running"
     update_run(run_id, steps_json=json.dumps(steps))
     kpis = build_kpis(core)
     steps["compute_kpis"] = "done"
-    update_run(run_id, steps_json=json.dumps(steps), kpis_json=json.dumps(kpis))
+    # Update property_core_json in DB so frontend gets the enriched values (e.g. AI Score)
+    update_run(run_id, steps_json=json.dumps(steps), kpis_json=json.dumps(kpis), property_core_json=json.dumps(core))
     
     # 3. Chapters
     logger.info(f"Pipeline [{run_id}]: Generating Chapters")
@@ -479,7 +507,12 @@ def build_kpis(core: Dict[str, Any]) -> Dict[str, Any]:
     completeness = round(present / len(fields), 2)
     
     # Dynamic Score Logic based on preferences
-    fit_score = IntelligenceEngine.calculate_fit_score(core)
+    # Use pre-calculated score from DataEnricher
+    if 'total_match_score' in core:
+         fit_score = core['total_match_score'] / 100.0
+    else:
+         fit_score = 0.5
+
     value_text = core.get("asking_price_eur", "€ N/B")
     
     cards = [

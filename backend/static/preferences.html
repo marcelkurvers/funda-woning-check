@@ -24,19 +24,20 @@
     </style>
 </head>
 
-<body class="bg-slate-50 text-slate-900 min-h-screen font-sans">
+<body class="bg-emerald-50 text-emerald-900 min-h-screen font-sans">
 
     <!-- Full Width Container for 4K -->
     <div class="w-full max-w-[2400px] mx-auto py-8 px-8">
 
-        <div class="flex items-center justify-between mb-8 pb-4 border-b border-slate-200">
+        <div class="flex items-center justify-between mb-8 pb-4 border-b border-emerald-200">
             <div>
-                <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight">AI Woning Voorkeuren <span
-                        class="text-blue-600">2.0</span></h1>
-                <p class="text-lg text-slate-500 mt-1">Gepersonaliseerde analyse-parameters voor Marcel & Petra.</p>
+                <h1 class="text-4xl font-extrabold text-emerald-900 tracking-tight">AI Woning Voorkeuren <span
+                        class="text-emerald-600">6.1</span></h1>
+                <p class="text-lg text-emerald-600/80 mt-1">Gepersonaliseerde analyse-parameters voor Marcel & Petra.
+                </p>
             </div>
             <a href="/"
-                class="group flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-600 hover:text-blue-600 hover:border-blue-300 transition-all font-medium shadow-sm">
+                class="group flex items-center gap-2 px-5 py-2.5 bg-white border border-emerald-200 rounded-lg text-emerald-600 hover:text-emerald-800 hover:border-emerald-300 transition-all font-medium shadow-sm">
                 <svg class="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" fill="none"
                     stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -51,7 +52,7 @@
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 h-full">
 
                 <!-- MARCEL SECTION (LEFT) -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                <div class="bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden flex flex-col">
                     <div
                         class="p-8 bg-gradient-to-r from-blue-50 to-white border-b border-blue-100 flex items-center gap-5">
                         <div
@@ -93,7 +94,7 @@
                 </div>
 
                 <!-- PETRA SECTION (RIGHT) -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                <div class="bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden flex flex-col">
                     <div
                         class="p-8 bg-gradient-to-r from-pink-50 to-white border-b border-pink-100 flex items-center gap-5">
                         <div
@@ -138,24 +139,24 @@
 
             <!-- AI CONFIGURATION SECTION -->
             <div id="ai-config-section"
-                class="mt-8 mb-24 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-6 bg-slate-900 text-white flex items-center justify-between">
+                class="mt-8 mb-24 bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden">
+                <div class="p-6 bg-emerald-500 text-white flex items-center justify-between">
                     <div class="flex items-center gap-4">
-                        <div class="p-2 bg-blue-500/20 rounded-lg">
-                            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="p-2 bg-white/20 rounded-lg">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
                         </div>
                         <div>
                             <h2 class="text-xl font-bold">AI Rapport Configuratie</h2>
-                            <p class="text-slate-400 text-sm">Selecteer de leverancier en het gewenste AI-model.</p>
+                            <p class="text-emerald-100 text-sm">Selecteer de leverancier en het gewenste AI-model.</p>
                         </div>
                     </div>
                 </div>
                 <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">AI Leverancier</label>
+                        <label class="block text-sm font-bold text-emerald-800 mb-2">AI Leverancier</label>
                         <select name="ai_provider" id="ai_provider_select"
                             class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 bg-white">
                             <option value="openai">OpenAI (GPT-4o)</option>
@@ -165,7 +166,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">AI Model</label>
+                        <label class="block text-sm font-bold text-emerald-800 mb-2">AI Model</label>
                         <select id="ai_model_select" name="ai_model"
                             class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 bg-white">
                             <option value="">Laden...</option>
@@ -179,10 +180,10 @@
             <!-- Sticky Action Bar -->
             <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] w-auto">
                 <div
-                    class="bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-4 border border-slate-700/50 backdrop-blur-sm">
+                    class="bg-emerald-500 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-4 border border-emerald-400/50 backdrop-blur-sm">
                     <p id="status-msg" class="text-sm font-medium text-emerald-400 hidden"></p>
                     <button type="submit" id="btn-save"
-                        class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-8 rounded-full shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2 text-sm">
+                        class="bg-white text-emerald-600 hover:bg-emerald-50 font-bold py-2.5 px-8 rounded-full shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2 text-sm">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
                             </path>
@@ -190,7 +191,7 @@
                         Opslaan
                     </button>
                     <button type="button" onclick="history.back()"
-                        class="text-slate-400 hover:text-white font-medium text-xs px-2 border-l border-slate-700">
+                        class="text-emerald-100 hover:text-white font-medium text-xs px-2 border-l border-emerald-400">
                         Annuleren
                     </button>
                 </div>
@@ -347,8 +348,9 @@
 
                 const m = data.marcel || {};
                 const p = data.petra || {};
-                const m_all = m.priorities || [];
-                const p_all = p.priorities || [];
+                // Default to all tags if no priorities saved (undefined or from empty init)
+                const m_all = m.priorities || Object.values(PREF_DEFINITIONS.marcel).flat();
+                const p_all = p.priorities || Object.values(PREF_DEFINITIONS.petra).flat();
 
                 // Load AI Settings
                 const provider = (data.ai_provider || 'openai').toLowerCase();

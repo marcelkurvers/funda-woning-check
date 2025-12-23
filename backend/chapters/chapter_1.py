@@ -20,35 +20,25 @@ class GeneralFeatures(BaseChapter):
         # 1. Ask Intelligence Engine for Dynamic Narrative
         narrative = IntelligenceEngine.generate_chapter_narrative(1, ctx)
         
-        # 2. Key Metrics - Use new fields with fallback to old names
-        living_area = IntelligenceEngine._parse_int(
-            ctx.get('living_area_m2') or ctx.get('oppervlakte', '0')
-        )
-        plot_area = IntelligenceEngine._parse_int(
-            ctx.get('plot_area_m2') or ctx.get('perceel', '0')
-        )
-        # Volume Calculation (Use actual value or estimate carefully)
-        # Use abs() to ensure positive volume if bad math occurs
-        volume = abs(living_area * 3)
+
+        # 2. Key Metrics - Use Enriched Data (Single Source of Truth)
+        living_area = ctx.get('living_area_parsed', 0)
+        plot_area = ctx.get('plot_area_parsed', 0)
+        volume = ctx.get('volume_m3', 0)
         
-        # Use actual parsed bedrooms if available, otherwise estimate
-        bedrooms = ctx.get('bedrooms')
-        rooms_count = IntelligenceEngine._parse_int(bedrooms) if bedrooms else max(3, int(living_area / 25))
+        rooms_count = ctx.get('rooms_parsed', 0)
+        bedrooms = ctx.get('bedrooms_parsed', 0)
+        if not rooms_count: rooms_count = max(3, int(living_area / 25))
         
         bathrooms = ctx.get('bathrooms', '?')
         property_type = ctx.get('property_type', 'Woonhuis')
         
-        # Additional calculations for new metrics
-        price_val = IntelligenceEngine._parse_int(
-            ctx.get('asking_price_eur') or ctx.get('prijs') or '0'
-        )
-        price_m2 = round(price_val / living_area) if living_area else 0
+        price_val = ctx.get('price_parsed', 0)
+        price_m2 = ctx.get('price_per_m2', 0)
         market_avg_m2 = int(ctx.get('avg_m2_price', 4800) or 4800)
         label = ctx.get('energy_label') or ctx.get('label') or '?'
-        reno_cost = 45000 if "F" in label or "G" in label else 25000 if "D" in label or "E" in label else 0
-        construction_year = IntelligenceEngine._parse_int(
-            ctx.get('build_year') or ctx.get('bouwjaar') or '0'
-        )
+        
+        construction_year = ctx.get('construction_year', 0)
         
         # 3. Layout Construction (Modern Dashboard)
         hero = {

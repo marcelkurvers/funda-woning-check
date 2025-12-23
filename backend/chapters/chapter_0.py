@@ -34,39 +34,17 @@ class ExecutiveSummary(BaseChapter):
         if is_generic and narrative.get('intro'):
              narrative['intro'] = narrative['intro'].replace("van de dit object", "van dit object")
 
-        # Parse inputs
-        # Parse inputs
-        try:
-            # Regex to find the first valid number sequence, ignoring dots but keeping the structure
-            # e.g. "€ 1.400.000" -> "1400000"
-            price_raw = str(ctx.get('prijs', '0'))
-            size_raw = str(ctx.get('oppervlakte', '0'))
-
-            # Extract digits from price (handle 1.250.000 -> 1250000)
-            price_digits = re.sub(r'[^\d]', '', price_raw)
-            price_val = int(price_digits) if price_digits else 0
-            
-            # Extract digits from size (handle 1.016 m2 -> 1016)
-            # Remove decimals (after comma) and then strip non-digits
-            base_size = size_raw.split(',')[0] 
-            size_digits = re.sub(r'[^\d]', '', base_size)
-            size_val = int(size_digits) if size_digits else 1
-            
-            if size_val == 0: size_val = 1
-            
-            price_m2 = round(price_val / size_val)
-        except Exception as e:
-            logging.error(f"Parsing Error: {e}")
-            price_val = 0
-            size_val = 1
-            price_m2 = 0
-
-        year = ctx.get('bouwjaar', '2000')
-        label = ctx.get('label', '?').upper()
+        # Use Enriched Data (Single Source of Truth)
+        price_val = ctx.get('price_parsed', 0)
+        size_val = ctx.get('living_area_parsed', 1)
+        price_m2 = ctx.get('price_per_m2', 0)
+        
+        year = ctx.get('construction_year', 2000)
+        label = (ctx.get('energy_label') or "?").upper()
         
         # Logic: Valuation
+        valuation_status = ctx.get('valuation_status', 'Marktconform')
         market_avg_m2 = int(ctx.get('avg_m2_price', 4800) or 4800) 
-        valuation_status = "Marktconform"
         trend = "neutral"
         if price_m2 > market_avg_m2 * 1.2:
             valuation_status = "Premium Segment"
@@ -75,47 +53,20 @@ class ExecutiveSummary(BaseChapter):
             valuation_status = "Potentiële Kans"
             trend = "down"
 
+
         # Logic: Renovation Risk & Costs
-        energy_reno_cost = 0
+        energy_reno_cost = ctx.get('energy_invest', 0)
+        sustain_advice = ctx.get('sustainability_advice', 'Standaard')
         
-        # Clean label for logic checks (take first letter or normalized)
-        label_clean = label if len(label) <= 3 else "Unknown"
-        
-        if any(x in label_clean for x in ["F", "G"]):
-            energy_reno_cost = 45000
-            sustain_advice = "Ingrijpende verduurzaming nodig."
-        elif any(x in label_clean for x in ["D", "E"]):
-            energy_reno_cost = 25000
-            sustain_advice = "Isolatie-update aanbevolen."
-        else:
-            sustain_advice = "Voldoet aan moderne standaarden."
-
         # Logic: Construction & Age Risk
-        construction_risk_cost = 0
-        try:
-            year_val = int(re.sub(r'[^\d]', '', str(year)) or 2000)
-            if year_val < 1990:
-                construction_alert = "Aandacht nodig: Dak, Leidingwerk & Asbest."
-                # Add risk buffer to cost consideration
-                construction_risk_cost = 15000 
-            else:
-                construction_alert = "Relatief jonge bouw; beperkt risico."
-        except Exception as e:
-            # construction_alert = "Bouwjaar verificatie vereist."
-            logging.warning(f"Bouwjaar verificatie vereist voor: {year} ({e})")
-            construction_alert = "Bouwjaar verificatie vereist."
-            year_val = 2000
-
-        total_expected_invest = energy_reno_cost + construction_risk_cost
+        construction_risk_cost = ctx.get('construction_invest', 0)
+        construction_alert = ctx.get('construction_alert', 'Check constructie.')
+        year_val = year
+        
+        total_expected_invest = ctx.get('estimated_reno_cost', energy_reno_cost + construction_risk_cost)
 
         # Logic: AI Score
-        base_score = 70
-        if price_m2 < market_avg_m2: base_score += 10
-        if "A" in label or "B" in label: base_score += 10
-        if "G" in label: base_score -= 15
-        if construction_risk_cost > 0: base_score -= 5
-        
-        ai_score = min(max(base_score, 0), 100)
+        ai_score = ctx.get('ai_score', 70)
         
 
 

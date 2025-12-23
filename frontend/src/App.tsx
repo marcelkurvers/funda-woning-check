@@ -153,7 +153,7 @@ function App() {
   const sortedChapters = Object.values(report.chapters).sort((a: any, b: any) => parseInt(a.id) - parseInt(b.id));
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden text-[13px] md:text-sm">
+    <div className="flex h-screen bg-emerald-50 font-sans text-emerald-900 overflow-hidden text-[13px] md:text-sm">
       <aside className="w-64 bg-white border-r border-slate-200 flex-shrink-0 h-full flex flex-col z-50 shadow-sm relative">
         <div className="p-6 border-b border-slate-100">
           <button onClick={() => setReport(null)} className="text-left group w-full">
@@ -161,7 +161,7 @@ function App() {
               <div className="p-1.5 bg-blue-600 rounded-lg">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
-              <div className="text-slate-900 font-serif font-bold text-lg tracking-tight group-hover:text-blue-600 transition-colors">AI Woning</div>
+              <div className="text-emerald-900 font-serif font-bold text-lg tracking-tight group-hover:text-blue-600 transition-colors">AI Woning</div>
             </div>
             <div className="text-xs text-slate-500 font-medium truncate pl-9" title={report.address}>{report.address}</div>
           </button>
@@ -205,7 +205,7 @@ function App() {
           </button>
           <div className="mt-4 px-3 flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-widest">
             <span>Version</span>
-            <span className="text-blue-500">v6.0.0-PREMIUM-DYNAMIC</span>
+            <span className="text-blue-500">v6.1.0-LIGHT-THEME</span>
           </div>
         </div>
       </aside>
@@ -230,7 +230,7 @@ function App() {
             <button onClick={() => setSettingsOpen(true)} className={`p-2 rounded-lg transition-all ${debugMode ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}>
               {debugMode ? <Bug className="w-5 h-5" /> : <Settings className="w-5 h-5" />}
             </button>
-            <button onClick={handleDownloadPdf} className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all font-bold text-xs shadow-lg shadow-slate-200">
+            <button onClick={handleDownloadPdf} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all font-bold text-xs shadow-lg shadow-emerald-200">
               <FileText className="w-4 h-4 text-blue-400" />
               <span>PDF Rapport</span>
             </button>
@@ -239,16 +239,16 @@ function App() {
 
         <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} debugMode={debugMode} setDebugMode={setDebugMode} />
 
-        <div className="flex-1 overflow-y-auto p-0 md:p-6 custom-scrollbar">
+        <div className={`flex-1 overflow-y-auto custom-scrollbar ${activeChapterId ? 'p-0' : 'p-0 md:p-6'}`}>
           {/* AI Provenance Status Bar (Global) - Hide when in Magazine View */}
           {!activeChapterId && (
-            <div className="mb-6 bg-slate-900 text-white rounded-xl shadow-lg p-4 flex flex-wrap items-center justify-between gap-4 border border-white/10 mx-6">
+            <div className="mb-6 bg-emerald-50 text-emerald-900 rounded-xl shadow-lg p-4 flex flex-wrap items-center justify-between gap-4 border border-emerald-200 mx-6">
               <div className="flex items-center gap-4">
-                <div className={`p-2 rounded-lg ${currentChapter?.provenance ? 'bg-blue-600' : 'bg-slate-700'}`}>
-                  <Sparkles className="w-4 h-4 text-white" />
+                <div className={`p-2 rounded-lg ${currentChapter?.provenance ? 'bg-blue-600' : 'bg-slate-200'}`}>
+                  <Sparkles className={`w-4 h-4 ${currentChapter?.provenance ? 'text-white' : 'text-slate-500'}`} />
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                     {currentChapter?.provenance ? 'AI Enrichment Status' : 'AI Offline / Cached'}
                   </div>
                   <div className="flex items-center gap-2">
@@ -265,15 +265,15 @@ function App() {
               </div>
               <div className="flex items-center gap-6">
                 <div className="flex flex-col items-end">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Provider & Model</span>
-                  <span className="text-xs font-medium text-blue-300">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Provider & Model</span>
+                  <span className="text-xs font-medium text-blue-600">
                     {currentChapter?.provenance?.provider || "Local"} / {currentChapter?.provenance?.model || "Mock/Cached"}
                   </span>
                 </div>
-                <div className="w-px h-8 bg-white/10" />
+                <div className="w-px h-8 bg-emerald-200" />
                 <div className="flex flex-col items-end">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Laatste Update</span>
-                  <span className="text-xs font-medium text-slate-300">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Laatste Update</span>
+                  <span className="text-xs font-medium text-slate-600">
                     {currentChapter?.provenance?.timestamp
                       ? new Date(currentChapter.provenance.timestamp).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
                       : "Onbekend"}
@@ -296,7 +296,7 @@ function App() {
               </div>
               <div className="flex-1 min-w-0 flex flex-col md:flex-row items-center justify-between w-full gap-4">
                 <div>
-                  <h2 className="text-xl font-black text-slate-900 tracking-tight truncate">{report.address}</h2>
+                  <h2 className="text-xl font-black text-emerald-900 tracking-tight truncate">{report.address}</h2>
                   <div className="text-xs text-slate-500 font-medium">Multi-Check Pro Analysis Report</div>
                 </div>
                 <div className="flex items-center gap-6 bg-slate-50 rounded-xl p-3 border border-slate-100">

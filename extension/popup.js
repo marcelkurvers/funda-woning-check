@@ -1,27 +1,46 @@
 document.addEventListener('DOMContentLoaded', () => {
     const btnAnalyze = document.getElementById('btn-analyze');
-    const btnPhotos = document.getElementById('btn-photos');
     const statusType = document.getElementById('page-type');
     const msg = document.getElementById('msg');
+    const statusDot = document.createElement('span'); // Create a dot for visual indicator 
+
+    // Insert the dot before the status text
+    statusDot.style.display = 'inline-block';
+    statusDot.style.width = '8px';
+    statusDot.style.height = '8px';
+    statusDot.style.borderRadius = '50%';
+    statusDot.style.marginRight = '8px';
+    statusType.parentNode.insertBefore(statusDot, statusType);
+
+    const colors = {
+        red: '#ef4444',    // Error / No Funda
+        yellow: '#eab308', // Funda found (general)
+        blue: '#3b82f6',   // Property found / Processing
+        green: '#22c55e',  // Success
+        white: '#f8fafc'
+    };
+
+    function setStatus(text, colorKey) {
+        statusType.textContent = text;
+        statusType.style.color = colors[colorKey];
+        statusDot.style.backgroundColor = colors[colorKey];
+        statusDot.style.boxShadow = `0 0 8px ${colors[colorKey]}`;
+    }
 
     // 1. Initial check: are we on Funda?
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const url = tabs[0].url;
         if (url && url.includes('funda.nl')) {
-            statusType.textContent = "Funda Gevonden";
             if (url.includes('/koop/') || url.includes('/huur/') || url.includes('/foto/') || url.includes('/media/') || url.includes('/overzicht/')) {
-                statusType.textContent = "Woning Gevonden";
+                setStatus("Woning Gevonden", 'blue');
                 btnAnalyze.disabled = false;
-                btnPhotos.disabled = false;
-                btnPhotos.style.opacity = "1";
             } else {
-                btnPhotos.disabled = true;
-                btnPhotos.title = "Alleen beschikbaar op een woning-pagina";
+                setStatus("Funda Gevonden", 'yellow');
+                btnAnalyze.disabled = true; // Still require listing page for full analysis
             }
         } else {
-            statusType.textContent = "Geen Funda Pagina";
+            setStatus("Geen Funda Pagina", 'red');
             btnAnalyze.disabled = true;
-            btnPhotos.disabled = true;
         }
     });
 
@@ -29,14 +48,10 @@ document.addEventListener('DOMContentLoaded', () => {
         processAction('extract_all');
     });
 
-    btnPhotos.addEventListener('click', () => {
-        processAction('get_photos');
-    });
-
     function processAction(action) {
         msg.textContent = "Verbinding maken...";
         msg.style.display = "block";
-        msg.style.color = "#f8fafc";
+        msg.style.color = colors.blue;
 
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             const activeTab = tabs[0];
@@ -46,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chrome.tabs.sendMessage(activeTab.id, { action: "ping" }, (pingResp) => {
                 if (chrome.runtime.lastError) {
                     msg.textContent = "Fout: Vernieuw de Funda pagina.";
-                    msg.style.color = "#fb7185";
+                    msg.style.color = colors.red;
                     return;
                 }
 
@@ -54,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 chrome.tabs.sendMessage(activeTab.id, { action }, (response) => {
                     if (chrome.runtime.lastError || !response) {
                         msg.textContent = "Fout bij extraheren.";
-                        msg.style.color = "#fb7185";
+                        msg.style.color = colors.red;
                         return;
                     }
                     sendToBackend(response);
@@ -83,22 +98,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (resp.ok) {
                 const result = await resp.json();
-                msg.textContent = "Succes! Klik om dashboard te openen.";
-                msg.style.color = "#4ade80";
-                msg.style.cursor = "pointer";
-                msg.className = "hover:underline";
+                msg.textContent = "Succes! Rapport wordt geopend...";
+                msg.style.color = colors.green;
+                setStatus("Analyse Voltooid", 'green');
 
-                msg.onclick = () => {
-                    window.open(`${apiUrl}/runs/${result.run_id}/status`, '_blank');
-                };
+                // Auto-open in new tab
+                setTimeout(() => {
+                    chrome.tabs.create({ url: `${apiUrl}/runs/${result.run_id}/status` });
+                }, 800);
             } else {
                 const errData = await resp.json().catch(() => ({}));
                 msg.textContent = "Fout: " + (errData.detail || resp.status);
-                msg.style.color = "#fb7185";
+                msg.style.color = colors.red;
             }
         } catch (e) {
-            msg.textContent = "Verbinding mislukt: Check instellingen (klik ⚙️)";
-            msg.style.color = "#fb7185";
+            msg.textContent = "Verbinding mislukt: Check instellingen";
+            msg.style.color = colors.red;
         }
     }
 

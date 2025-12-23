@@ -14,24 +14,24 @@ class PreferenceMatch(BaseChapter):
         # Chapter 2 in IntelligenceEngine is the Match Analyse
         narrative = IntelligenceEngine.generate_chapter_narrative(2, ctx)
         
+
         # 2. Extract keywords for metrics
         prefs = ctx.get('_preferences', {})
         marcel = prefs.get('marcel', {})
         petra = prefs.get('petra', {})
         
-        # Calculate a match score (could be improved)
-        match_score = 80 # default
-        if "score" in narrative.get('intro', ''):
-             try:
-                 # Extract percentage from intro "match van 85%"
-                 match_score = int(narrative['intro'].split('match van ')[1].split('%')[0])
-             except: pass
+        # Calculate a match score (Single Source of Truth)
+        match_score = ctx.get('total_match_score', 80)
+        
+        # Use Enriched Scores for breakdown if available
+        marcel_match_check = "Check" if ctx.get('marcel_match_score', 50) > 60 else "Review"
+        petra_match_check = "Check" if ctx.get('petra_match_score', 50) > 60 else "Review"
 
         # 3. Metrics for the Match Analyse
         metrics = [
             {"id": "match_total", "label": "Totale Match", "value": f"{match_score}%", "icon": "heart", "color": "green" if match_score > 70 else "orange", "explanation": "Overeenkomst met profiel"},
-            {"id": "marcel_hits", "label": "Marcel Tech", "value": "Check", "icon": "hardware-chip", "color": "blue", "explanation": "Infrastructuur & Infra"},
-            {"id": "petra_hits", "label": "Petra Sfeer", "value": "Check", "icon": "color-palette", "color": "pink", "explanation": "Esthetiek & Comfort"},
+            {"id": "marcel_hits", "label": "Marcel Tech", "value": marcel_match_check, "icon": "hardware-chip", "color": "blue", "explanation": "Infrastructuur & Infra"},
+            {"id": "petra_hits", "label": "Petra Sfeer", "value": petra_match_check, "icon": "color-palette", "color": "pink", "explanation": "Esthetiek & Comfort"},
             {"id": "priorities", "label": "Prioriteiten", "value": f"{len(marcel.get('priorities', [])) + len(petra.get('priorities', []))}", "icon": "list", "explanation": "Totaal aantal wensen"}
         ]
         

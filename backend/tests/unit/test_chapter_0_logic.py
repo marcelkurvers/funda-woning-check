@@ -3,6 +3,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 import pytest
 from chapters.chapter_0 import ExecutiveSummary
+from enrichment import DataEnricher
 
 class TestChapter0Logic:
 
@@ -52,6 +53,7 @@ class TestChapter0Logic:
             'build_year': 1920, # Old house -> Asbestos risk
             'energy_label': 'A' # Good label, but structure is old risk
         }
+        ctx = DataEnricher.enrich(ctx)
         chapter = ExecutiveSummary(ctx)
         output = chapter.generate()
         

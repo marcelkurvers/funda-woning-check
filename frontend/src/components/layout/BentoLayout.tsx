@@ -26,14 +26,14 @@ export const BentoGrid = ({ children, className = "" }: BentoGridProps) => {
 export const BentoCard = ({ children, className = "", title, icon, delay = 0, variant = 'default' }: BentoCardProps) => {
     // Determine base styles based on variant
     const variants = {
-        default: "bg-white border-slate-200",
+        default: "bg-white border-emerald-200",
         primary: "bg-gradient-to-br from-blue-600 to-indigo-700 text-white border-transparent",
         highlight: "bg-amber-50 border-amber-200",
         alert: "bg-red-50 border-red-200",
         ghost: "bg-transparent border-transparent shadow-none !p-0"
     };
 
-    const textColors = variant === 'primary' ? "text-white" : "text-slate-800";
+    const textColors = variant === 'primary' ? "text-white" : "text-emerald-800";
 
     return (
         <motion.div
@@ -51,7 +51,7 @@ export const BentoCard = ({ children, className = "", title, icon, delay = 0, va
             {(title || icon) && (
                 <div className="flex items-center gap-3 mb-4">
                     {icon && (
-                        <div className={`p-2 rounded-lg ${variant === 'primary' ? 'bg-white/20' : 'bg-slate-100'}`}>
+                        <div className={`p-2 rounded-lg ${variant === 'primary' ? 'bg-white/20' : 'bg-emerald-100'}`}>
                             {icon}
                         </div>
                     )}
@@ -64,7 +64,7 @@ export const BentoCard = ({ children, className = "", title, icon, delay = 0, va
             )}
 
             {/* Content */}
-            <div className={`flex-1 ${variant === 'primary' ? 'text-blue-50' : 'text-slate-600'}`}>
+            <div className={`flex-1 ${variant === 'primary' ? 'text-blue-50' : 'text-emerald-600'}`}>
                 {children}
             </div>
         </motion.div>

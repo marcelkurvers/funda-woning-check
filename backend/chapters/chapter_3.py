@@ -12,13 +12,17 @@ class TechnicalState(BaseChapter):
         ctx = self.context
         narrative = IntelligenceEngine.generate_chapter_narrative(3, ctx)
         
-        build_year_str = str(ctx.get('bouwjaar', '2000'))
-        build_year = IntelligenceEngine._parse_int(build_year_str) or 2000
+
+        # Use Enriched Data (Single Source of Truth)
+        build_year = ctx.get('construction_year', 2000)
         age = 2025 - build_year
             
         risk_level = "Laag"
         if build_year < 1920: risk_level = "Hoog"
         elif build_year < 1980: risk_level = "Gemiddeld"
+        
+        construction_alert = ctx.get('construction_alert', 'Check constructie.')
+        reno_cost = ctx.get('estimated_reno_cost', 0)
         
         hero = {
             "address": ctx.get('adres', 'Adres Onbekend'),
@@ -28,33 +32,31 @@ class TechnicalState(BaseChapter):
         }
         
         metrics = [
-            # Enrich metrics with color/explanation
             {"id": "year", "label": "Bouwjaar", "value": f"{build_year}", "icon": "calendar", "trend": "neutral", "color": "blue"},
             {"id": "risk", "label": "Risico Profiel", "value": risk_level, "icon": "alert", "color": "green" if risk_level == "Laag" else "orange" if risk_level == "Gemiddeld" else "red", "explanation": "Gebaseerd op leeftijd" },
             {"id": "roof", "label": "Dak", "value": "Inspecteren" if age > 20 else "Nieuwstaat", "icon": "home", "trend": "neutral", "color": "orange" if age > 20 else "green", "explanation": "Ouder dan 20 jaar" if age > 20 else "< 20 jaar oud"},
             {"id": "foundation", "label": "Fundering", "value": "Onbekend" if build_year < 1950 else "Beton", "icon": "stats-chart", "color": "orange" if build_year < 1950 else "green"}
         ]
-        # New metrics (additive)
-        price_val = IntelligenceEngine._parse_int(ctx.get('prijs') or ctx.get('asking_price_eur'))
-        price_m2 = round(price_val / (IntelligenceEngine._parse_int(ctx.get('oppervlakte','0')) or 1))
-        market_avg_m2 = ctx.get('avg_m2_price', 4800)
-        label = ctx.get('label','?')
-        reno_cost = 45000 if "F" in label or "G" in label else 25000 if "D" in label or "E" in label else 0
-        construction_year = IntelligenceEngine._parse_int(ctx.get('bouwjaar') or ctx.get('build_year'))
-        construction_alert = "Aandacht nodig" if construction_year < 1990 else "Relatief jong"
-        if market_avg_m2:
-            price_dev_pct = round(((price_m2 - market_avg_m2) / market_avg_m2) * 100)
+
+        # Use Enriched Derived Data
+        price_m2 = ctx.get('price_per_m2', 0)
+        market_avg_m2 = int(ctx.get('avg_m2_price', 4800) or 4800)
+        label = ctx.get('energy_label') or "?"
+        
         if market_avg_m2:
             price_dev_pct = round(((price_m2 - market_avg_m2) / market_avg_m2) * 100)
             metrics.append({"id":"price_deviation","label":"Prijsafwijking","value":f"{price_dev_pct:+,}%" if price_dev_pct != 0 else "0%","icon":"analytics","color":"green" if price_dev_pct < 5 else "orange","explanation": "vs markt"})
-        future_score = 80 if label in ["A","A+","A++","B"] else 60 if label in ["C","D"] else 40
+            
+        future_score = 80 if "A" in label else 60 if label in ["C","D"] else 40
         metrics.append({"id":"energy_future","label":"Energie Toekomstscore","value":f"{future_score}","icon":"leaf","color":"green" if future_score>=70 else "orange" if future_score>=50 else "red","trend":"neutral"})
-        maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
+        
         maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
         metrics.append({"id":"maintenance_intensity","label":"Onderhoud","value":maintenance,"icon":"hammer","trend":"neutral", "color": "red" if reno_cost > 30000 else "green"})
-        family = "Geschikt voor gezin" if (IntelligenceEngine._parse_int(ctx.get('oppervlakte','0')) or 0) >= 120 else "Minder geschikt voor groot gezin"
+        
+        family = "Geschikt voor gezin" if ctx.get('living_area_parsed', 0) >= 120 else "Minder geschikt voor groot gezin"
         metrics.append({"id":"family_suitability","label":"Gezinsgeschiktheid","value":family,"icon":"people","trend":"neutral"})
-        lt_quality = "Hoog" if "jong" in construction_alert.lower() else "Middelmatig" if "aandacht" in construction_alert.lower() else "Laag"
+        
+        lt_quality = "Hoog" if "jong" in construction_alert.lower() else "Middelmatig"
         metrics.append({"id":"long_term_quality","label":"Lange-termijn kwaliteit","value":lt_quality,"icon":"shield","trend":"neutral"})
         
         risk_html = self._render_rich_narrative(narrative, extra_html=f"""

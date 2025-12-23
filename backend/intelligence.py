@@ -34,11 +34,25 @@ class IntelligenceEngine:
         Returns a dictionary with 'title', 'intro', 'main_analysis', and 'conclusion'
         dynamically generated based on the context.
         """
-        # Normalize Data
-        price_val = IntelligenceEngine._parse_int(ctx.get('prijs') or ctx.get('asking_price_eur'))
-        area_val = IntelligenceEngine._parse_int(ctx.get('oppervlakte') or ctx.get('living_area_m2'))
-        plot_val = IntelligenceEngine._parse_int(ctx.get('perceel') or ctx.get('plot_area_m2'))
-        year_val = IntelligenceEngine._parse_int(ctx.get('bouwjaar') or ctx.get('build_year'))
+        # Normalize Data using Enriched Context if available
+        # Fallback to local parsing only if enrichment didn't happen (robustness)
+        
+        price_val = ctx.get('price_parsed')
+        if price_val is None:
+             price_val = IntelligenceEngine._parse_int(ctx.get('prijs') or ctx.get('asking_price_eur'))
+
+        area_val = ctx.get('living_area_parsed')
+        if area_val is None:
+             area_val = IntelligenceEngine._parse_int(ctx.get('oppervlakte') or ctx.get('living_area_m2'))
+
+        plot_val = ctx.get('plot_area_parsed')
+        if plot_val is None:
+             plot_val = IntelligenceEngine._parse_int(ctx.get('perceel') or ctx.get('plot_area_m2'))
+
+        year_val = ctx.get('construction_year')
+        if year_val is None:
+             year_val = IntelligenceEngine._parse_int(ctx.get('bouwjaar') or ctx.get('build_year'))
+
         label = (ctx.get('label') or ctx.get('energy_label') or "G").upper()
         
         data = {
@@ -57,12 +71,20 @@ class IntelligenceEngine:
             "features": ctx.get('features', []),
             "media_urls": ctx.get('media_urls', []),
             "_preferences": ctx.get('_preferences', {}),
-            # Missing fields added for AI context:
+            # Enriched Fields
             "volume_m3": ctx.get('volume_m3') or ctx.get('inhoud'),
-            "rooms": ctx.get('rooms'),
-            "num_rooms": ctx.get('rooms'), # Alias
-            "bedrooms": ctx.get('bedrooms'),
-            "bathrooms": ctx.get('bathrooms')
+            "rooms": ctx.get('rooms_parsed'),
+            "num_rooms": ctx.get('rooms_parsed'), 
+            "bedrooms": ctx.get('bedrooms_parsed'),
+            "bathrooms": ctx.get('bathrooms'),
+            
+            # Scores & Matches (Pre-calculated)
+            "ai_score": ctx.get('ai_score', 0),
+            "marcel_match_score": ctx.get('marcel_match_score', 0),
+            "petra_match_score": ctx.get('petra_match_score', 0),
+            "marcel_reasons": ctx.get('marcel_reasons', []),
+            "petra_reasons": ctx.get('petra_reasons', []),
+            "total_match_score": ctx.get('total_match_score', 0)
         }
 
         result = {}
@@ -221,10 +243,16 @@ class IntelligenceEngine:
 
         cls._request_count += 1
 
+        # --- LAYER 2: OWNERSHIP & SCOPE RESOLUTION ---
+        from backend.domain.ownership import OwnershipMap
+        
+        # Filter the data context to ONLY what this chapter is allowed to see/own
+        # This prevents the AI from hallucinating or duplicating facts from other chapters
+        scoped_data = OwnershipMap.get_chapter_context(chapter_id, data)
+        
         # Import chapter variable strategy
         from domain.chapter_variables import (
             get_chapter_ai_prompt,
-            filter_variables_for_chapter,
             should_show_core_data
         )
         
@@ -294,10 +322,16 @@ class IntelligenceEngine:
         )
 
         user_prompt = f"""
-        **Property Data**: {json.dumps(data, default=str)}
+        **Chapter Context Data (Strictly Scoped)**: {json.dumps(scoped_data, default=str)}
         **Reference Draft**: {json.dumps(fallback, default=str)}
         **Marcel's Preferences**: {json.dumps(prefs.get('marcel', {}), default=str)}
         **Petra's Preferences**: {json.dumps(prefs.get('petra', {}), default=str)}
+        
+        **Matching Insights (Use these as validated facts)**:
+        - Marcel Matches (Validated): {data.get('marcel_reasons', [])}
+        - Petra Matches (Validated): {data.get('petra_reasons', [])}
+        - Calculated Match Score: {data.get('total_match_score', 0)}%
+        - AI Property Score: {data.get('ai_score', '?')}
         
         **Task**:
         - Populate and interpret the REQUIRED DOMAIN VARIABLES for Chapter {chapter_id}.
@@ -370,6 +404,26 @@ class IntelligenceEngine:
                     "model": "Hybrid Heuristic/AI",
                     "confidence": "high",
                     "timestamp": datetime.now().isoformat()
+                }
+
+            # --- LAYER 4: VALIDATION GATE ---
+            from backend.validation.gate import ValidationGate
+            validation_errors = ValidationGate.validate_chapter_output(chapter_id, result, data)
+            
+            if validation_errors:
+                error_msg = f"Validation Failed for Chapter {chapter_id}: {'; '.join(validation_errors)}"
+                logger.error(error_msg)
+                # User mandate: "Rendering must stop... No silent fallbacks"
+                # However, stopping the WHOLE report might be too harsh for the user in production?
+                # The user said: "Rendering must stop. Errors must be explicit."
+                # We will return a special error state so the UI can show the error instead of bad data.
+                return {
+                    "title": "Validation Error",
+                    "intro": "System Validation Failed.",
+                    "main_analysis": f"<div class='error'>{error_msg}</div>",
+                    "variables": {},
+                    "comparison": {},
+                    "conclusion": "Validation Failed."
                 }
 
             # Post-process: Ensure Marcel & Petra mention if missing
@@ -544,6 +598,49 @@ class IntelligenceEngine:
         
         score = matches / len(all_prio)
         return round(score, 2)
+
+    @staticmethod
+    def calculate_persona_score(d: Dict[str, Any], persona: str) -> float:
+        """
+        Calculates a numeric fit score (0.0 - 100.0) for a specific persona
+        based on their priorities vs property data.
+        """
+        prefs = d.get('_preferences', {})
+        props = prefs.get(persona, {})
+        
+        prio = props.get('priorities', [])
+        hidden = props.get('hidden_priorities', [])
+        
+        # Combine all priorities
+        all_prio = prio + hidden
+        if not all_prio:
+            return 50.0 # Default middle ground
+            
+        # Combine source text for searching
+        description = d.get('description', '') or ""
+        features = str(d.get('features', []))
+        source_blob = f"{description} {features}".lower()
+        
+        matches = 0
+        for p in all_prio:
+            p_lower = p.lower()
+            # Basic token matching
+            tokens = [t.strip() for t in p_lower.split('/') if len(t.strip()) > 2]
+            if not tokens: tokens = [p_lower]
+            
+            for token in tokens:
+                # Specialized mappings
+                if token == "solar": token = "zonnepanelen"
+                if token == "jaren 30": token = "193"
+                if token == "accu": token = "batterij"
+                if token == "warmtepomp": token = "warmtepomp"
+                
+                if token in source_blob:
+                    matches += 1
+                    break
+        
+        # Calculate percentage
+        return round((matches / len(all_prio)) * 100, 1)
 
     @staticmethod
     def _narrative_ch2(d):
@@ -1049,13 +1146,22 @@ class IntelligenceEngine:
         year = get('year')
         
         # Heuristic Variables Grid for the v5.0 Layout
+        def fmt_nl(x):
+            if isinstance(x, (int, float)):
+                return f"{x:,}".replace(',', '.')
+            return str(x)
+
         variables = {
-            "asking_price_eur": {"value": f"€ {price:,}" if isinstance(price, (int, float)) else price, "status": "fact", "reasoning": "Direct uit Funda broncode."},
+            "asking_price_eur": {"value": f"€ {fmt_nl(price)}" if isinstance(price, (int, float)) else price, "status": "fact", "reasoning": "Direct uit Funda broncode."},
             "living_area_m2": {"value": f"{area} m²", "status": "fact", "reasoning": "Geverifieerd via NEN2580 metadata."},
             "build_year": {"value": str(year), "status": "fact", "reasoning": "Kadastrale inschrijving."},
             "energy_label": {"value": label, "status": "fact", "reasoning": "EP-Online database koppeling."},
-            "price_per_m2": {"value": f"€ {round(price/area):,}" if isinstance(price, (int,float)) and area and area > 0 else "onbekend", "status": "inferred", "reasoning": "Berekend op basis van prijs en metrage."}
+            "price_per_m2": {"value": f"€ {fmt_nl(round(price/area))}" if isinstance(price, (int,float)) and area and area > 0 else "onbekend", "status": "inferred", "reasoning": "Berekend op basis van prijs en metrage."}
         }
+
+        # Calculate Scores
+        marcel_score = IntelligenceEngine.calculate_persona_score(d, 'marcel')
+        petra_score = IntelligenceEngine.calculate_persona_score(d, 'petra')
         
         intro = f"Analyse van {address}. Een object met een woonoppervlak van {area} m² op een perceel van {get('plot_area_m2', '?')} m²."
         
@@ -1065,7 +1171,7 @@ class IntelligenceEngine:
         """
 
         interpretation = f"<p>Voor <strong>Marcel</strong> is de technische basis van {year} {'gunstig' if isinstance(year, int) and year > 2000 else 'een aandachtspunt'} voor zijn focus op onderhoudsarme systemen. <strong>Petra</strong> zal de lichtinval en de potentie van de {area} m² woonruimte waarderen als canvas voor een sfeervol interieur.</p>"
-        conclusion = "Dit object biedt een sterke balans tussen prijs en kwaliteit, met ruimte voor strategische optimalisatite."
+        conclusion = "Dit object biedt een sterke balans tussen prijs en kwaliteit, met ruimte voor strategische optimalisatie."
         
         return {
             "title": "Executive Summary & Strategie",
@@ -1088,7 +1194,9 @@ class IntelligenceEngine:
                 "marcel": "De woning biedt solide ROI-potentieel door de combinatie van prijs en metrage. Marcel\'s focus op tech-infra vereist een check op de huidige meterkast en isolatiegraad.",
                 "petra": "Petra\'s behoefte aan sfeer wordt beantwoord door de unieke ligging en de ruimtelijke opzet van de woonkamer. De 'flow' tussen keuken en buitenruimte is een sterk punt.",
                 "combined_advice": "Een bezichtiging is sterk aanbevolen om de interactie tussen de ruimtes fysiek te ervaren."
-            }
+            },
+            "marcel_match_score": marcel_score,
+            "petra_match_score": petra_score
         }
 
     @staticmethod
