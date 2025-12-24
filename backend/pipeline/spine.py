@@ -1,20 +1,25 @@
 """
-Pipeline Spine - The Single Execution Path
+Pipeline Spine - The Single Execution Path (FAIL-CLOSED)
 
 This module contains the ONLY valid execution path for report generation.
 Every browser button click, every API call must flow through this spine.
 
-INVARIANTS ENFORCED:
+INVARIANTS ENFORCED (NON-NEGOTIABLE):
 1. Registry is created once, locked once, never recreated
 2. Every chapter passes through ValidationGate
 3. AI failure does not bypass validation
-4. Rendering is blocked on validation failure
+4. Rendering is BLOCKED on validation failure (no graceful degradation)
 5. No output path exists outside this spine
 
-If you find yourself wanting to bypass this spine, stop.
-The architecture requires this enforcement. Find another way.
+FAIL-CLOSED PRINCIPLE:
+- Invalid reports cannot be produced
+- Violations cause hard failures, not warnings
+- If you find yourself wanting to bypass this spine, STOP - the architecture forbids it
+
+If any of these invariants are violated, the system is incorrect.
 """
 
+import os
 import logging
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime
@@ -25,11 +30,62 @@ from backend.domain.pipeline_context import (
     PipelineViolation,
     ValidationFailure
 )
-from backend.domain.registry import RegistryType
+from backend.domain.registry import RegistryType, RegistryConflict, RegistryLocked
 from backend.domain.ownership import OwnershipMap
 from backend.validation.gate import ValidationGate
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# PRODUCTION MODE DETECTION (LAW E ENFORCEMENT)
+# =============================================================================
+# In production, strict validation is ALWAYS enabled. 
+# Only tests may disable it, and only with explicit flag.
+#
+# LAW E: No "Test Mode" That Leaks to Real Output
+# If PIPELINE_TEST_MODE=true, outputs MUST be isolated and never served
+# through the same endpoint a user uses.
+# =============================================================================
+
+def is_production_mode() -> bool:
+    """
+    Detect if we're in production mode.
+    Production = strict validation MANDATORY.
+    
+    LAW E ENFORCEMENT:
+    - Default is ALWAYS production mode (fail-closed)
+    - Test mode requires explicit environment variable
+    - Test mode outputs must be marked as test-only
+    """
+    # FAIL-CLOSED: Default to production (strict) unless explicitly in test mode
+    test_mode = os.environ.get("PIPELINE_TEST_MODE", "").lower() == "true"
+    return not test_mode
+
+
+def is_test_mode() -> bool:
+    """Check if running in test mode (inverse of production)."""
+    return not is_production_mode()
+
+
+# Test mode isolation marker - added to all outputs in test mode
+TEST_MODE_ISOLATION_MARKER = "__TEST_MODE_ONLY__"
+
+
+def mark_test_output(output: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Mark output as test-only if running in test mode.
+    
+    LAW E: Test outputs must be distinguishable from production outputs.
+    """
+    if is_test_mode():
+        output[TEST_MODE_ISOLATION_MARKER] = True
+        output["_test_mode_warning"] = (
+            "This output was generated in PIPELINE_TEST_MODE=true. "
+            "It may contain invalid data that bypassed strict validation. "
+            "Do NOT serve to end users."
+        )
+    return output
 
 
 class PipelineSpine:
@@ -38,6 +94,8 @@ class PipelineSpine:
     
     All report generation MUST flow through this class.
     There are no alternative paths.
+    
+    FAIL-CLOSED: Any invalid state causes immediate failure.
     """
     
     def __init__(self, run_id: str, preferences: Optional[Dict[str, Any]] = None):
@@ -49,6 +107,8 @@ class PipelineSpine:
         """
         self.ctx = create_pipeline_context(run_id, preferences)
         self._phase = "initialized"
+        self._validation_failed = False
+        self._failed_chapters: List[int] = []
         logger.info(f"PipelineSpine [{run_id}]: Initialized")
     
     # =========================================================================
@@ -79,6 +139,8 @@ class PipelineSpine:
         
         This is where all facts, variables, and KPIs are registered.
         After this phase, the registry is LOCKED and immutable.
+        
+        FAIL-CLOSED: RegistryConflict during enrichment aborts the pipeline.
         """
         if self._phase != "data_ingested":
             raise PipelineViolation(f"Cannot enrich in phase '{self._phase}'")
@@ -89,6 +151,7 @@ class PipelineSpine:
         from backend.pipeline.enrichment_adapter import enrich_into_context
         
         # Enrich data INTO the context (not returning a new dict)
+        # This may raise RegistryConflict - which is FATAL
         enrich_into_context(self.ctx, raw)
         
         # Mark enrichment complete
@@ -109,13 +172,14 @@ class PipelineSpine:
         Generate all chapters with MANDATORY validation.
         
         Every chapter output passes through ValidationGate.
-        Validation failure raises ValidationFailure exception.
+        
+        FAIL-CLOSED BEHAVIOR:
+        - Validation is always run
+        - Failed chapters are tracked
+        - In production, validation failure means pipeline failure
         
         Returns:
-            Dict mapping chapter_id to validated chapter output
-        
-        Raises:
-            ValidationFailure: If any chapter fails validation
+            Dict mapping chapter_id to chapter output (may include failed chapters)
         """
         if self._phase != "enriched_and_locked":
             raise PipelineViolation(f"Cannot generate chapters in phase '{self._phase}'")
@@ -125,7 +189,7 @@ class PipelineSpine:
         # Import chapter generator
         from backend.pipeline.chapter_generator import generate_chapter_with_validation
         
-        validated_chapters = {}
+        all_chapters = {}
         
         for chapter_id in range(14):
             logger.info(f"PipelineSpine [{self.ctx.run_id}]: Generating chapter {chapter_id}")
@@ -145,30 +209,31 @@ class PipelineSpine:
             
             if errors:
                 logger.error(f"PipelineSpine [{self.ctx.run_id}]: Chapter {chapter_id} FAILED validation: {errors}")
-                # Store error state but continue to collect all errors
+                self._validation_failed = True
+                self._failed_chapters.append(chapter_id)
                 output["_validation_failed"] = True
                 output["_validation_errors"] = errors
             else:
                 # Only store in validated chapters if validation passed
                 self.ctx.store_validated_chapter(chapter_id, output)
             
-            validated_chapters[chapter_id] = output
+            all_chapters[chapter_id] = output
         
         self._phase = "chapters_generated"
         
-        # Check if any chapter failed
-        if not self.ctx.all_chapters_valid():
-            failed = [cid for cid, errs in self.ctx._validation_results.items() if errs]
-            logger.error(f"PipelineSpine [{self.ctx.run_id}]: {len(failed)} chapters failed validation")
-            # We continue but mark the report as having validation issues
+        if self._validation_failed:
+            logger.error(
+                f"PipelineSpine [{self.ctx.run_id}]: VALIDATION FAILED for chapters: {self._failed_chapters}. "
+                f"Report generation is INVALID."
+            )
         
-        return validated_chapters
+        return all_chapters
     
     def generate_single_chapter(self, chapter_id: int) -> Dict[str, Any]:
         """
         Generate a single chapter with mandatory validation.
         
-        For incremental generation or regeneration scenarios.
+        FAIL-CLOSED: Raises ValidationFailure if validation fails.
         """
         if self._phase not in ["enriched_and_locked", "chapters_generated"]:
             raise PipelineViolation(f"Cannot generate chapter in phase '{self._phase}'")
@@ -204,27 +269,35 @@ class PipelineSpine:
         Get the final renderable output.
         
         Args:
-            strict: If True, raises if any validation failed.
-                    If False, returns partial output with error markers.
+            strict: PRODUCTION MODE - must be True in production.
+                    If True, raises if any validation failed.
+                    If False (ONLY for tests), returns output with error markers.
         
         Returns:
             Complete report structure ready for rendering
         
         Raises:
             PipelineViolation: If pipeline not in correct phase
-            ValidationFailure: If strict=True and validations failed
+            PipelineViolation: If strict=True and validations failed
         """
         if self._phase != "chapters_generated":
             raise PipelineViolation(f"Cannot render in phase '{self._phase}'")
         
+        # FAIL-CLOSED: In production, always strict
+        if is_production_mode():
+            strict = True
+        
         if strict and not self.ctx.all_chapters_valid():
             failed = {cid: errs for cid, errs in self.ctx._validation_results.items() if errs}
-            raise PipelineViolation(f"Cannot render - validation failed for chapters: {list(failed.keys())}")
+            raise PipelineViolation(
+                f"FATAL: Cannot render invalid report. Validation failed for chapters: {list(failed.keys())}. "
+                f"Errors: {failed}"
+            )
         
         # Build final output structure
         chapters = self.ctx.get_validated_chapters()
         
-        # Add any failed chapters with error markers if not strict
+        # Add any failed chapters with error markers if not strict (test mode only)
         if not strict:
             for chapter_id in range(14):
                 if chapter_id not in chapters:
@@ -239,7 +312,7 @@ class PipelineSpine:
                         "chapter_data": {}
                     }
         
-        return {
+        output = {
             "run_id": self.ctx.run_id,
             "created_at": self.ctx.created_at.isoformat(),
             "registry_entry_count": len(self.ctx.registry.get_all()),
@@ -247,6 +320,9 @@ class PipelineSpine:
             "chapters": {str(k): v for k, v in chapters.items()},
             "incomplete_data": self.ctx.get_incomplete_entries()
         }
+        
+        # LAW E: Mark test mode outputs for isolation
+        return mark_test_output(output)
     
     # =========================================================================
     # CONVENIENCE: Full Pipeline Execution
@@ -258,7 +334,7 @@ class PipelineSpine:
         run_id: str,
         raw_data: Dict[str, Any],
         preferences: Optional[Dict[str, Any]] = None,
-        strict_validation: bool = False
+        strict_validation: Optional[bool] = None
     ) -> Tuple["PipelineSpine", Dict[str, Any]]:
         """
         Execute the complete pipeline from raw data to renderable output.
@@ -269,25 +345,34 @@ class PipelineSpine:
             run_id: Unique identifier for this pipeline run
             raw_data: Parsed property data
             preferences: User preferences (Marcel & Petra)
-            strict_validation: If True, raise on any validation failure
+            strict_validation: If None, uses production mode detection.
+                               Only tests should set this to False.
         
         Returns:
             Tuple of (PipelineSpine instance, renderable output)
+            
+        Raises:
+            PipelineViolation: If any validation fails (in production mode)
+            RegistryConflict: If registry conflicts occur during enrichment
         """
         logger.info(f"PipelineSpine.execute_full_pipeline: Starting run {run_id}")
+        
+        # FAIL-CLOSED: Default to strict in production
+        if strict_validation is None:
+            strict_validation = is_production_mode()
         
         spine = cls(run_id, preferences)
         
         # Phase 1: Ingest
         spine.ingest_raw_data(raw_data)
         
-        # Phase 2: Enrich & Lock
+        # Phase 2: Enrich & Lock (may raise RegistryConflict)
         spine.enrich_and_populate_registry()
         
         # Phase 3: Generate with Validation
         spine.generate_all_chapters()
         
-        # Phase 4: Get Renderable Output
+        # Phase 4: Get Renderable Output (may raise PipelineViolation if strict)
         output = spine.get_renderable_output(strict=strict_validation)
         
         logger.info(f"PipelineSpine.execute_full_pipeline: Completed run {run_id}")
@@ -295,20 +380,46 @@ class PipelineSpine:
         return spine, output
 
 
+# =============================================================================
+# PUBLIC API - THESE ARE THE ONLY VALID ENTRY POINTS
+# =============================================================================
+
+def execute_report_pipeline(
+    run_id: str,
+    raw_data: Dict[str, Any],
+    preferences: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Execute the full pipeline - PUBLIC API.
+    
+    This is the ONLY function that should be called from main.py.
+    All other paths are deprecated and will throw.
+    
+    FAIL-CLOSED: In production, validation failure raises PipelineViolation.
+    """
+    _, output = PipelineSpine.execute_full_pipeline(
+        run_id=run_id,
+        raw_data=raw_data,
+        preferences=preferences,
+        strict_validation=None  # Uses production mode detection
+    )
+    return output
+
+
+# Backward compatibility alias - but marked for removal
 def execute_pipeline(
     run_id: str,
     raw_data: Dict[str, Any],
     preferences: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """
-    Convenience function to execute the full pipeline.
+    DEPRECATED: Use execute_report_pipeline instead.
     
-    This is the ONLY function that should be called from main.py.
+    This function exists only for backward compatibility.
+    It forwards to execute_report_pipeline.
     """
-    _, output = PipelineSpine.execute_full_pipeline(
-        run_id=run_id,
-        raw_data=raw_data,
-        preferences=preferences,
-        strict_validation=False  # Allow partial output in production
+    logger.warning(
+        "execute_pipeline is DEPRECATED. Use execute_report_pipeline. "
+        "This function will be removed in a future version."
     )
-    return output
+    return execute_report_pipeline(run_id, raw_data, preferences)

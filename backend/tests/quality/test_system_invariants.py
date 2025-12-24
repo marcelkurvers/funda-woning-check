@@ -156,8 +156,12 @@ def test_invariant_ownership_enforcement(populated_registry):
         "variables": {"tuin_grootte": 50},
         "main_analysis": "Big garden with excellent outdoor space.",
         "comparison": {
-            "marcel": "Marcel vindt de tuin groot genoeg voor zijn hobby.", 
+            "marcel": "Marcel vindt de tuin groot genoeg voor zijn hobby.",
             "petra": "Petra geniet van de zon in deze ruime tuin."
+        },
+        "narrative": {
+            "text": "This is a very long narrative that describes the garden in great detail to ensure we meet the required word count of at least three hundred words. " * 20,
+            "word_count": 500
         }
     }
     errors_good = ValidationGate.validate_chapter_output(7, good_output, registry_ctx)
@@ -176,26 +180,26 @@ def test_invariant_ai_no_raw_restatement():
         "area": 120,
         "exact_coord": 52.3456
     }
-    
+
     # Case A: Violation (Direct Restatement)
     ai_text_bad = "The price is exactly 500000 euros."
-    
+
     # Heuristic Check Logic (Simulating the Gate logic for this invariant)
     violations = []
     for k, v in registry_values.items():
         if str(v) in ai_text_bad:
             violations.append(k)
-            
+
     # Note: Gate currently has a looser check for small numbers, let's test specific big number
     assert "price" in violations, "FAIL: AI restating '500000' should be caught."
-    
+
     # Case B: Compliance (Interpretation)
     ai_text_good = "The price is reasonable for this market segment."
     violations_good = []
     for k, v in registry_values.items():
         if str(v) in ai_text_good:
             violations_good.append(k)
-            
+
     assert not violations_good, "FAIL: Interpretive text incorrectly flagged."
 
 
@@ -208,19 +212,23 @@ def test_invariant_preference_materiality():
     # Mock output with weak preferences
     weak_output = {
         "variables": {},
-        "main_analysis": "Good house.",
+        "main_analysis": "Good house. " + ("long text " * 100),
         "comparison": {
             "marcel": "Good.", # Too short
             "petra": ""      # Missing
+        },
+        "narrative": {
+            "text": "Narrative text " * 150,
+            "word_count": 300
         }
     }
-    
+
     errors = ValidationGate.validate_chapter_output(1, weak_output, {})
-    
+
     # We expect failures regarding preference reasoning length/presence
     pref_errors = [e for e in errors if "prediction" in e.lower() or "preference" in e.lower() or "reasoning" in e.lower()]
     assert len(pref_errors) > 0, "FAIL: Weak preference reasoning was accepted."
-    
+
     # Mock output with strong preferences
     strong_output = {
         "variables": {},
@@ -228,6 +236,10 @@ def test_invariant_preference_materiality():
         "comparison": {
             "marcel": "Marcel will appreciate the technical setup and fiber connection.",
             "petra": "Petra will love the morning light in the garden."
+        },
+        "narrative": {
+            "text": "Narrative text " * 150,
+            "word_count": 300
         }
     }
     errors_strong = ValidationGate.validate_chapter_output(1, strong_output, {})
@@ -240,12 +252,17 @@ def test_invariant_render_gate_blocks_failure():
     """
     Invariant 6: No page renders if validation fails.
     """
-    # We test the Interface behavior. 
+    # We test the Interface behavior.
     # If validation returns errors, the flow should return an error block or raise Exception.
-    
+
     # Simulate IntelligenceEngine flow
     chapter_id = 9
-    bad_result = {"variables": {"illegal_ownership": 1}, "main_analysis": "x", "comparison": {"marcel": "x", "petra": "y"}}
+    bad_result = {
+        "variables": {"illegal_ownership": 1}, 
+        "main_analysis": "x", 
+        "comparison": {"marcel": "x", "petra": "y"},
+        "narrative": {"text": "foo", "word_count": 1} # Also fails narrative
+    }
     ctx = {"illegal_ownership": 1} # It exists in registry
     
     # 1. Run Gate

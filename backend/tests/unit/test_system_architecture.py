@@ -61,13 +61,21 @@ class TestSystemArchitecture:
         chapter_id = 7 # Garden
         registry_ctx = {"asking_price_eur": 500000}
         
-        # CASE A: Good output (includes required fields id and title)
+        # Create a 300+ word narrative for the test
+        long_narrative = " ".join(["word"] * 350)
+        
+        # CASE A: Good output (includes required fields id, title, AND narrative)
         output_good = {
             "id": "7",
             "title": "Garden Analysis",
             "variables": {"tuin_grootte": "50m2"}, # assuming allowed
             "main_analysis": "Mooie tuin met veel privacy.",
-            "comparison": {"marcel": "Prima tuin. Dit is top.", "petra": "Fijne tuin. Ik hou ervan."}
+            "comparison": {"marcel": "Prima tuin. Dit is top.", "petra": "Fijne tuin. Ik hou ervan."},
+            # MANDATORY: Narrative is required for chapters 0-12
+            "narrative": {
+                "text": long_narrative,
+                "word_count": 350
+            }
         }
         
         errors = ValidationGate.validate_chapter_output(chapter_id, output_good, registry_ctx)

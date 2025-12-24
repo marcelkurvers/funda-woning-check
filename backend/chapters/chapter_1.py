@@ -1,13 +1,26 @@
+"""
+Chapter 1: General Property Features
+
+ARCHITECTURAL INVARIANTS (NON-NEGOTIABLE):
+1. NO arithmetic operations
+2. NO value derivation (e.g., rooms_count = max(3, int(living_area / 25)))
+3. All values MUST come from registry (via ctx)
+4. This class is PRESENTATION ONLY
+"""
 
 from typing import List, Dict, Any
 from chapters.base import BaseChapter
 from domain.models import ChapterOutput, UIComponent
 from intelligence import IntelligenceEngine
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class GeneralFeatures(BaseChapter):
     def get_title(self) -> str:
         ctx = self.context
-        p_type = ctx.get('property_type', '').lower()
+        p_type = str(ctx.get('property_type', '')).lower()
         if 'appartement' in p_type:
             return "Kenmerken Appartement"
         elif 'vrijstaand' in p_type or 'villa' in p_type:
@@ -17,43 +30,52 @@ class GeneralFeatures(BaseChapter):
     def generate(self) -> ChapterOutput:
         ctx = self.context
         
-        # 1. Ask Intelligence Engine for Dynamic Narrative
+        # Generate narrative (AI or registry-only fallback)
         narrative = IntelligenceEngine.generate_chapter_narrative(1, ctx)
-        
 
-        # 2. Key Metrics - Use Enriched Data (Single Source of Truth)
-        living_area = ctx.get('living_area_parsed', 0)
-        plot_area = ctx.get('plot_area_parsed', 0)
+        # === ALL VALUES FROM REGISTRY (NO COMPUTATION) ===
+        living_area = ctx.get('living_area_m2', 0)
+        plot_area = ctx.get('plot_area_m2', 0)
         volume = ctx.get('volume_m3', 0)
-        
-        rooms_count = ctx.get('rooms_parsed', 0)
-        bedrooms = ctx.get('bedrooms_parsed', 0)
-        if not rooms_count: rooms_count = max(3, int(living_area / 25))
-        
+        rooms = ctx.get('rooms', 0)  # Pre-computed in enrichment
+        bedrooms = ctx.get('bedrooms', 0)
         bathrooms = ctx.get('bathrooms', '?')
         property_type = ctx.get('property_type', 'Woonhuis')
+        construction_year = ctx.get('build_year', 0)
+        label = ctx.get('energy_label', '?')
         
-        price_val = ctx.get('price_parsed', 0)
-        price_m2 = ctx.get('price_per_m2', 0)
-        market_avg_m2 = int(ctx.get('avg_m2_price', 4800) or 4800)
-        label = ctx.get('energy_label') or ctx.get('label') or '?'
-        
-        construction_year = ctx.get('construction_year', 0)
-        
-        # 3. Layout Construction (Modern Dashboard)
+        # Hero (display only)
         hero = {
-            "address": ctx.get('address') or ctx.get('adres', 'Adres Onbekend'),
-            "price": ctx.get('asking_price_eur') or ctx.get('prijs', 'Prijs op aanvraag'),
+            "address": ctx.get('address', ctx.get('adres', 'Adres Onbekend')),
+            "price": ctx.get('asking_price_eur', 'Prijs op aanvraag'),
             "status": "Woninginformatie",
-            "labels": [property_type, f"{construction_year} Bouwjaar"]
+            "labels": [property_type, f"{construction_year} Bouwjaar"] if construction_year else [property_type]
         }
 
+        # Metrics - using pre-computed values only
         metrics = [
-            {"id": "living", "label": "Woonoppervlakte", "value": f"{living_area} m²", "icon": "expand", "color": "blue"},
-            {"id": "bedrooms", "label": "Slaapkamers", "value": f"{rooms_count}", "icon": "bed", "color": "blue"},
-            {"id": "energy", "label": "Label", "value": ctx.get('energy_label', '?'), "icon": "leaf", "color": "green"}
+            {
+                "id": "living", 
+                "label": "Woonoppervlakte", 
+                "value": f"{living_area} m²" if living_area else "Onbekend",
+                "icon": "expand", 
+                "color": "blue"
+            },
+            {
+                "id": "rooms", 
+                "label": "Kamers", 
+                "value": str(rooms) if rooms else "Onbekend",
+                "icon": "bed", 
+                "color": "blue"
+            },
+            {
+                "id": "energy", 
+                "label": "Label", 
+                "value": label or "?",
+                "icon": "leaf", 
+                "color": "green"
+            }
         ]
-        
         
         main_content = self._render_rich_narrative(narrative)
         
@@ -64,39 +86,28 @@ class GeneralFeatures(BaseChapter):
             <ul class="specs-list">
             <li><strong>Soort:</strong> {property_type}</li>
             <li><strong>Bouwtype:</strong> {ctx.get('construction_type', 'Onbekend')}</li>
-            <li><strong>Bouwjaar:</strong> {construction_year}</li>
+            <li><strong>Bouwjaar:</strong> {construction_year or 'Onbekend'}</li>
             <li><strong>Energielabel:</strong> {label}</li>
-            <li><strong>Verwarming:</strong> {(ctx.get('heating') or 'Onbekend')[:50]}...</li>
-            <li><strong>Isolatie:</strong> {ctx.get('insulation') or 'Onbekend'}</li>
-            <li><strong>Garage:</strong> {ctx.get('garage') or 'Onbekend'}</li>
+            <li><strong>Verwarming:</strong> {str(ctx.get('heating', 'Onbekend'))[:50]}</li>
+            <li><strong>Isolatie:</strong> {ctx.get('insulation', 'Onbekend')}</li>
+            <li><strong>Garage:</strong> {ctx.get('garage', 'Onbekend')}</li>
             </ul>
             """
         }
         
-        # CONTEXTUAL WIDGETS
-        advisor_title = "Makelaars Blik"
-        advisor_content = "Een ruime woning met veel mogelijkheden. Controleer altijd de NEN2580 meetrapporten."
-        
-        if construction_year < 1980:
-            advisor_title = "Renovatie Advies"
-            advisor_content = "Gezien de leeftijd is een bouwkundige keuring sterk aanbevolen. Let op isolatie en leidingwerk."
-        elif property_type.lower() == "appartement":
-            advisor_title = "VvE Check"
-            advisor_content = "Controleer de VvE-stukken: notulen, meerjarenonderhoudsplan (MJOP) en reservefonds."
-
+        # Sidebar advice - using registry values for conditional, no computation
         sidebar_advisor = {
             "type": "advisor",
-            "title": advisor_title,
-            "content": advisor_content,
+            "title": "Advies",
+            "content": narrative.get('conclusion', 'Analyse vereist meer data.')
         }
 
-        # Left sidebar: Space-focused metrics
         left_sidebar = [
             {
                 "type": "highlight_card",
                 "icon": "home",
                 "title": "Woningtype",
-                "content": f"{property_type} uit {construction_year}"
+                "content": f"{property_type}" + (f" uit {construction_year}" if construction_year else "")
             }
         ]
         
@@ -113,5 +124,5 @@ class GeneralFeatures(BaseChapter):
             title="1. Algemene Woningkenmerken",
             grid_layout=layout, 
             blocks=[],
-            chapter_data=narrative # Populate chapter data for tests and reuse
+            chapter_data=narrative
         )

@@ -448,84 +448,80 @@ def simulate_pipeline(run_id):
         unknowns = []
     
     steps["generate_chapters"] = "done"
-    logger.info(f"Pipeline [{run_id}]: Complete - Validation: {kpis.get('validation_passed', 'unknown')}")
-    update_run(run_id, steps_json=json.dumps(steps), chapters_json=json.dumps(chapters), unknowns_json=json.dumps(unknowns), status="done")
+    
+    # =========================================================================
+    # LAW D ENFORCEMENT: FAIL-CLOSED PERSISTENCE
+    # =========================================================================
+    # If validation_passed is False, we MUST NOT store chapters_json.
+    # Only diagnostics (steps_json, kpis with errors) are stored.
+    # This prevents invalid reports from reaching users.
+    # =========================================================================
+    
+    validation_passed = kpis.get('validation_passed', False)
+    
+    if validation_passed:
+        # VALID REPORT: Store chapters and mark as done
+        logger.info(f"Pipeline [{run_id}]: ✓ VALIDATION PASSED - Storing chapters")
+        update_run(
+            run_id, 
+            steps_json=json.dumps(steps), 
+            chapters_json=json.dumps(chapters), 
+            unknowns_json=json.dumps(unknowns), 
+            status="done"
+        )
+    else:
+        # INVALID REPORT: Do NOT store chapters, mark as validation_failed
+        logger.error(
+            f"Pipeline [{run_id}]: ✗ VALIDATION FAILED - NOT storing chapters_json. "
+            f"This is LAW D enforcement: invalid reports cannot persist."
+        )
+        # Store only diagnostics for debugging
+        diagnostics = {
+            "validation_failed": True,
+            "kpis": kpis,
+            "chapter_count": len(chapters),
+            "failed_reason": "One or more chapters failed validation. See kpis for details."
+        }
+        update_run(
+            run_id, 
+            steps_json=json.dumps(steps), 
+            # chapters_json is NOT updated - keeps previous value or empty
+            kpis_json=json.dumps(kpis),  # Contains validation details
+            unknowns_json=json.dumps(unknowns),
+            # CRITICAL: status is 'validation_failed', NOT 'done'
+            status="validation_failed"
+        )
+
+class BypassBlocked(Exception):
+    """Raised when deprecated bypass functions are called."""
+    pass
+
 
 def build_chapters(core: Dict[str, Any]) -> Dict[str, Any]:
-    chapters = {}
+    """
+    ⛔ DEPRECATED - THIS FUNCTION IS BLOCKED ⛔
     
-    # Check current preferences from KV store
-    prefs = get_kv("preferences", {})
-    # Ensure current AI settings are reflected in prefs for IntelligenceEngine
-    if 'ai_model' not in prefs or not prefs['ai_model']:
-        prefs['ai_model'] = settings.ai.model
-    if 'ai_provider' not in prefs or not prefs['ai_provider']:
-        prefs['ai_provider'] = settings.ai.provider
-        
-    core['_preferences'] = prefs
+    This function was a bypass path that allowed chapter generation
+    without going through the validation spine.
     
-    for i in range(14):
-        # 1. Try Rich Chapter Generation via Chapter Classes
-        cls = get_chapter_class(i)
-        if cls:
-            try:
-                obj = cls(core, id=i)
-                output = obj.generate()
-                # Set segment name
-                output.segment = obj.get_segment_name()
-                
-                # Bridge: Ensure Chapter 0 contains property_core and metrics for frontend dashboard
-                if i == 0:
-                    if output.chapter_data is None: output.chapter_data = {}
-                    output.chapter_data["property_core"] = core
-                    # Bridge metrics for dashboard
-                    if output.grid_layout and isinstance(output.grid_layout, dict):
-                         output.chapter_data["metrics"] = output.grid_layout.get("metrics", [])
-                
-                output.id = str(i)
-                data_dict = output.dict()
-                # Bridge: make sure chapter_data has metrics/sidebar for frontend
-                if data_dict["chapter_data"] is None: data_dict["chapter_data"] = {}
-                if data_dict["grid_layout"] and isinstance(data_dict["grid_layout"], dict):
-                    data_dict["chapter_data"]["metrics"] = data_dict["grid_layout"].get("metrics", [])
-                    data_dict["chapter_data"]["sidebar_items"] = data_dict["grid_layout"].get("sidebar", [])
-                
-                chapters[str(i)] = data_dict
-                logger.debug(f" - Generated Rich Chapter {i}")
-                continue
-            except Exception as e:
-                logger.error(f"Failed to generate Rich Chapter {i}: {e}")
-
-        # 2. Fallback: Direct IntelligenceEngine call
-        output = IntelligenceEngine.generate_chapter_narrative(i, core)
-        chapter_id = str(i)
-        title = output.get("title", CHAPTER_TITLES.get(str(i), f"Hoofdstuk {i}"))
+    FAIL-CLOSED ENFORCEMENT:
+    All report generation MUST go through execute_report_pipeline().
+    This function now raises BypassBlocked to prevent any bypass attempts.
+    
+    Migration:
+        # OLD (BLOCKED):
+        chapters = build_chapters(core)
         
-        # Ensure chapter_data has required fields for frontend bridging test
-        output["sidebar_items"] = output.get("sidebar_items", [])
-        output["metrics"] = output.get("metrics", [])
-        
-        # Map provenance from output if available
-        prov_dict = output.get('_provenance')
-        from domain.models import AIProvenance
-        prov = AIProvenance(**prov_dict) if prov_dict else None
-
-        # Construct a backward-compatible dictionary matching ChapterOutput structure
-        chapters[chapter_id] = {
-            "id": chapter_id,
-            "title": title,
-            "grid_layout": {
-                "main": {"title": title, "content": output.get("main_analysis")},
-                "metrics": [{"id": "fallback", "label": "Status", "value": "AI Generated"}]
-            },
-            "blocks": [],
-            "chapter_data": output,
-            "segment": {0: "EXECUTIVE / STRATEGIE", 1: "OBJECT / ARCHITECTUUR", 2: "SYNERGIE / MATCH", 3: "TECHNIEK / CONDITIE", 4: "ENERGETICA / AUDIT", 5: "LAYOUT / POTENTIE", 6: "AFWERKING / ONDERHOUD", 7: "EXTERIEUR / TUIN", 8: "MOBILITEIT / PARKEREN", 9: "JURIDISCH / KADASTER", 10: "FINANCIEEL / RENDEMENT", 11: "MARKT / POSITIE", 12: "VERDICT / STRATEGIE"}.get(i, f"DOSSIER / SEGMENT {i}"),
-            "property_core": output.get("property_core") if i == 0 else None,
-            "provenance": prov_dict, # Pass raw dict for easier JSON serialization
-            "missing_critical_data": output.get('metadata', {}).get('missing_vars', [])
-        }
-    return chapters
+        # NEW (CORRECT):
+        from pipeline.bridge import execute_report_pipeline
+        chapters, kpis, enriched_core = execute_report_pipeline(run_id, core, prefs)
+    """
+    raise BypassBlocked(
+        "FATAL: build_chapters() is a DEPRECATED BYPASS PATH and is now BLOCKED. "
+        "All report generation MUST go through execute_report_pipeline(). "
+        "This enforcement is mandatory - no exceptions. "
+        "See pipeline/bridge.py for the correct API."
+    )
 
 def build_kpis(core: Dict[str, Any]) -> Dict[str, Any]:
     fields = ["asking_price_eur", "living_area_m2", "plot_area_m2", "build_year", "energy_label"]
@@ -559,6 +555,10 @@ def build_unknowns(core: Dict[str, Any]) -> List[str]:
     return [f for f in fields if not core.get(f)]
 
 # --- API ROUTES ---
+@app.get("/api/version")
+def get_version():
+    return {"version": __version__}
+
 @app.get("/api/runs")
 def list_runs():
     con = db()

@@ -1,6 +1,6 @@
 # Test Coverage Map
 
-**Generated**: 2025-12-22 21:27:47 UTC
+**Generated**: 2025-12-24 13:47:03 UTC
 **Project**: `/Users/marcelkurvers/Development/funda-app/backend`
 
 ## Executive Summary
@@ -18,9 +18,9 @@
 **Detected Languages**: 2/6
 
 ### ✓ Python
-- **Source files**: 50
-- **Test files**: 45
-- **Test ratio**: 90% (45 test files per 50 source files)
+- **Source files**: 72
+- **Test files**: 58
+- **Test ratio**: 81% (58 test files per 72 source files)
 
 ### ✓ Javascript/Typescript
 - **Source files**: 2

@@ -95,8 +95,12 @@ class TestAsyncPipeline:
         response = client.get("/api/runs/nonexistent-id/status")
         assert response.status_code == 404
 
-    def test_pipeline_runs_in_background(self, client):
+    @patch("backend.pipeline.bridge.execute_report_pipeline")
+    def test_pipeline_runs_in_background(self, mock_pipeline, client):
         """Test that pipeline executes in background thread"""
+        # Mock the heavy lifting
+        mock_pipeline.return_value = ({"0": {}}, {"validation_passed": True}, {})
+        
         # Create and start a run
         create_response = client.post("/api/runs", json={
             "funda_url": "manual-paste",
@@ -108,29 +112,37 @@ class TestAsyncPipeline:
         start_response = client.post(f"/api/runs/{run_id}/start")
         assert start_response.status_code == 200
 
-        # Initially should be queued or running
+        # Initially should be queued, processing, or running
         status_response = client.get(f"/api/runs/{run_id}/status")
         initial_status = status_response.json()["status"]
-        assert initial_status in ["queued", "running"]
+        assert initial_status in ["queued", "running", "processing", "done", "error"], f"Unexpected status: {initial_status}"
 
         # Wait for completion (with timeout)
-        max_wait = 20  # Increased to 20 seconds for slower systems
-        wait_time = 0
-        while wait_time < max_wait:
-            time.sleep(1)
-            wait_time += 1
+        max_wait = 5  # Should be very fast with mock
+        start_wait = time.time()
+        
+        final_status = None
+        while (time.time() - start_wait) < max_wait:
             status_response = client.get(f"/api/runs/{run_id}/status")
-            status = status_response.json()["status"]
+            status_data = status_response.json()
+            status = status_data["status"]
+            
             if status in ["done", "error"]:
+                final_status = status
                 break
+            
+            if status == "validation_failed":
+                 final_status = status
+                 break
+                 
+            time.sleep(0.1)
 
-        # Should eventually complete (done, error, or still running is acceptable)
-        final_status = client.get(f"/api/runs/{run_id}/status")
-        json_status = final_status.json()
-        if json_status["status"] not in ["done", "error"]:
-             print(f"Pipeline still processing with status: {json_status}")
-        # Accept done, error, or running (pipeline may take longer than timeout)
-        assert json_status["status"] in ["done", "error", "running"], f"Unexpected status: {json_status['status']}"
+        # Assert that we actually finished
+        if final_status is None:
+            pytest.fail(f"Pipeline timed out after {max_wait} seconds. Last status: {status}")
+            
+        assert final_status in ["done", "error", "validation_failed"], f"Unexpected final status: {final_status}"
+
 
     def test_multiple_concurrent_pipelines(self, client):
         """Test that multiple pipelines can run concurrently"""
@@ -183,7 +195,14 @@ class TestBackwardCompatibility:
 
         # Start and wait for completion
         client.post(f"/api/runs/{run_id}/start")
-        time.sleep(5)  # Wait a bit for processing
+        # Poll for completion
+        max_wait = 10
+        start_wait = time.time()
+        while (time.time() - start_wait) < max_wait:
+            status = client.get(f"/api/runs/{run_id}/status").json()["status"]
+            if status in ["done", "error", "validation_failed"]:
+                break
+            time.sleep(0.1)
 
         # Report endpoint should still work
         report_response = client.get(f"/api/runs/{run_id}/report")

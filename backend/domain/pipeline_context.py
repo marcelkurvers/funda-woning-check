@@ -16,7 +16,13 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 import logging
 
-from backend.domain.registry import CanonicalRegistry, RegistryEntry, RegistryType
+from backend.domain.registry import (
+    CanonicalRegistry, 
+    RegistryEntry, 
+    RegistryType,
+    RegistryConflict,
+    RegistryLocked
+)
 
 logger = logging.getLogger(__name__)
 

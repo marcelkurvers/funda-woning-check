@@ -1,9 +1,24 @@
+"""
+Chapter 10: Financial Analysis
+
+ARCHITECTURAL INVARIANTS (NON-NEGOTIABLE):
+1. NO arithmetic operations (kk_costs, notary, makelaar, etc.)
+2. NO value derivation or computation
+3. All values MUST come from registry (via ctx)
+4. This class is PRESENTATION ONLY
+
+All financial calculations are now performed in enrichment.py
+and registered in the CanonicalRegistry BEFORE this chapter runs.
+"""
 
 from typing import List, Dict, Any
 from chapters.base import BaseChapter
 from domain.models import ChapterOutput, UIComponent
 from intelligence import IntelligenceEngine
-import re
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class FinancialAnalysis(BaseChapter):
     def get_title(self) -> str:
@@ -13,77 +28,79 @@ class FinancialAnalysis(BaseChapter):
         ctx = self.context
         narrative = IntelligenceEngine.generate_chapter_narrative(10, ctx)
         
-        price_raw = str(ctx.get('prijs', '0'))
-        price_digits = re.sub(r'[^\d]', '', price_raw)
-        price_val = int(price_digits) if price_digits else 0
+        # === ALL VALUES FROM REGISTRY (NO COMPUTATION) ===
+        # Ensure numeric types for formatting
+        price_val = ctx.get('asking_price_eur', 0)
+        if isinstance(price_val, str):
+            price_val = int(''.join(filter(str.isdigit, price_val)) or '0')
+        price_val = int(price_val) if price_val else 0
         
-        kk_costs = int(price_val * 0.02)
-        notary = 1500
-        makelaar = int(price_val * 0.015)
-        total_acquisition = price_val + kk_costs + notary + makelaar
+        price_m2 = ctx.get('price_per_m2', 0)
+        if isinstance(price_m2, str):
+            price_m2 = int(''.join(filter(str.isdigit, price_m2)) or '0')
+        price_m2 = int(price_m2) if price_m2 else 0
         
+        label = ctx.get('energy_label', '?')
+        year = ctx.get('build_year', 0)
+        
+        # Pre-computed financial values (from enrichment layer)
+        estimated_kk = ctx.get('estimated_kk', 0)
+        estimated_total = ctx.get('estimated_total_cost', price_val)
+        valuation_status = ctx.get('valuation_status', 'Onbekend')
+        energy_invest = ctx.get('energy_invest', 0)
+        construction_invest = ctx.get('construction_invest', 0)
+        estimated_reno = ctx.get('estimated_reno_cost', 0)
+        
+        # Hero (display only)
         hero = {
-            "address": ctx.get('adres', 'Adres Onbekend'),
-            "price": f"€ {price_val:,}",
+            "address": ctx.get('adres', ctx.get('address', 'Adres Onbekend')),
+            "price": f"€ {price_val:,}".replace(',', '.') if price_val else "Onbekend",
             "status": "Vraagprijs",
             "labels": ["Kosten Koper", "Financiering"]
         }
         
+        # Metrics - using pre-computed values only
         metrics = [
-            {"id": "price", "label": "Vraagprijs", "value": f"€ {price_val:,}", "icon": "pricetag", "color": "blue", "explanation": "Kosten Koper excl."},
-            {"id": "kk", "label": "Kosten Koper", "value": f"€ {(kk_costs+notary+makelaar):,}", "icon": "wallet", "color": "orange", "explanation": "Overdracht, Notaris, etc."},
-            {"id": "total", "label": "Totaal Benodigd", "value": f"€ {total_acquisition:,}", "icon": "cash", "color": "blue", "explanation": "Indicatie investering"},
-            {"id": "monthly", "label": "Maandlast", "value": f"€ {int(total_acquisition * 0.04 / 12):,}", "icon": "calendar", "color": "green", "explanation": "Bruto/mnd (indicatie)"}
+            {
+                "id": "price", 
+                "label": "Vraagprijs", 
+                "value": f"€ {price_val:,}".replace(',', '.') if price_val else "Onbekend",
+                "icon": "pricetag", 
+                "color": "blue",
+                "explanation": "Kosten Koper excl."
+            },
+            {
+                "id": "price_m2", 
+                "label": "Prijs per m²", 
+                "value": f"€ {price_m2:,}" if price_m2 else "Onbekend",
+                "icon": "analytics", 
+                "color": "blue"
+            },
+            {
+                "id": "reno", 
+                "label": "Geschatte Renovatie", 
+                "value": f"€ {estimated_reno:,}" if estimated_reno else "€ 0",
+                "icon": "hammer", 
+                "color": "orange" if estimated_reno > 0 else "green"
+            },
+            {
+                "id": "valuation", 
+                "label": "Marktwaardering", 
+                "value": valuation_status,
+                "icon": "trending-up", 
+                "color": "blue"
+            }
         ]
-        # New metrics (additive)
-        price_val = IntelligenceEngine._parse_int(ctx.get('prijs') or ctx.get('asking_price_eur'))
-        price_m2 = round(price_val / (IntelligenceEngine._parse_int(ctx.get('oppervlakte','0')) or 1))
-        market_avg_m2 = ctx.get('avg_m2_price', 4800)
-        label = ctx.get('label','?')
-        reno_cost = 45000 if "F" in label or "G" in label else 25000 if "D" in label or "E" in label else 0
-        construction_year = IntelligenceEngine._parse_int(ctx.get('bouwjaar') or ctx.get('build_year'))
-        construction_alert = "Aandacht nodig" if construction_year < 1990 else "Relatief jong"
-        if market_avg_m2:
-            price_dev_pct = round(((price_m2 - market_avg_m2) / market_avg_m2) * 100)
-            metrics.append({"id":"price_deviation","label":"Prijsafwijking %","value":f"{price_dev_pct:+,}%" if price_dev_pct != 0 else "0%","icon":"trend-up" if price_dev_pct>0 else "trend-down" if price_dev_pct<0 else "neutral","trend":"up" if price_dev_pct>0 else "down" if price_dev_pct<0 else "neutral","trend_text":f"{price_dev_pct:+}% vs markt"})
-        future_score = 80 if label in ["A","A+","A++","B"] else 60 if label in ["C","D"] else 40
-        metrics.append({"id":"energy_future","label":"Energie Toekomstscore","value":f"{future_score}","icon":"leaf","color":"green" if future_score>=70 else "orange" if future_score>=50 else "red","trend":"neutral"})
-        maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
-        maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
-        metrics.append({"id":"maintenance_intensity","label":"Onderhoud","value":maintenance,"icon":"hammer","trend":"neutral", "color": "red" if reno_cost > 30000 else "green"})
-        family = "Geschikt voor gezin" if (IntelligenceEngine._parse_int(ctx.get('oppervlakte','0')) or 0) >= 120 else "Minder geschikt voor groot gezin"
-        metrics.append({"id":"family_suitability","label":"Gezinsgeschiktheid","value":family,"icon":"people","trend":"neutral"})
-        lt_quality = "Hoog" if "jong" in construction_alert.lower() else "Middelmatig" if "aandacht" in construction_alert.lower() else "Laag"
-        metrics.append({"id":"long_term_quality","label":"Lange-termijn kwaliteit","value":lt_quality,"icon":"shield","trend":"neutral"})
         
-        breakdown_html = self._render_rich_narrative(narrative, extra_html=f"""
-        <div class="grid grid-cols-1 gap-0 bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
-            <div class="flex justify-between items-center p-4 border-b border-slate-200">
-                <span class="text-slate-600">Overdrachtsbelasting</span>
-                <span class="font-medium text-slate-800">€ {kk_costs:,}</span>
-            </div>
-            <div class="flex justify-between items-center p-4 border-b border-slate-200">
-                <span class="text-slate-600">Notaris (geschat)</span>
-                <span class="font-medium text-slate-800">€ {notary:,}</span>
-            </div>
-            <div class="flex justify-between items-center p-4 border-b border-slate-200">
-                <span class="text-slate-600">Makelaar / Advies</span>
-                <span class="font-medium text-slate-800">€ {makelaar:,}</span>
-            </div>
-            <div class="flex justify-between items-center p-4 bg-slate-100">
-                <span class="font-bold text-slate-800">Totaal K.K.</span>
-                <span class="font-bold text-blue-600">€ {(kk_costs+notary+makelaar):,}</span>
-            </div>
-        </div>
-        """)
+        # Main content from narrative (AI or registry template)
+        breakdown_html = self._render_rich_narrative(narrative)
 
-        # Left sidebar: Cost breakdown
         left_sidebar = [
-             {
+            {
                 "type": "highlight_card",
                 "icon": "cash",
-                "title": "Totaal Benodigd",
-                "content": f"€ {total_acquisition:,}"
+                "title": "Vraagprijs",
+                "content": f"€ {price_val:,}".replace(',', '.') if price_val else "Onbekend"
             }
         ]
         
@@ -94,7 +111,12 @@ class FinancialAnalysis(BaseChapter):
             "main": {"title": "Kostenanalyse", "content": breakdown_html},
             "left_sidebar": left_sidebar,
             "sidebar": [
-                {"type": "advisor", "title": "Biedingsadvies", "content": f"Overweeg een bod rond € {int(price_val*0.95):,}.", "style": "gradient"}
+                {
+                    "type": "advisor", 
+                    "title": "Financieel Advies", 
+                    "content": narrative.get('conclusion', 'Analyse vereist meer data.'),
+                    "style": "gradient"
+                }
             ]
         }
         

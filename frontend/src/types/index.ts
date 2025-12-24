@@ -1,3 +1,14 @@
+/**
+ * Mandatory narrative contract for each chapter.
+ * 
+ * Every chapter (0-12) MUST produce a narrative of at least 300 words.
+ * This is NOT optional. Frontend MUST render this.
+ */
+export interface NarrativeContract {
+    text: string;
+    word_count: number;
+}
+
 export interface ChapterData {
     id: string;
     title: string;
@@ -21,6 +32,8 @@ export interface ChapterData {
         factual_variables?: string[];
     };
     missing_critical_data?: string[];
+    // MANDATORY NARRATIVE FIELD (chapters 0-12)
+    narrative?: NarrativeContract;
 }
 
 export type SidebarItem =

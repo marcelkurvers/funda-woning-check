@@ -9,7 +9,10 @@ from typing import Dict, Any
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-from main import build_chapters
+# Set test mode before imports
+os.environ["PIPELINE_TEST_MODE"] = "true"
+
+from pipeline.bridge import execute_report_pipeline
 
 class TestDynamism(unittest.TestCase):
     """
@@ -68,12 +71,22 @@ class TestDynamism(unittest.TestCase):
     def test_dynamism_score_generation(self):
         """
         Generates detailed Per-Chapter Dynamism analysis.
+        Uses the enforced execute_report_pipeline instead of deprecated build_chapters.
         """
         print("\nGenerated Scenario A (Tiny Apartment)...")
-        output_a = build_chapters(self.scenario_a)
+        # Use execute_report_pipeline - the ONLY valid entry point
+        output_a, _, _ = execute_report_pipeline(
+            run_id="dynamism-test-a",
+            raw_data=self.scenario_a,
+            preferences={}
+        )
         
         print("Generated Scenario B (Luxury Villa)...")
-        output_b = build_chapters(self.scenario_b)
+        output_b, _, _ = execute_report_pipeline(
+            run_id="dynamism-test-b",
+            raw_data=self.scenario_b,
+            preferences={}
+        )
 
         chapter_scores = []
         total_content_sim = 0

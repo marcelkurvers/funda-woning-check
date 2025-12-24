@@ -412,6 +412,9 @@ class TestValidationGate:
     
     def test_valid_chapter_passes(self):
         """Valid chapter output passes validation."""
+        # Create a 300+ word narrative for the test
+        long_narrative = " ".join(["word"] * 350)
+        
         output = {
             "id": "0",
             "title": "Executive Summary",
@@ -420,6 +423,11 @@ class TestValidationGate:
             "comparison": {
                 "marcel": "Marcel will appreciate the technical infrastructure and efficiency.",
                 "petra": "Petra will love the natural light and comfortable atmosphere."
+            },
+            # MANDATORY: Narrative is required for chapters 0-12
+            "narrative": {
+                "text": long_narrative,
+                "word_count": 350
             }
         }
         registry = {"address": "Teststraat 123", "asking_price_eur": 500000}

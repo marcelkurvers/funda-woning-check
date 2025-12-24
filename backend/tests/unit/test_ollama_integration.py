@@ -151,23 +151,37 @@ class TestPreferenceIntegration(unittest.TestCase):
         self.assertIn("marcel", ctx["_preferences"])
         self.assertIn("petra", ctx["_preferences"])
 
-    def test_fit_score_calculation_with_preferences(self):
-        """Verify fit score can be calculated with preferences"""
-        ctx = {
+    def test_fit_score_calculation_in_enrichment(self):
+        """
+        ARCHITECTURAL CHANGE: Fit score is now calculated in enrichment layer.
+        
+        This test verifies that match scores are computed during enrichment,
+        not in IntelligenceEngine.
+        """
+        from enrichment import DataEnricher
+        
+        raw_data = {
             "address": "Test",
-            "price": 500000,
-            "area": 120,
+            "prijs": "€ 500.000",
+            "oppervlakte": "120 m²",
+            "description": "Woning met garage en tuin",
+            "features": ["Garage", "Tuin"],
             "_preferences": {
                 "marcel": {"priorities": ["Garage", "Zonnepanelen"]},
                 "petra": {"priorities": ["Tuin", "Glas in lood"]}
             }
         }
         
-        score = IntelligenceEngine.calculate_fit_score(ctx)
+        enriched = DataEnricher.enrich(raw_data)
         
-        self.assertIsInstance(score, float)
-        self.assertGreaterEqual(score, 0.0)
-        self.assertLessEqual(score, 1.0)
+        # Match scores should be computed in enrichment
+        self.assertIn('marcel_match_score', enriched)
+        self.assertIn('petra_match_score', enriched)
+        self.assertIn('total_match_score', enriched)
+        
+        # Should be numeric values
+        self.assertIsInstance(enriched['marcel_match_score'], (int, float))
+        self.assertIsInstance(enriched['petra_match_score'], (int, float))
 
 
 class TestMultiChapterIntegration(unittest.TestCase):
@@ -216,8 +230,13 @@ class TestMultiChapterIntegration(unittest.TestCase):
         
         self.assertIn('title', result)
         self.assertIn('intro', result)
-        # Should mention energy label
-        self.assertIn("A", result['intro'])
+        
+        # Registry-only template should reference energy/sustainability
+        full_text = result.get('intro', '') + result.get('main_analysis', '')
+        self.assertTrue(
+            'energie' in full_text.lower() or 'duurzaam' in full_text.lower(),
+            "Chapter 4 should reference energy topics"
+        )
 
     def test_data_propagation_across_chapters(self):
         """Verify property data propagates correctly to all chapters"""

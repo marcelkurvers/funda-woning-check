@@ -1,5 +1,5 @@
 import React from 'react';
-import { Quote, User, Info, Layers, Check, Target, Zap, ShieldCheck, Heart, ArrowRight } from 'lucide-react';
+import { Quote, User, Info, Layers, Check, Target, Zap, ShieldCheck, Heart, ArrowRight, BookOpen, AlertTriangle } from 'lucide-react';
 
 interface MagazineChapterProps {
     content: any;
@@ -20,7 +20,16 @@ export const MagazineChapter: React.FC<MagazineChapterProps> = ({ content, chapt
     const hasVariables = content.variables && Object.keys(content.variables).length > 0;
     const analysisHTML = content.main_analysis || "";
 
-    // 2. Logic: Actionable Items
+    // 2. MANDATORY NARRATIVE (chapters 0-12)
+    // The backend MUST provide this. If missing, show error state.
+    const narrative = content.narrative || content.chapter_data?.narrative;
+    const narrativeText = narrative?.text || "";
+    const narrativeWordCount = narrative?.word_count || 0;
+    const hasNarrative = narrativeText.length > 0;
+    const isNarrativeRequired = chapterNumber <= 12;
+    const narrativeMissing = isNarrativeRequired && !hasNarrative;
+
+    // 3. Logic: Actionable Items
     const viewingMissions = content.advice || [];
     const strengths = content.strengths || [];
 
@@ -103,6 +112,56 @@ export const MagazineChapter: React.FC<MagazineChapterProps> = ({ content, chapt
                                 dangerouslySetInnerHTML={{ __html: analysisHTML }}
                             />
                         </div>
+
+                        {/* === MANDATORY NARRATIVE SECTION === */}
+                        {/* This section MUST be rendered for chapters 0-12. If narrative is missing, show error. */}
+                        {isNarrativeRequired && (
+                            <div className="p-16 md:p-24 lg:p-32 bg-gradient-to-br from-slate-50 to-blue-50/30 border-y border-slate-100 relative">
+                                <div className="absolute top-8 right-8 flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    <BookOpen className="w-3 h-3" />
+                                    <span>Redactionele Analyse</span>
+                                    {hasNarrative && (
+                                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full ml-2">
+                                            {narrativeWordCount} woorden
+                                        </span>
+                                    )}
+                                </div>
+
+                                {narrativeMissing ? (
+                                    /* ERROR STATE: Narrative is missing - this should never happen */
+                                    <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-8 text-center">
+                                        <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                                        <h3 className="text-xl font-bold text-red-700 mb-2">Narratief Ontbreekt</h3>
+                                        <p className="text-red-600 max-w-lg mx-auto">
+                                            Dit hoofdstuk heeft geen redactionele analyse. Dit is een systeemfout.
+                                            Elk hoofdstuk (0-12) moet een narratief van minimaal 300 woorden bevatten.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    /* NARRATIVE CONTENT */
+                                    <div className="max-w-4xl mx-auto">
+                                        <div className="flex items-center gap-4 mb-12">
+                                            <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+                                                <Quote className="w-6 h-6 text-white" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-2xl font-serif font-bold text-slate-900">Redactionele Duiding</h3>
+                                                <p className="text-sm text-slate-500">Analytische interpretatie voor Marcel & Petra</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="prose prose-lg prose-slate max-w-none leading-relaxed text-slate-700 font-serif">
+                                            {narrativeText.split('\n\n').map((paragraph: string, idx: number) => (
+                                                <p key={idx} className="mb-6 first:first-letter:text-5xl first:first-letter:font-serif first:first-letter:font-bold first:first-letter:float-left first:first-letter:mr-3 first:first-letter:leading-none first:first-letter:text-blue-600">
+                                                    {paragraph.trim()}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
 
                         {/* HET KIJKPLAN (Viewing Mission) */}
                         <div className="p-16 md:p-24 lg:p-32 bg-emerald-50 text-slate-900 relative border-y-8 border-emerald-100">

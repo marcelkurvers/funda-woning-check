@@ -82,6 +82,11 @@ class ValidationGate:
         # =====================================================================
         errors.extend(ValidationGate._check_required_fields(chapter_id, output))
         
+        # =====================================================================
+        # VALIDATION 5: MANDATORY NARRATIVE - Chapters 0-12 MUST have narrative
+        # =====================================================================
+        errors.extend(ValidationGate._check_narrative(chapter_id, output))
+        
         if errors:
             logger.warning(f"ValidationGate: Chapter {chapter_id} failed with {len(errors)} errors")
         
@@ -229,6 +234,82 @@ class ValidationGate:
             )
         
         return errors
+    
+    # Chapters that MUST have narrative (0-12, excluding media chapter 13)
+    NARRATIVE_REQUIRED_CHAPTERS = set(range(13))  # 0-12
+    
+    # Minimum word count for narrative
+    MIN_NARRATIVE_WORD_COUNT = 300
+    
+    @staticmethod
+    def _check_narrative(chapter_id: int, output: Dict[str, Any]) -> List[str]:
+        """
+        Check that mandatory narrative is present and meets minimum word count.
+        
+        VALIDATION RULES (FAIL-CLOSED):
+        - Chapters 0-12 MUST have a narrative field
+        - Narrative MUST have at least 300 words
+        - Missing narrative = FAIL
+        - Too short narrative = FAIL
+        
+        There is NO fallback. There is NO skip.
+        """
+        errors = []
+        
+        # Only chapters 0-12 require narrative
+        if chapter_id not in ValidationGate.NARRATIVE_REQUIRED_CHAPTERS:
+            return errors
+        
+        # Check for narrative in output
+        narrative = output.get('narrative')
+        
+        # Also check in chapter_data
+        chapter_data = output.get('chapter_data', {})
+        if isinstance(chapter_data, dict) and 'narrative' in chapter_data:
+            narrative = narrative or chapter_data.get('narrative')
+        
+        # ===================================================================
+        # VALIDATION: Narrative must exist
+        # ===================================================================
+        if not narrative:
+            errors.append(
+                f"Narrative Missing: Chapter {chapter_id} has no 'narrative' field. "
+                f"Every chapter (0-12) MUST have a narrative of at least 300 words. "
+                f"This is NOT optional."
+            )
+            return errors
+        
+        # ===================================================================
+        # VALIDATION: Narrative must have text
+        # ===================================================================
+        text = narrative.get('text', '') if isinstance(narrative, dict) else ''
+        if not text or not text.strip():
+            errors.append(
+                f"Narrative Empty: Chapter {chapter_id} has empty narrative text. "
+                f"Narrative text is REQUIRED."
+            )
+            return errors
+        
+        # ===================================================================
+        # VALIDATION: Narrative must meet minimum word count
+        # ===================================================================
+        word_count = narrative.get('word_count', 0) if isinstance(narrative, dict) else 0
+        
+        # Verify word count matches actual text (trust but verify)
+        actual_word_count = len(text.split())
+        
+        # Use the lower of reported vs actual (be strict)
+        effective_word_count = min(word_count, actual_word_count) if word_count > 0 else actual_word_count
+        
+        if effective_word_count < ValidationGate.MIN_NARRATIVE_WORD_COUNT:
+            errors.append(
+                f"Narrative Too Short: Chapter {chapter_id} narrative has {effective_word_count} words "
+                f"(minimum {ValidationGate.MIN_NARRATIVE_WORD_COUNT}). "
+                f"Narrative word count requirement is MANDATORY."
+            )
+        
+        return errors
+    
     
     @staticmethod
     def validate_full_report(

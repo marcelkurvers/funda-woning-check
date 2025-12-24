@@ -1,21 +1,25 @@
 """
-Pipeline Bridge - Integration with Database-Driven Workflow
+Pipeline Bridge - Integration with Database-Driven Workflow (FAIL-CLOSED)
 
-This module bridges the new PipelineSpine with the existing database-driven
-workflow in main.py. It provides a drop-in replacement for the old 
-build_chapters and build_kpis functions.
+This module bridges the PipelineSpine with the existing database-driven
+workflow in main.py. It provides the ONLY valid entry point for report generation.
 
-The bridge ensures:
+FAIL-CLOSED ENFORCEMENT:
 1. All execution flows through the spine
-2. Validation is enforced on every chapter
-3. The database receives structured, validated output
+2. Validation is BLOCKING on every chapter
+3. The database receives ONLY validated, structured output
+4. No bypass paths exist
+
+If validation fails in production, the pipeline ABORTS.
 """
 
+import os
 import logging
 from typing import Dict, Any, Tuple, Optional
 
-from backend.pipeline.spine import PipelineSpine
-from backend.domain.pipeline_context import ValidationFailure
+from backend.pipeline.spine import PipelineSpine, is_production_mode
+from backend.domain.pipeline_context import PipelineViolation, ValidationFailure
+from backend.domain.registry import RegistryConflict, RegistryLocked
 
 logger = logging.getLogger(__name__)
 
@@ -24,12 +28,17 @@ def execute_report_pipeline(
     run_id: str,
     raw_data: Dict[str, Any],
     preferences: Optional[Dict[str, Any]] = None
-) -> Tuple[Dict[str, Any], Dict[str, Any], Any]:
+) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
     """
     Execute the full report pipeline through the spine.
     
-    This is the bridge function that main.py should call instead of
-    the old build_chapters + build_kpis approach.
+    This is the ONLY function that main.py should call.
+    All other generation paths are deprecated and blocked.
+    
+    FAIL-CLOSED BEHAVIOR:
+    - In production: validation failure raises PipelineViolation
+    - Registry conflicts raise RegistryConflict
+    - No partial output, no warnings-only - failures are fatal
     
     Args:
         run_id: Unique run identifier
@@ -37,24 +46,38 @@ def execute_report_pipeline(
         preferences: Marcel & Petra preferences
     
     Returns:
-        Tuple of (chapters_dict, kpis_dict, spine_instance)
+        Tuple of (chapters_dict, kpis_dict, enriched_core_dict)
         
-        chapters_dict: Dict mapping chapter ID strings to chapter output
+        chapters_dict: Dict mapping chapter ID strings to validated chapter output
         kpis_dict: Dict containing dashboard KPI cards
-        spine: The PipelineSpine instance (for debugging/inspection)
+        enriched_core: Enriched registry dict for database storage
+        
+    Raises:
+        PipelineViolation: If validation fails (production mode)
+        RegistryConflict: If registry conflicts occur
+        RegistryLocked: If attempting to modify locked registry
     """
     logger.info(f"Pipeline Bridge: Starting execution for run {run_id}")
+    
+    # Determine strict mode
+    strict = is_production_mode()
     
     try:
         spine, output = PipelineSpine.execute_full_pipeline(
             run_id=run_id,
             raw_data=raw_data,
             preferences=preferences,
-            strict_validation=False  # Allow partial output in production
+            strict_validation=strict
         )
+    except PipelineViolation as e:
+        logger.error(f"Pipeline Bridge: FATAL - Validation failure - {e}")
+        raise  # Re-raise - no graceful degradation
+    except RegistryConflict as e:
+        logger.error(f"Pipeline Bridge: FATAL - Registry conflict - {e}")
+        raise  # Re-raise - no graceful degradation
     except Exception as e:
-        logger.error(f"Pipeline Bridge: Execution failed - {e}")
-        raise
+        logger.error(f"Pipeline Bridge: FATAL - Unexpected error - {e}")
+        raise  # Re-raise - no swallowing of errors
     
     # Convert chapters output to expected format
     chapters = output.get("chapters", {})
@@ -62,10 +85,13 @@ def execute_report_pipeline(
     # Build KPIs from registry data
     kpis = _build_kpis_from_spine(spine)
     
-    # Also update raw_data with enriched values for database storage
+    # Get enriched core for database storage
     enriched_core = spine.ctx.get_registry_dict()
     
-    logger.info(f"Pipeline Bridge: Complete. {len(chapters)} chapters, validation_passed={output.get('validation_passed')}")
+    logger.info(
+        f"Pipeline Bridge: Complete. {len(chapters)} chapters, "
+        f"validation_passed={output.get('validation_passed')}"
+    )
     
     return chapters, kpis, enriched_core
 
@@ -137,3 +163,16 @@ def build_unknowns_from_context(ctx) -> list:
     """Build list of missing/unknown fields from context."""
     fields = ["asking_price_eur", "living_area_m2", "plot_area_m2", "build_year", "energy_label", "rooms", "bedrooms"]
     return [f for f in fields if not ctx.get_registry_value(f)]
+
+
+# =============================================================================
+# DEPRECATED BYPASS BLOCKER
+# =============================================================================
+
+def _raise_bypass_blocked(func_name: str):
+    """Raise an error when a deprecated bypass function is called."""
+    raise PipelineViolation(
+        f"FATAL: Bypass attempt blocked. The function '{func_name}' is deprecated "
+        f"and CANNOT be used. All report generation MUST go through execute_report_pipeline(). "
+        f"This is a structural enforcement - no exceptions."
+    )

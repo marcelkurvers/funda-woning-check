@@ -1,4 +1,4 @@
-# AI Woning Rapport v7.0.0
+# AI Woning Rapport v7.2.1
 
 [![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue?logo=docker)](https://ghcr.io/marcelkurvers/funda-app)
 [![Build Status](https://github.com/marcelkurvers/funda-app/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/marcelkurvers/funda-app/actions/workflows/docker-publish.yml)
@@ -13,7 +13,7 @@ The **AI Woning Rapport** is designed to provide potential homebuyers with deep,
 
 ### Key Features
 
-- **🔒 Pipeline Spine Architecture (v7.0)**: Structural enforcement of all quality guarantees. Single canonical registry, mandatory validation gates, and locked immutable truth. Every report flows through one unavoidable execution path.
+- **🔒 Pipeline Spine Architecture (v7.2)**: Structural enforcement of all quality guarantees. Single canonical registry, mandatory validation gates, and locked immutable truth. Every report flows through one unavoidable execution path.
 - **AI Trust & Transparency Architecture**: Every insight is labeled as **Fact** (from data) or **Inferred** (AI analysis), complete with **AI Provenance** (model/provider tracking) and **Proof of Reasoning**.
 - **Smart Variable Display Strategy**: Core property data shown ONLY once (Chapter 0), with each chapter displaying only relevant, domain-specific variables. No repetition, maximum clarity.
 - **Marcel & Petra Preference Matching**: Automatic calculation and visual indication of how each property variable matches personal preferences, with color-coded indicators (blue for Marcel, pink for Petra, purple for both).

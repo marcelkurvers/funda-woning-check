@@ -20,9 +20,15 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [debugMode, setDebugMode] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [appVersion, setAppVersion] = useState("v...");
 
   useEffect(() => {
     const init = async () => {
+      fetch('/api/version')
+        .then(res => res.json())
+        .then(data => setAppVersion(`v${data.version}`))
+        .catch(() => setAppVersion('v?.?.?'));
+
       const pathParts = window.location.pathname.split('/');
       const queryParams = new URLSearchParams(window.location.search);
       let runIdFromUrl = queryParams.get('runId');
@@ -205,7 +211,7 @@ function App() {
           </button>
           <div className="mt-4 px-3 flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-widest">
             <span>Version</span>
-            <span className="text-blue-500">v6.1.0-LIGHT-THEME</span>
+            <span className="text-blue-500">{appVersion}</span>
           </div>
         </div>
       </aside>

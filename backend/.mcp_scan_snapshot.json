@@ -1,5 +1,5 @@
 {
-  "scanned_at": "2025-12-22T21:27:40.550766Z",
+  "scanned_at": "2025-12-24T13:45:37.925078Z",
   "root": "/Users/marcelkurvers/Development/funda-app/backend",
   "excluded_dirs": [
     ".cache",
@@ -24,8 +24,8 @@
   "languages": {
     "python": {
       "language": "python",
-      "source_files": 50,
-      "test_files": 45,
+      "source_files": 72,
+      "test_files": 58,
       "test_roots": [
         ".",
         "tests",
