@@ -1,11 +1,10 @@
-# AI Woning Rapport v7.2.2
+# AI Woning Rapport v8.0.0
 
 [![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue?logo=docker)](https://ghcr.io/marcelkurvers/funda-app)
 [![Build Status](https://github.com/marcelkurvers/funda-app/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/marcelkurvers/funda-app/actions/workflows/docker-publish.yml)
 [![License](https://img.shields.io/badge/license-Private-red)](LICENSE)
 
-A powerful, data-driven real estate analysis tool that transforms Funda listings into comprehensive, personalized property reports.
-
+A powerful, data-driven real estate analysis tool that transforms Funda listings into comprehensive, personalized property reports. **Now featuring Decision-Grade V3 Analysis.**
 
 ## 🚀 Overview
 
@@ -13,8 +12,9 @@ The **AI Woning Rapport** is designed to provide potential homebuyers with deep,
 
 ### Key Features
 
-- **🔒 Pipeline Spine Architecture (v7.2)**: Structural enforcement of all quality guarantees. Single canonical registry, mandatory validation gates, and locked immutable truth. Every report flows through one unavoidable execution path.
-- **Narrative-First Enforcement**: Mandatory narrative layer that generates insights based strictly on the canonical registry. Validates word count and structural integrity before any output is returned.
+- **🏆 Decision-Grade Dashboard V3**: A first-class executive decision memo (500-800 words) that synthesis decision drivers, risks, and recommended next steps immediately upon load. No more KPI-only summaries.
+- **Narrative-First Enforcement (Laws 1-4)**: Strict architectural enforcement ensuring every chapter (0-12) has a minimum 300-word narrative and the dashboard has a 500-word narrative. The pipeline fails closed if any narrative is missing or too short.
+- **🔒 Pipeline Spine Architecture (v8.0)**: Structural enforcement of all quality guarantees. Single canonical registry, mandatory validation gates, and locked immutable truth. Every report flows through one unavoidable execution path.
 - **Fail-Closed Enforcement**: Reports that fail validation are strictly rejected (database writes blocked), ensuring that only 100% valid reports reach the user.
 - **AI Trust & Transparency Architecture**: Every insight is labeled as **Fact** (from data) or **Inferred** (AI analysis), complete with **AI Provenance** (model/provider tracking) and **Proof of Reasoning**.
 - **Smart Variable Display Strategy**: Core property data shown ONLY once (Chapter 0), with each chapter displaying only relevant, domain-specific variables. No repetition, maximum clarity.
@@ -25,7 +25,7 @@ The **AI Woning Rapport** is designed to provide potential homebuyers with deep,
 - **Multi-Source Ingestion**: Parse data via Funda URLs or direct HTML/Text paste. Robust handling of image pasting with automated upload.
 - **AI Provider Factory**: Modular support for **Ollama** (Local), **OpenAI**, **Anthropic Claude**, and **Google Gemini**.
 - **Advanced Parser**: High-accuracy extraction with multi-line support, logical validation, and cross-consistency checks.
-- **Modern Magazine v2 Dashboard**: A premium, responsive interface featuring interactive charts, AI provenance headers, and a detailed domain variable grid.
+- **Modern Magazine v3 Dashboard**: A premium, responsive interface featuring interactive charts, AI provenance headers, and a detailed domain variable grid.
 - **Intelligent Pipeline**: Asynchronous processing with data persistence and automated PDF generation.
 - **Runtime Configuration**: Granular control over AI models, market data, and user preferences via a dedicated Settings API.
 
