@@ -304,7 +304,9 @@ async def _shutdown():
 
 # Include configuration router
 from backend.api import config as config_router
+from backend.api import ai_status as ai_status_router
 app.include_router(config_router.router)
+app.include_router(ai_status_router.router)
 
 # --- PIPELINE ---
 def simulate_pipeline(run_id):

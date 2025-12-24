@@ -11,6 +11,7 @@ import { LandingPage } from './components/LandingPage';
 import { SettingsModal } from './components/common/SettingsModal';
 import { DiscoveryBento } from './components/common/DiscoveryBento';
 import { MediaGallery } from './components/common/MediaGallery';
+import { AIStatusIndicator } from './components/common/AIStatusIndicator';
 
 
 import type { ReportData } from './types';
@@ -235,6 +236,7 @@ function App() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <AIStatusIndicator onOpenSettings={() => window.location.href = '/static/preferences.html'} />
             <button onClick={() => setSettingsOpen(true)} className={`p-2 rounded-lg transition-all ${debugMode ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}>
               {debugMode ? <Bug className="w-5 h-5" /> : <Settings className="w-5 h-5" />}
             </button>
