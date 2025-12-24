@@ -186,3 +186,91 @@
 .magazine-pacing h4 {
   @apply text-xs font-black uppercase tracking-[0.5em] text-blue-600 mb-6 mt-16;
 }
+
+/* === NARRATIVE-FIRST HIERARCHY === */
+/* Ensures narrative content is visually dominant over KPIs */
+
+.narrative-primary {
+  @apply text-lg md:text-xl leading-relaxed text-slate-700 font-serif;
+}
+
+.narrative-primary p {
+  @apply mb-6;
+}
+
+.narrative-primary p:first-of-type::first-letter {
+  @apply text-5xl font-serif font-bold float-left mr-3 leading-none text-blue-600;
+}
+
+/* Supporting data should be visually subdued */
+.supporting-data {
+  @apply text-sm text-slate-500 bg-slate-50 rounded-xl p-4 border border-slate-100;
+}
+
+.supporting-data .value {
+  @apply text-lg font-bold text-slate-700;
+}
+
+/* Collapsible sections styling */
+.collapsible-section {
+  @apply border-t border-slate-100 py-4;
+}
+
+.collapsible-header {
+  @apply flex items-center justify-between py-3 cursor-pointer select-none;
+}
+
+.collapsible-header:hover {
+  @apply text-blue-600;
+}
+
+/* Insight cards - narrative-derived */
+.insight-card {
+  @apply p-5 rounded-xl border-l-4 transition-all;
+}
+
+.insight-card.takeaway {
+  @apply bg-blue-50 border-blue-500;
+}
+
+.insight-card.tension {
+  @apply bg-amber-50 border-amber-500;
+}
+
+.insight-card.relevance {
+  @apply bg-slate-50 border-slate-300;
+}
+
+/* Orientation page (Chapter 0) specific */
+.orientation-nav-item {
+  @apply w-full text-left p-5 rounded-2xl border transition-all;
+}
+
+.orientation-nav-item.priority-high {
+  @apply bg-blue-50 border-blue-200 hover:border-blue-400 hover:shadow-lg;
+}
+
+.orientation-nav-item.priority-normal {
+  @apply bg-slate-50 border-slate-200 hover:border-slate-300 hover:shadow-md;
+}
+
+/* Error states - for validation failures */
+.error-state {
+  @apply bg-red-50 border-2 border-red-200 rounded-2xl p-8;
+}
+
+.error-state .error-icon {
+  @apply text-red-500;
+}
+
+.error-state .error-title {
+  @apply text-xl font-bold text-red-700 mb-2;
+}
+
+.error-state .error-message {
+  @apply text-red-600;
+}
+
+.error-state .error-code {
+  @apply text-sm text-red-500 mt-4 font-mono;
+}

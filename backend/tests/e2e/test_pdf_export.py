@@ -148,7 +148,7 @@ class TestPDFExport(unittest.TestCase):
         self.assertGreaterEqual(count_titles, 13, "Expected at least 13 chapter titles")
 
         # Check Modern Layout usage
-        self.assertIn('class="visual-grid"', html_content, "Visual grid (metrics) not found")
+        self.assertIn('class="mag-v3-kpi-grid"', html_content, "Magazine V3 KPI Grid not found")
         self.assertIn('KURVERS PROPERTY CONSULTING', html_content, "Branding not found")
 
         print("Test PDF Export Logic Passed (Mocked Engine).")

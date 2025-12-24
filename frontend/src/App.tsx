@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BentoGrid, BentoCard } from './components/layout/BentoLayout';
 import { MagazineChapter } from './components/MagazineChapter';
+import { OrientationChapter } from './components/OrientationChapter';
 import {
   ChevronRight, Loader2, AlertCircle, Sparkles,
   Plus, FileText, Home, Settings, Zap, Bug, BookOpen
@@ -335,18 +336,31 @@ function App() {
             </div>
           ) : content ? (
             <div className="animate-in fade-in duration-700">
-              {/* MAGAZINE VIEW */}
-              <MagazineChapter
-                content={content}
-                chapterId={activeChapterId}
-                media={report.media_from_db || []}
-                provenance={currentChapter?.provenance || content._provenance}
-              />
-
-              {activeChapterId === "0" && report.discovery && report.discovery.length > 0 && (
-                <div className="max-w-5xl mx-auto px-4 md:px-8 pb-12">
-                  <DiscoveryBento attributes={report.discovery} />
-                </div>
+              {/* CHAPTER 0: ORIENTATION VIEW (not narrative-heavy) */}
+              {activeChapterId === "0" ? (
+                <>
+                  <OrientationChapter
+                    content={content}
+                    chapters={sortedChapters}
+                    media={report.media_from_db || []}
+                    address={report.address}
+                    provenance={currentChapter?.provenance || content._provenance}
+                    onNavigate={(chapterId) => setActiveChapterId(chapterId)}
+                  />
+                  {report.discovery && report.discovery.length > 0 && (
+                    <div className="max-w-5xl mx-auto px-4 md:px-8 pb-12">
+                      <DiscoveryBento attributes={report.discovery} />
+                    </div>
+                  )}
+                </>
+              ) : (
+                /* CHAPTERS 1-12: NARRATIVE-FIRST ANALYSIS VIEW */
+                <MagazineChapter
+                  content={content}
+                  chapterId={activeChapterId}
+                  media={report.media_from_db || []}
+                  provenance={currentChapter?.provenance || content._provenance}
+                />
               )}
             </div>
           ) : (

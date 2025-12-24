@@ -105,5 +105,5 @@ Found **55** potential issues.
 ### 📄 `domain/narrative_generator.py`
 | Line | Type | Content |
 | :--- | :--- | :--- |
-| 412 | **Placeholder** | `# Using a valid placeholder that meets word count for reliability in this specific tool call` |
+| 408 | **Placeholder** | `# Using a valid placeholder that meets word count for reliability in this specific tool call` |
 

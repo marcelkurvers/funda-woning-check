@@ -242,6 +242,11 @@ class PasteIn(BaseModel):
 # --- FASTAPI APP ---
 app = FastAPI(title=f"AI Woning Rapport Pro v{__version__}")
 
+@app.get("/api/version")
+def get_version():
+    return {"version": __version__}
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], # For dev; can be restricted to extension IDs later
@@ -555,9 +560,7 @@ def build_unknowns(core: Dict[str, Any]) -> List[str]:
     return [f for f in fields if not core.get(f)]
 
 # --- API ROUTES ---
-@app.get("/api/version")
-def get_version():
-    return {"version": __version__}
+
 
 @app.get("/api/runs")
 def list_runs():
@@ -952,10 +955,17 @@ async def get_run_pdf(run_id: str):
         logger.error(f"PDF Generation error: {e}")
         raise HTTPException(500, f"PDF engine error: {e}")
         
+    # Create a nice filename
+    address = core.get("address", "Unbekend").replace(" ", "_").replace(",", "").replace("/", "-")
+    import re
+    safe_address = re.sub(r'[^a-zA-Z0-9_\-]', '', address)
+    date_str = now().split(" ")[0] # YYYY-MM-DD
+    filename = f"Funda_Rapport_{safe_address}_{date_str}.pdf"
+
     return Response(
         content=pdf_bytes, 
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=Funda_Rapport_{run_id[:8]}.pdf"}
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
 # --- SPA CATCH-ALL ---
