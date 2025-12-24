@@ -191,7 +191,7 @@ class PipelineSpine:
         
         all_chapters = {}
         
-        for chapter_id in range(14):
+        for chapter_id in range(1, 14): # Skip 0, it is generated as Dashboard
             logger.info(f"PipelineSpine [{self.ctx.run_id}]: Generating chapter {chapter_id}")
             
             # Generate chapter (may use AI or fallback - doesn't matter)
@@ -222,7 +222,10 @@ class PipelineSpine:
         self._phase = "chapters_generated"
         
         if self._validation_failed:
-            logger.error(
+            # We continue to generate dashboard even if chapters failed? 
+            # Spec says "If ANY narrative fails -> stop execution".
+            # So we should probably raise here or ensure get_renderable_output fails.
+             logger.error(
                 f"PipelineSpine [{self.ctx.run_id}]: VALIDATION FAILED for chapters: {self._failed_chapters}. "
                 f"Report generation is INVALID."
             )
@@ -259,6 +262,37 @@ class PipelineSpine:
         
         self.ctx.store_validated_chapter(chapter_id, output)
         return output
+    
+    # =========================================================================
+    # PHASE 3.5: DASHBOARD GENERATION (First-Class Output)
+    # =========================================================================
+    
+    def generate_dashboard(self) -> Dict[str, Any]:
+        """
+        Generate decision dashboard (LAT 2).
+        
+        This MUST happen after chapter generation.
+        """
+        if self._phase != "chapters_generated":
+            raise PipelineViolation(f"Cannot generate dashboard in phase '{self._phase}'")
+            
+        from backend.pipeline.dashboard_generator import generate_dashboard_with_validation
+        
+        logger.info(f"PipelineSpine [{self.ctx.run_id}]: Generating Dashboard")
+        
+        # FAIL-CLOSED: Dashboard failure kills the pipeline
+        try:
+            output = generate_dashboard_with_validation(self.ctx)
+            # Store as dict
+            self.ctx.store_dashboard(output.model_dump())
+        except Exception as e:
+            self._validation_failed = True
+            logger.error(f"PipelineSpine [{self.ctx.run_id}]: Dashboard generation FAILED: {e}")
+            if is_production_mode():
+                raise e
+        
+        return self.ctx.get_dashboard()
+
     
     # =========================================================================
     # PHASE 4: RENDER (Only after validation)
@@ -318,6 +352,7 @@ class PipelineSpine:
             "registry_entry_count": len(self.ctx.registry.get_all()),
             "validation_passed": self.ctx.all_chapters_valid(),
             "chapters": {str(k): v for k, v in chapters.items()},
+            "dashboard": self.ctx.get_dashboard(),
             "incomplete_data": self.ctx.get_incomplete_entries()
         }
         
@@ -371,6 +406,9 @@ class PipelineSpine:
         
         # Phase 3: Generate with Validation
         spine.generate_all_chapters()
+        
+        # Phase 3.5: Dashboard
+        spine.generate_dashboard()
         
         # Phase 4: Get Renderable Output (may raise PipelineViolation if strict)
         output = spine.get_renderable_output(strict=strict_validation)

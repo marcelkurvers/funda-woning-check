@@ -82,7 +82,16 @@ def execute_report_pipeline(
     # Convert chapters output to expected format
     chapters = output.get("chapters", {})
     
-    # Build KPIs from registry data
+    # INJECT DASHBOARD AS CHAPTER 0 (LAW 2)
+    # The dashboard is a first-class output that replaces the old KPI summary.
+    # We map it to Chapter 0 so the frontend renders it as the primary view.
+    dashboard_data = spine.ctx.get_dashboard()
+    if dashboard_data:
+        chapter_0 = _convert_dashboard_to_chapter(dashboard_data, spine.ctx)
+        chapters["0"] = chapter_0
+        # Also validate it technically to be safe? It's already validated by generator.
+    
+    # Build KPIs from registry data (Legacy support + Dashboard alignment)
     kpis = _build_kpis_from_spine(spine)
     
     # Get enriched core for database storage
@@ -94,6 +103,53 @@ def execute_report_pipeline(
     )
     
     return chapters, kpis, enriched_core
+
+
+def _convert_dashboard_to_chapter(dashboard: Dict[str, Any], ctx: Any) -> Dict[str, Any]:
+    """Convert strict DashboardOutput to Chapter 0 format for frontend."""
+    content = dashboard.get("dashboard", {})
+    narrative = content.get("narrative", {})
+    
+    # Format Top Drivers as list items
+    drivers = content.get("top_decision_drivers", [])
+    risks = content.get("risks_and_unknowns", [])
+    
+    # Construct the chapter mapping
+    return {
+        "id": "0",
+        "title": "EXECUTIVE DASHBOARD",
+        "narrative": narrative, # Pass strictly
+        "segment": "BESLUITVORMING",
+        "chapter_data": {
+            "title": "Executive Besluitvorming",
+            "intro": "Directie Samenvatting",
+            "main_analysis": narrative.get("text", ""), # This ensures narrative renders in main block
+            "sections": [
+                {"title": "Strategische Drivers", "items": drivers},
+                {"title": "Risico's & Onzekerheden", "items": risks}
+            ],
+            "metrics": _build_dashboard_metrics(content, ctx),
+            "narrative": narrative # Redundant but safe for frontend
+        },
+        "grid_layout": {
+             # Basic layout for compatibility
+             "main": {"content": narrative.get("text", "")},
+             "metrics": _build_dashboard_metrics(content, ctx)
+        }
+    }
+
+
+def _build_dashboard_metrics(content: Dict[str, Any], ctx: Any) -> list:
+    """Build metrics list from dashboard content."""
+    coverage = content.get("coverage", {}).get("score", 0)
+    marcel_score = content.get("persona_alignment", {}).get("marcel", {}).get("score", 0)
+    petra_score = content.get("persona_alignment", {}).get("petra", {}).get("score", 0)
+    
+    return [
+        {"id": "marcel", "label": "Marcel Match", "value": f"{marcel_score}%"},
+        {"id": "petra", "label": "Petra Match", "value": f"{petra_score}%"},
+        {"id": "quality", "label": "Data Kwaliteit", "value": f"{int(coverage*100)}%"}
+    ]
 
 
 def _build_kpis_from_spine(spine: PipelineSpine) -> Dict[str, Any]:

@@ -70,6 +70,9 @@ class PipelineContext:
     # Generated chapter outputs (only populated after validation passes)
     _validated_chapters: Dict[int, Dict[str, Any]] = field(default_factory=dict, repr=False)
     
+    # Dashboard output (populated after dashboard generation)
+    _dashboard_output: Optional[Dict[str, Any]] = field(default=None, repr=False)
+    
     # Preferences (user-defined, not from registry)
     preferences: Dict[str, Any] = field(default_factory=dict)
     
@@ -185,6 +188,14 @@ class PipelineContext:
     def get_validated_chapters(self) -> Dict[int, Dict[str, Any]]:
         """Get all validated chapter outputs."""
         return self._validated_chapters.copy()
+        
+    def store_dashboard(self, output: Dict[str, Any]) -> None:
+        """Store validated dashboard output."""
+        self._dashboard_output = output
+        
+    def get_dashboard(self) -> Optional[Dict[str, Any]]:
+        """Get dashboard output."""
+        return self._dashboard_output.copy() if self._dashboard_output else None
     
     def get_incomplete_entries(self) -> List[str]:
         """Get list of registry entries marked as incomplete or uncertain."""

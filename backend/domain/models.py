@@ -90,3 +90,25 @@ class ChapterOutput(BaseModel):
         default=None,
         description="Mandatory narrative text (300+ words). Required for chapters 0-12."
     )
+
+
+class PersonaAlignment(BaseModel):
+    marcel: Dict[str, Any] = {}
+    petra: Dict[str, Any] = {}
+
+
+class DashboardContent(BaseModel):
+    coverage: Dict[str, Any] = {}
+    top_decision_drivers: List[str] = []
+    risks_and_unknowns: List[str] = []
+    persona_alignment: PersonaAlignment = Field(default_factory=PersonaAlignment)
+    narrative: NarrativeContract = Field(..., description="Mandatory dashboard narrative (500-800 words)")
+
+
+class DashboardOutput(BaseModel):
+    """
+    The strict dashboard output contract.
+    LAW 2: Dashboard is First-Class Output.
+    """
+    dashboard: DashboardContent
+

@@ -1,13 +1,15 @@
 # AI-Enhanced Reporting System Architecture
 
-## CORE INVARIANT (ABSOLUTE)
+## CORE INVARIANTS (ABSOLUTE)
 
 ```
-If a factual value appears in a report, it MUST come from the CanonicalRegistry.
-AI must never output factual values directly.
+1. If a factual value appears in a report, it MUST come from the CanonicalRegistry.
+2. Every chapter (0-12) MUST have a narrative of at least 300 words.
+3. Dashboard MUST exist and have a narrative of at least 500 words.
+4. Pipeline MUST fail if narrative is missing or too short.
 ```
 
-If this invariant is violated anywhere, the system is incorrect.
+If these invariants are violated anywhere, the system is incorrect.
 
 ---
 

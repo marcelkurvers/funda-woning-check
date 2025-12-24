@@ -682,208 +682,171 @@
             text-align: center;
             font-style: italic;
         }
-    </style>
-    /* --- MAGAZINE V2 ARCHITECTURE --- */
-    .mag-v2-container {
-    font-family: 'Inter', sans-serif;
-    color: #334155;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    }
 
-    /* Unique Chapter Headers */
-    .mag-v2-header {
-    position: relative;
-    margin-bottom: 50px;
-    padding-bottom: 20px;
-    border-bottom: 4px solid #0c121e;
-    }
+        /* --- MAGAZINE V3 (The New Standard) --- */
+        .mag-v3-container {
+            display: flex;
+            gap: 35px;
+            align-items: flex-start;
+        }
 
-    .mag-v2-chapter-number {
-    font-size: 140pt;
-    font-weight: 900;
-    color: rgba(241, 245, 249, 0.8);
-    position: absolute;
-    top: -60px;
-    right: 0;
-    line-height: 1;
-    z-index: 0;
-    font-family: 'Outfit', sans-serif;
-    }
+        .mag-v3-main {
+            flex: 1.6;
+        }
 
-    .mag-v2-title-group {
-    position: relative;
-    z-index: 1;
-    }
+        .mag-v3-sidebar {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-top: 10px;
+        }
 
-    .mag-v2-tag {
-    font-size: 8pt;
-    font-weight: 800;
-    color: #3b82f6;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    margin-bottom: 10px;
-    display: block;
-    }
+        /* Narrative Styling */
+        .mag-v3-intro {
+            font-family: 'Playfair Display', serif;
+            font-size: 11pt;
+            font-style: italic;
+            color: #1e293b;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            border-left: 3px solid #3b82f6;
+            padding-left: 20px;
+        }
 
-    .mag-v2-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 38pt;
-    color: #0c121e;
-    font-weight: 700;
-    line-height: 1.1;
-    margin: 0;
-    }
+        .mag-v3-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 9.5pt;
+            line-height: 1.7;
+            color: #334155;
+            text-align: justify;
+            margin-bottom: 25px;
+        }
 
-    /* Layouts */
-    .mag-v2-content-wrapper {
-    display: grid;
-    grid-template-columns: 1.8fr 1fr;
-    gap: 40px;
-    align-items: start;
-    }
+        .mag-v3-text p {
+            margin-bottom: 15px;
+        }
 
-    .mag-v2-main-text {
-    font-size: 10pt;
-    line-height: 1.8;
-    color: #334155;
-    text-align: justify;
-    }
+        .mag-v3-pull-quote {
+            background: linear-gradient(to right, #f0f9ff 0%, rgba(255, 255, 255, 0) 100%);
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            margin: 30px 0;
+            font-family: 'Playfair Display', serif;
+            font-size: 12pt;
+            font-style: italic;
+            color: #0369a1;
+            border-radius: 0 12px 12px 0;
+        }
 
-    .mag-v2-main-text p {
-    margin-bottom: 20px;
-    }
+        /* Sidebar Widgets */
+        .mag-v3-widget {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
 
-    .mag-v2-intro-paragraph {
-    font-family: 'Playfair Display', serif;
-    font-size: 12pt;
-    font-style: italic;
-    color: #1e293b;
-    margin-bottom: 30px;
-    padding-left: 20px;
-    border-left: 3px solid #3b82f6;
-    }
+        .mag-v3-widget-title {
+            font-size: 7pt;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #94a3b8;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-    /* Sidebar Elements */
-    .mag-v2-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-    }
+        /* Fact File (Variables) */
+        .mag-v3-fact-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 8px 0;
+            border-bottom: 1px dashed #f1f5f9;
+            font-size: 8.5pt;
+        }
 
-    .mag-v2-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    padding: 25px;
-    border-radius: 0;
-    position: relative;
-    box-shadow: 10px 10px 0px rgba(241, 245, 249, 1);
-    }
+        .mag-v3-fact-row:last-child {
+            border-bottom: none;
+        }
 
-    .mag-v2-card.dark {
-    background: #0c121e;
-    color: #fff;
-    border: none;
-    }
+        .mag-v3-fact-label {
+            color: #64748b;
+            font-weight: 500;
+        }
 
-    .mag-v2-card-title {
-    font-size: 7pt;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-bottom: 15px;
-    display: block;
-    border-bottom: 1px solid rgba(0,0,0,0.1);
-    padding-bottom: 10px;
-    }
+        .mag-v3-fact-value {
+            color: #0f172a;
+            font-weight: 700;
+            text-align: right;
+        }
 
-    .mag-v2-card.dark .mag-v2-card-title {
-    color: #94a3b8;
-    border-bottom-color: rgba(255,255,255,0.1);
-    }
+        /* KPI Cards (Metrics) */
+        .mag-v3-kpi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
 
-    /* Data Visualization */
-    .mag-v2-data-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-    border-bottom: 1px dashed #e2e8f0;
-    padding-bottom: 8px;
-    }
+        .mag-v3-kpi-card {
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
 
-    .mag-v2-data-row:last-child {
-    border-bottom: none;
-    }
+        .mag-v3-kpi-val {
+            font-size: 14pt;
+            font-weight: 800;
+            color: #0f172a;
+            display: block;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
 
-    .mag-v2-data-label {
-    font-size: 8pt;
-    color: #64748b;
-    font-weight: 500;
-    }
+        .mag-v3-kpi-label {
+            font-size: 6pt;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
 
-    .mag-v2-data-value {
-    font-size: 9pt;
-    font-weight: 800;
-    color: #0f172a;
-    }
+        /* Advisory Box */
+        .mag-v3-advisory {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
 
-    .mag-v2-card.dark .mag-v2-data-label {
-    color: #94a3b8;
-    }
-    .mag-v2-card.dark .mag-v2-data-value {
-    color: #f8fafc;
-    }
+        .mag-v3-advisory .mag-v3-widget-title {
+            color: #166534;
+        }
 
-    /* Visual Fillers */
-    .mag-v2-visual-filler {
-    margin-top: 30px;
-    opacity: 0.1;
-    text-align: center;
-    }
+        .mag-v3-advisory-text {
+            font-size: 8.5pt;
+            color: #15803d;
+            line-height: 1.5;
+        }
 
-    .mag-v2-pull-quote {
-    font-family: 'Playfair Display', serif;
-    font-size: 16pt;
-    font-style: italic;
-    color: #3b82f6;
-    margin: 40px 0;
-    text-align: center;
-    position: relative;
-    }
+        /* AI Box */
+        .mag-v3-ai-box {
+            background: #f8fafc;
+            position: relative;
+            overflow: hidden;
+        }
 
-    .mag-v2-pull-quote::before {
-    content: '"';
-    font-size: 60pt;
-    position: absolute;
-    top: -30px;
-    left: 45%;
-    color: #e2e8f0;
-    z-index: -1;
-    font-family: serif;
-    }
-
-    /* M&P Match Card */
-    .mag-v2-match-box {
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-    border: 2px solid #fff;
-    padding: 20px;
-    }
-
-    .mag-v2-match-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-    }
-
-    .mag-v2-avatar-circle {
-    width: 30px; height: 30px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: bold; color: white; font-size: 10pt;
-    }
+        .mag-v3-ai-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: #64748b;
+        }
     </style>
 </head>
 
@@ -1044,7 +1007,6 @@
     </div>
 
     <!-- CHAPTERS -->
-    {% for ch in chapters %}
     <div class="page">
         <div class="chapter-number">0{{ loop.index0 if loop.index0 < 10 else loop.index0 }}</div>
 
@@ -1199,123 +1161,130 @@
                 </div>
                 {% endif %}
 
-                <!-- COMPREHENSIVE VARIABLES DISPLAY -->
-                {% if ch.chapter_data and ch.chapter_data.variables %}
-                <div class="infographic-box" style="margin: 25px 0;">
-                    <h4
-                        style="font-size: 8pt; color: #0369a1; text-transform: uppercase; margin-bottom: 15px; font-weight: 800; letter-spacing: 1.5px;">
-                        📊 Gedetailleerde Objectgegevens
-                    </h4>
-                    <div class="variables-grid">
-                        {% for key, var_data in ch.chapter_data.variables.items() %}
-                        <div class="variable-item">
-                            <div class="variable-icon">
-                                <span style="color: white; font-size: 10pt; font-weight: 800;">{{ loop.index }}</span>
-                            </div>
-                            <div class="variable-content">
-                                <div class="variable-label">{{ key.replace('_', ' ') }}</div>
-                                <div class="variable-value">{{ var_data.value if var_data.value else 'N/B' }}</div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
+                <!-- MAGAZINE V3 CONTENT LAYOUT -->
+                <div class="mag-v3-container">
 
-                {% if ch.grid_layout and ch.grid_layout.metrics %}
-                <div class="visual-grid">
-                    {% for m in ch.grid_layout.metrics[:4] %}
-                    <div class="metric-card">
-                        <span class="metric-label">{{ m.label }}</span>
-                        <span class="metric-value">{{ m.value }}</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill"
-                                style="width: 80%; background: {% if m.color == 'green' %}#10b981{% elif m.color == 'red' %}#ef4444{% else %}#3b82f6{% endif %};">
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-
-                <div class="content-layout">
-                    <div class="main-narrative">
+                    <!-- LEFT COLUMN: NARRATIVE -->
+                    <div class="mag-v3-main">
                         {% if ch.chapter_data %}
+
                         {% if ch.chapter_data.intro %}
-                        <p
-                            style="font-weight: 600; color: #0c121e; font-size: 10pt; margin-bottom: 20px; line-height: 1.7;">
+                        <div class="mag-v3-intro">
                             {{ ch.chapter_data.intro | striptags | safe }}
-                        </p>
+                        </div>
                         {% endif %}
 
                         {% if ch.chapter_data.main_analysis %}
-                        <div class="two-column" style="font-size: 9pt; line-height: 1.7; color: #334155;">
+                        <div class="mag-v3-text">
                             {{ ch.chapter_data.main_analysis | safe }}
                         </div>
                         {% endif %}
 
                         {% if ch.chapter_data.conclusion %}
-                        <div class="pull-quote">
+                        <div class="mag-v3-pull-quote">
                             {{ ch.chapter_data.conclusion | striptags | safe }}
                         </div>
                         {% endif %}
 
                         {% elif ch.grid_layout and ch.grid_layout.main %}
-                        <div class="two-column" style="font-size: 9pt; line-height: 1.7;">
+                        <div class="mag-v3-text">
                             {{ ch.grid_layout.main.content | safe }}
                         </div>
                         {% endif %}
+
+                        <div style="margin-top: 30px; font-size: 7pt; color: #94a3b8;">
+                            <strong>BRONNEN:</strong> Funda, Kadaster, Ruimtelijke Plannen,
+                            <span style="color: #64748b;">Kurvers Extensie v2.1</span>
+                        </div>
                     </div>
 
-                    <div class="advisory-panel">
-                        {% if ch.chapter_data and ch.chapter_data.interpretation %}
-                        <div class="expert-insight">
-                            <h4>
+                    <!-- RIGHT COLUMN: DATA SIDEBAR -->
+                    <div class="mag-v3-sidebar">
+
+                        <!-- 1. KEY METRICS (KPIs) -->
+                        {% if ch.grid_layout and ch.grid_layout.metrics %}
+                        <div class="mag-v3-widget">
+                            <div class="mag-v3-widget-title">
                                 <svg class="icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
                                     <path d="M12 2v20M2 12h20" />
                                 </svg>
-                                AI Interpretatie
-                            </h4>
-                            <div style="font-size: 8pt; line-height: 1.6; color: #475569;">
+                                KERN DATA
+                            </div>
+                            <div class="mag-v3-kpi-grid">
+                                {% for m in ch.grid_layout.metrics[:4] %}
+                                <div class="mag-v3-kpi-card">
+                                    <span class="mag-v3-kpi-val">{{ m.value }}</span>
+                                    <span class="mag-v3-kpi-label">{{ m.label }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- 2. VARIABLES (Fact File) -->
+                        {% if ch.chapter_data and ch.chapter_data.variables %}
+                        <div class="mag-v3-widget">
+                            <div class="mag-v3-widget-title">
+                                <svg class="icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                                </svg>
+                                DETAILS
+                            </div>
+                            {% for key, var_data in ch.chapter_data.variables.items() %}
+                            <div class="mag-v3-fact-row">
+                                <span class="mag-v3-fact-label">{{ key.replace('_', ' ') }}</span>
+                                <span class="mag-v3-fact-value">{{ var_data.value if var_data.value else '-' }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- 3. AI INTERPRETATION -->
+                        {% if ch.chapter_data and ch.chapter_data.interpretation %}
+                        <div class="mag-v3-widget mag-v3-ai-box">
+                            <div class="mag-v3-widget-title" style="color: #475569;">
+                                🔍 ANALYST NOTE
+                            </div>
+                            <div style="font-size: 8pt; color: #334155; line-height: 1.5; font-style: italic;">
                                 {{ ch.chapter_data.interpretation | safe }}
                             </div>
                         </div>
                         {% endif %}
 
+                        <!-- 4. ADVISORY -->
                         {% if ch.chapter_data and ch.chapter_data.advice %}
-                        <div class="sidebar-callout">
-                            <h5>⚡ Strategisch Advies</h5>
-                            <p>{{ ch.chapter_data.advice | striptags | safe }}</p>
+                        <div class="mag-v3-widget mag-v3-advisory">
+                            <div class="mag-v3-widget-title">
+                                ⚡ ACTIE PLAN
+                            </div>
+                            <div class="mag-v3-advisory-text">
+                                {{ ch.chapter_data.advice | striptags | safe }}
+                            </div>
                         </div>
                         {% endif %}
 
+                        <!-- 5. MATCH -->
                         {% if ch.chapter_data and ch.chapter_data.comparison %}
-                        <div
-                            style="background: #eff6ff; padding: 15px; border-radius: 12px; border: 1px solid #dbeafe; margin-top: 15px;">
-                            <h4
-                                style="font-size: 7pt; color: #1e40af; text-transform: uppercase; margin-bottom: 10px; font-weight: 800;">
-                                👥 M&P Match</h4>
-                            <div style="display: flex; flex-direction: column; gap: 10px;">
-                                <div
-                                    style="font-size: 7.5pt; line-height: 1.5; background: white; padding: 10px; border-radius: 8px;">
-                                    <strong style="color: #3b82f6;">Marcel:</strong> {{
-                                    ch.chapter_data.comparison.marcel | striptags | safe }}
-                                </div>
-                                <div
-                                    style="font-size: 7.5pt; line-height: 1.5; background: white; padding: 10px; border-radius: 8px;">
-                                    <strong style="color: #ec4899;">Petra:</strong> {{ ch.chapter_data.comparison.petra
-                                    | striptags | safe }}
-                                </div>
+                        <div class="mag-v3-widget" style="background: #f0f7ff; border-color: #bfdbfe;">
+                            <div class="mag-v3-widget-title" style="color: #1e40af;">
+                                👥 PROFIEL MATCH
                             </div>
-                            {% if ch.chapter_data.comparison.combined_advice %}
-                            <div
-                                style="margin-top: 10px; font-style: italic; border-top: 1px solid #dbeafe; padding-top: 10px; font-size: 8pt; color: #1e3a8a; font-weight: 600;">
-                                💡 {{ ch.chapter_data.comparison.combined_advice | striptags | safe }}
+                            <div style="font-size: 7.5pt; margin-bottom: 8px;">
+                                <strong style="color: #2563eb;">M:</strong>
+                                <span style="color: #1e3a8a;">{{ ch.chapter_data.comparison.marcel | striptags |
+                                    truncate(60) }}</span>
                             </div>
-                            {% endif %}
+                            <div style="font-size: 7.5pt;">
+                                <strong style="color: #db2777;">P:</strong>
+                                <span style="color: #831843;">{{ ch.chapter_data.comparison.petra | striptags |
+                                    truncate(60) }}</span>
+                            </div>
                         </div>
                         {% endif %}
+
                     </div>
                 </div>
 

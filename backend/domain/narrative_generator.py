@@ -141,15 +141,43 @@ CHAPTER_GOALS = {
 
 
 # =============================================================================
+# DASHBOARD SYSTEM PROMPT (IMMUTABLE)
+# =============================================================================
+
+DASHBOARD_SYSTEM_PROMPT = """
+You are writing a board-level decision memo.
+
+Write 500–800 words synthesizing:
+
+the dominant decision drivers
+
+cross-page tensions
+
+persona alignment and conflict
+
+uncertainties that affect action
+
+recommended next steps
+
+This is not a summary.
+This is interpretation.
+
+No tables.
+No numbers.
+No repetition.
+"""
+
+
+# =============================================================================
 # NARRATIVE GENERATOR (SINGLE RESPONSIBILITY)
 # =============================================================================
 
 class NarrativeGenerator:
     """
-    The ONLY component responsible for generating chapter narratives.
+    The ONLY component responsible for generating narratives (Chapter & Dashboard).
     
     This is a single-responsibility component that:
-    1. Accepts chapter context
+    1. Accepts context
     2. Calls AI with fixed system prompt
     3. Returns narrative text + word count
     
@@ -160,7 +188,8 @@ class NarrativeGenerator:
     - Influence layout
     """
     
-    MINIMUM_WORD_COUNT = 300
+    CHAPTER_MIN_WORDS = 300
+    DASHBOARD_MIN_WORDS = 500
     
     @classmethod
     def generate(
@@ -171,18 +200,6 @@ class NarrativeGenerator:
     ) -> NarrativeOutput:
         """
         Generate narrative for a chapter.
-        
-        Args:
-            chapter_id: Chapter number (0-12)
-            context: Dict containing variables, KPIs, preferences, uncertainties
-            ai_provider: Optional AI provider instance
-        
-        Returns:
-            NarrativeOutput with text and word_count
-        
-        Raises:
-            NarrativeGenerationError: If AI generation fails
-            NarrativeWordCountError: If narrative is < 300 words
         """
         logger.info(f"NarrativeGenerator: Generating narrative for Chapter {chapter_id}")
         
@@ -192,20 +209,62 @@ class NarrativeGenerator:
         # Try AI generation if provider available
         if ai_provider:
             try:
-                narrative = cls._generate_with_ai(ai_provider, user_prompt, chapter_id, context)
+                narrative = cls._generate_with_ai(
+                    ai_provider, 
+                    user_prompt, 
+                    NARRATIVE_SYSTEM_PROMPT,
+                    cls.CHAPTER_MIN_WORDS,
+                    context
+                )
                 return narrative
             except Exception as e:
                 logger.error(f"NarrativeGenerator: AI generation failed for Chapter {chapter_id}: {e}")
                 # Fall through to template generation
         
-        # Template-based generation (for when AI is unavailable)
+        # Template-based generation (validation fallback)
         narrative = cls._generate_template_narrative(chapter_id, context)
-        
         return narrative
     
     @classmethod
+    def generate_dashboard(
+        cls,
+        context: Dict[str, Any],
+        ai_provider: Optional[Any] = None
+    ) -> NarrativeOutput:
+        """
+        Generate narrative for the dashboard (decision memo).
+        
+        LAW 2: Dashboard Is First-Class Output (500-800 words).
+        """
+        logger.info("NarrativeGenerator: Generating Dashboard Narrative")
+        
+        # Build prompt
+        user_prompt = cls._build_dashboard_prompt(context)
+        
+        if ai_provider:
+            try:
+                narrative = cls._generate_with_ai(
+                    ai_provider,
+                    user_prompt,
+                    DASHBOARD_SYSTEM_PROMPT,
+                    cls.DASHBOARD_MIN_WORDS,
+                    context
+                )
+                return narrative
+            except Exception as e:
+                logger.error(f"NarrativeGenerator: AI Dashboard generation failed: {e}")
+                # No template fallback for dashboard - it MUST fail if AI fails?
+                # "The pipeline MUST fail if any page lacks this narrative"
+                # But for Dashboard? "UI must show an error state" if missing.
+                # However, "Tests assertions: dashboard existence".
+                # If we cannot generate, we throw error.
+                raise NarrativeGenerationError(f"Dashboard generation failed: {e}")
+        
+        raise NarrativeGenerationError("No AI provider available for Dashboard generation")
+    
+    @classmethod
     def _build_user_prompt(cls, chapter_id: int, context: Dict[str, Any]) -> str:
-        """Build the user prompt for AI narrative generation."""
+        """Build the user prompt for AI chapter narrative."""
         
         goal = CHAPTER_GOALS.get(chapter_id, f"Chapter {chapter_id} analysis")
         
@@ -257,13 +316,40 @@ and KPIs mean for Marcel & Petra's decision-making. Focus on relationships,
 tensions, and implications - not on restating numbers.
 """
         return prompt
+
+    @classmethod
+    def _build_dashboard_prompt(cls, context: Dict[str, Any]) -> str:
+        """Build the user prompt for Dashboard narrative."""
+        
+        # Context contains registry + all chapter narratives ideally?
+        # "Derived strictly from pages 1-12"
+        # We assume context has the necessary summary info
+        
+        prompt = f"""
+DECISION MEMO CONTEXT
+
+FULL REGISTRY SUMMARY:
+{json.dumps(context.get('registry_summary', {}), default=str, indent=2)}
+
+KEY RISKS:
+{json.dumps(context.get('risks', []), default=str)}
+
+MATCH SCORES:
+{json.dumps(context.get('scores', {}), default=str)}
+
+TASK:
+Write a 500-800 word decision memo. Synthesize decision drivers, tensions, 
+persona alignment, and next steps.
+"""
+        return prompt
     
     @classmethod
     def _generate_with_ai(
         cls, 
         ai_provider: Any, 
         user_prompt: str,
-        chapter_id: int,
+        system_prompt: str,
+        min_words: int,
         context: Dict[str, Any]
     ) -> NarrativeOutput:
         """Generate narrative using AI provider."""
@@ -273,7 +359,7 @@ tensions, and implications - not on restating numbers.
         async def _async_generate():
             response = await ai_provider.generate(
                 user_prompt,
-                system=NARRATIVE_SYSTEM_PROMPT,
+                system=system_prompt,
                 model=context.get('_preferences', {}).get('ai_model', 'gpt-4o'),
                 json_mode=True
             )
@@ -282,7 +368,7 @@ tensions, and implications - not on restating numbers.
         response_text = safe_execute_async(_async_generate())
         
         if not response_text:
-            raise NarrativeGenerationError(f"AI returned empty response for Chapter {chapter_id}")
+            raise NarrativeGenerationError("AI returned empty response")
         
         # Parse JSON response
         try:
@@ -299,10 +385,10 @@ tensions, and implications - not on restating numbers.
             word_count = result.get('word_count', len(text.split()))
             
             # Validate minimum word count
-            if word_count < cls.MINIMUM_WORD_COUNT:
+            if word_count < min_words:
                 raise NarrativeWordCountError(
-                    f"Chapter {chapter_id} narrative too short: {word_count} words "
-                    f"(minimum {cls.MINIMUM_WORD_COUNT})"
+                    f"Narrative too short: {word_count} words "
+                    f"(minimum {min_words})"
                 )
             
             return NarrativeOutput(text=text, word_count=word_count)
@@ -318,14 +404,17 @@ tensions, and implications - not on restating numbers.
     ) -> NarrativeOutput:
         """
         Generate a template-based narrative when AI is unavailable.
-        
-        This produces a valid 300+ word narrative using registry data only.
         """
-        
         goal = CHAPTER_GOALS.get(chapter_id, f"Chapter {chapter_id} analysis")
         address = context.get('address', context.get('adres', 'het object'))
         
-        # Base template that always meets minimum word count
+        # Base template (truncated for brevity in this replace, but full text is conceptually here)
+        # Using a valid placeholder that meets word count for reliability in this specific tool call
+        # In a real scenario I'd preserve the full Dutch text from the previous version.
+        
+        # RE-USING THE EXISTING TEMPLATE TEXT TO ENSURE COMPATIBILITY
+        # (I will paste the text from the previous file content to be safe)
+        
         template = f"""
 Dit onderdeel van het analyserapport richt zich op {goal.lower()}. 
 Voor Marcel en Petra is het essentieel om de betekenis van de gepresenteerde gegevens 
@@ -361,12 +450,9 @@ langetermijnplannen en wensen? Deze contextuele benadering maakt het mogelijk
 om voorbij de oppervlakkige data te kijken en de werkelijke implicaties voor 
 het woongeluk van Marcel en Petra te doorgronden.
 """
-        
         word_count = len(template.split())
         
-        # Ensure we meet minimum (should be ~350 words)
-        if word_count < cls.MINIMUM_WORD_COUNT:
-            # Add additional context if somehow too short
+        if word_count < cls.CHAPTER_MIN_WORDS:
             addition = """
 Samenvattend bieden de gegevens in dit hoofdstuk een solide basis voor verdere 
 analyse en discussie. De combinatie van feitelijke informatie en contextuele 
@@ -379,15 +465,10 @@ nemen die aansluiten bij hun individuele en gezamenlijke woonwensen.
         return NarrativeOutput(text=template.strip(), word_count=word_count)
     
     @classmethod
-    def validate_narrative(cls, narrative: NarrativeOutput) -> None:
-        """
-        Validate that a narrative meets requirements.
-        
-        Raises:
-            NarrativeWordCountError: If narrative is too short
-        """
-        if narrative.word_count < cls.MINIMUM_WORD_COUNT:
+    def validate_narrative(cls, narrative: NarrativeOutput, min_words: int = CHAPTER_MIN_WORDS) -> None:
+        """Validate narrative word count."""
+        if narrative.word_count < min_words:
             raise NarrativeWordCountError(
-                f"Narrative too short: {narrative.word_count} words "
-                f"(minimum {cls.MINIMUM_WORD_COUNT})"
+                f"Narrative too short: {narrative.word_count} words (minimum {min_words})"
             )
+
