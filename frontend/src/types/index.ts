@@ -85,3 +85,7 @@ export interface ReportData {
     discovery?: DiscoveryAttribute[];
     media_from_db?: MediaItem[];
 }
+
+// Re-export 4-Plane Cognitive Model types
+export * from './planes';
+

@@ -274,3 +274,297 @@
 .error-state .error-code {
   @apply text-sm text-red-500 mt-4 font-mono;
 }
+
+/* ============================================================================
+   4-PLANE COGNITIVE MODEL LAYOUT
+   
+   LAYOUT SPEC (MANDATORY):
+   ┌───────────────┬──────────────────────────────┬──────────────────────┬───────────────────────┐
+   │ PLANE A       │ PLANE B                      │ PLANE C              │ PLANE D               │
+   │ Visuals       │ Narrative (300+ words)       │ KPIs & Data          │ Marcel / Petra        │
+   │ (Left)        │ (Center–Upper)               │ (Center–Lower)       │ (Right)               │
+   │ 🟦 Blue       │ 🟩 Green                     │ 🟨 Amber             │ 🟥 Red                │
+   └───────────────┴──────────────────────────────┴──────────────────────┴───────────────────────┘
+   ========================================================================== */
+
+.four-plane-chapter {
+  @apply w-full min-h-screen bg-slate-50;
+}
+
+.four-plane-grid {
+  @apply grid grid-cols-12 gap-4 p-4;
+}
+
+/* Plane Headers - Color-coded for cognitive clarity */
+.plane-header {
+  @apply px-4 py-3 flex items-center gap-2 border-b;
+}
+
+/* 🟦 PLANE A — Visual Intelligence (Blue) */
+.plane-a {
+  @apply bg-white rounded-2xl shadow-sm overflow-hidden;
+  border: 2px solid theme('colors.blue.100');
+}
+
+.plane-a .plane-header {
+  @apply bg-blue-50 border-blue-100;
+}
+
+.plane-a .plane-content {
+  @apply p-4 min-h-[400px];
+}
+
+/* 🟩 PLANE B — Narrative Reasoning (Green/Emerald) */
+.plane-b {
+  @apply bg-white rounded-2xl shadow-sm overflow-hidden flex-1;
+  border: 2px solid theme('colors.emerald.100');
+}
+
+.plane-b .plane-header {
+  @apply bg-emerald-50 border-emerald-100;
+}
+
+.plane-b .plane-content {
+  @apply p-6 min-h-[500px];
+}
+
+/* Narrative styling within Plane B */
+.plane-b .prose {
+  @apply max-w-none;
+}
+
+.plane-b .prose p:first-of-type::first-letter {
+  @apply text-4xl font-serif font-bold float-left mr-3 leading-none text-emerald-600;
+}
+
+/* 🟨 PLANE C — Factual Anchor (Amber/Yellow) */
+.plane-c {
+  @apply bg-white rounded-2xl shadow-sm overflow-hidden;
+  border: 2px solid theme('colors.amber.100');
+}
+
+.plane-c .plane-header {
+  @apply bg-amber-50 border-amber-100;
+}
+
+.plane-c .plane-content {
+  @apply p-4 min-h-[300px];
+}
+
+/* KPI Cards styling */
+.plane-c .kpi-card {
+  @apply bg-amber-50/50 rounded-lg p-3 border border-amber-100;
+}
+
+.plane-c .kpi-label {
+  @apply text-[10px] font-bold text-amber-700 uppercase tracking-wider;
+}
+
+.plane-c .kpi-value {
+  @apply text-lg font-bold text-slate-800;
+}
+
+/* 🟥 PLANE D — Human Preference (Red) */
+.plane-d {
+  @apply bg-white rounded-2xl shadow-sm overflow-hidden;
+  border: 2px solid theme('colors.red.100');
+}
+
+.plane-d .plane-header {
+  @apply bg-red-50 border-red-100;
+}
+
+.plane-d .plane-content {
+  @apply p-4 min-h-[400px];
+}
+
+/* Persona cards within Plane D */
+.plane-d .persona-marcel {
+  @apply bg-blue-50 rounded-lg p-3 border border-blue-200;
+}
+
+.plane-d .persona-petra {
+  @apply bg-pink-50 rounded-lg p-3 border border-pink-200;
+}
+
+.plane-d .overlap-section {
+  @apply bg-emerald-50 rounded-lg p-3 border border-emerald-200;
+}
+
+.plane-d .tension-section {
+  @apply bg-red-50 rounded-lg p-3 border border-red-200;
+}
+
+/* Synchronized scroll behavior */
+.four-plane-scroll-sync {
+  scroll-behavior: smooth;
+}
+
+/* Plane Violation Error State */
+.plane-violation-error {
+  @apply bg-red-50 border-2 border-red-300 rounded-2xl p-6;
+}
+
+.plane-violation-error .error-header {
+  @apply flex items-start gap-3 mb-4;
+}
+
+.plane-violation-error .error-icon {
+  @apply w-8 h-8 text-red-500 shrink-0;
+}
+
+.plane-violation-error .error-title {
+  @apply font-bold text-red-700 text-lg;
+}
+
+.plane-violation-error .error-message {
+  @apply text-red-600 text-sm;
+}
+
+.plane-violation-error .error-code {
+  @apply mt-4 p-3 bg-red-100 rounded-lg text-xs font-mono text-red-700;
+}
+
+/* Chart containers within Plane A */
+.chart-container {
+  @apply mb-6;
+}
+
+.chart-title {
+  @apply text-xs font-bold text-slate-600 uppercase tracking-wider mb-3;
+}
+
+/* Radar chart styling */
+.radar-chart svg {
+  @apply w-full max-w-[200px] mx-auto;
+}
+
+/* Bar chart styling */
+.bar-chart-item {
+  @apply flex items-center gap-2 mb-2;
+}
+
+.bar-chart-label {
+  @apply text-xs text-slate-500 w-20 truncate;
+}
+
+.bar-chart-track {
+  @apply flex-1 bg-slate-100 rounded-full h-4 overflow-hidden;
+}
+
+.bar-chart-fill {
+  @apply h-full bg-blue-500 rounded-full transition-all duration-500;
+}
+
+.bar-chart-value {
+  @apply text-xs font-medium text-slate-700 w-12 text-right;
+}
+
+/* Gauge chart styling */
+.gauge-chart {
+  @apply flex flex-col items-center;
+}
+
+.gauge-value {
+  @apply text-xl font-bold text-slate-800;
+}
+
+.gauge-label {
+  @apply text-xs text-slate-500;
+}
+
+/* Data source attribution */
+.data-attribution {
+  @apply pt-4 border-t text-[10px] uppercase tracking-wider;
+}
+
+.plane-a .data-attribution {
+  @apply border-blue-50 text-blue-400;
+}
+
+.plane-c .data-attribution {
+  @apply border-amber-50 text-amber-400;
+}
+
+/* Comparison cards in Plane D */
+.comparison-card {
+  @apply bg-slate-50 rounded-lg p-3 border border-slate-200;
+}
+
+.comparison-card .aspect-label {
+  @apply text-xs font-bold text-slate-700;
+}
+
+.comparison-card .alignment-badge {
+  @apply text-[10px] px-2 py-0.5 rounded-full font-medium;
+}
+
+.comparison-card .alignment-aligned {
+  @apply bg-emerald-100 text-emerald-700;
+}
+
+.comparison-card .alignment-divergent {
+  @apply bg-red-100 text-red-700;
+}
+
+.comparison-card .alignment-tension {
+  @apply bg-amber-100 text-amber-700;
+}
+
+.comparison-card .alignment-complementary {
+  @apply bg-blue-100 text-blue-700;
+}
+
+/* Responsive adjustments for 4-plane layout */
+@media (max-width: 1024px) {
+  .four-plane-grid {
+    @apply gap-3;
+  }
+
+  .plane-a,
+  .plane-d {
+    @apply col-span-12;
+  }
+
+  .plane-b .plane-content,
+  .plane-c .plane-content {
+    @apply min-h-[300px];
+  }
+}
+
+@media (max-width: 768px) {
+  .four-plane-grid {
+    @apply gap-2 p-2;
+  }
+
+  .plane-header {
+    @apply px-3 py-2;
+  }
+
+  .plane-content {
+    @apply p-3;
+  }
+}
+
+/* Print styles for 4-plane layout */
+@media print {
+  .four-plane-chapter {
+    @apply bg-white;
+  }
+
+  .four-plane-grid {
+    @apply block;
+  }
+
+  .plane-a,
+  .plane-b,
+  .plane-c,
+  .plane-d {
+    @apply col-span-12 mb-8 border-2 break-inside-avoid;
+    page-break-inside: avoid;
+  }
+
+  .plane-header {
+    @apply text-black;
+  }
+}
