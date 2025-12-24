@@ -207,8 +207,11 @@ class TestValidationEnforcement:
             strict_validation=False
         )
         
-        # All 14 chapters should have validation results
-        assert len(spine.ctx._validation_results) == 14
+        # Chapters 1-13 should have validation results (13 chapters)
+        # Chapter 0 (Dashboard) is generated separately and not included in chapter validation
+        assert len(spine.ctx._validation_results) == 13, (
+            f"Expected 13 validation results for chapters 1-13, got {len(spine.ctx._validation_results)}"
+        )
     
     def test_validation_errors_are_recorded(self):
         """Validation errors are stored in context."""
@@ -331,8 +334,10 @@ class TestFullPipelineExecution:
         assert "registry_entry_count" in output
         assert "validation_passed" in output
         
-        # Should have 14 chapters (some may have failed validation)
-        assert len(output["chapters"]) == 14
+        # Should have 14 chapters (0-13) in the output
+        assert len(output["chapters"]) == 14, (
+            f"Expected 14 chapters (0-13), got {len(output['chapters'])}"
+        )
     
     def test_pipeline_preserves_registry_values(self, sample_raw_data, sample_preferences):
         """Pipeline output contains registry-derived values."""
@@ -412,13 +417,15 @@ class TestValidationGate:
     
     def test_valid_chapter_passes(self):
         """Valid chapter output passes validation."""
-        # Create a 300+ word narrative for the test
-        long_narrative = " ".join(["word"] * 350)
+        # Create a 500+ word narrative for the test (chapter 0 requires 500)
+        long_narrative = " ".join(["Dit is een uitgebreide analyse van deze woning."] * 80)
         
+        # 4-plane structure is now REQUIRED for chapters 0-12
         output = {
             "id": "0",
             "title": "Executive Summary",
-            "main_analysis": "A comprehensive analysis of this property.",
+            "plane_structure": True,
+            "main_analysis": long_narrative,  # Legacy field still included
             "variables": {"address": "Teststraat 123"},  # Chapter 0 owns this
             "comparison": {
                 "marcel": "Marcel will appreciate the technical infrastructure and efficiency.",
@@ -427,8 +434,41 @@ class TestValidationGate:
             # MANDATORY: Narrative is required for chapters 0-12
             "narrative": {
                 "text": long_narrative,
-                "word_count": 350
-            }
+                "word_count": len(long_narrative.split())
+            },
+            # 4-PLANE STRUCTURE (MANDATORY)
+            "plane_a": {
+                "plane": "A",
+                "charts": [],
+                "trends": [],
+                "comparisons": [],
+                "data_source_ids": [],
+                "not_applicable": True,
+                "not_applicable_reason": "Test chapter",
+            },
+            "plane_b": {
+                "plane": "B",
+                "narrative_text": long_narrative,
+                "word_count": len(long_narrative.split()),
+                "not_applicable": False,
+                "ai_generated": True,
+            },
+            "plane_c": {
+                "plane": "C",
+                "kpis": [],
+                "missing_data": [],
+                "uncertainties": [],
+                "not_applicable": False,
+            },
+            "plane_d": {
+                "plane": "D",
+                "marcel": {"match_score": 75, "mood": "positive", "key_values": [], "concerns": []},
+                "petra": {"match_score": 80, "mood": "positive", "key_values": [], "concerns": []},
+                "comparisons": [],
+                "overlap_points": [],
+                "tension_points": [],
+                "not_applicable": False,
+            },
         }
         registry = {"address": "Teststraat 123", "asking_price_eur": 500000}
         

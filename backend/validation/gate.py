@@ -50,7 +50,12 @@ class ValidationGate:
         registry_context: Dict[str, Any]
     ) -> List[str]:
         """
-        Validates chapter output against Registry and Ownership rules.
+        Validates chapter output against Registry, Ownership, and 4-PLANE rules.
+        
+        FAIL-CLOSED 4-PLANE VALIDATION:
+        - Each chapter MUST have plane_a, plane_b, plane_c, plane_d
+        - Plane B MUST have at least 300 words (500 for chapter 0)
+        - Content MUST NOT cross plane boundaries
         
         Args:
             chapter_id: The chapter number (0-13)
@@ -61,6 +66,11 @@ class ValidationGate:
             List of error strings. Empty list = validation passed.
         """
         errors = []
+        
+        # =====================================================================
+        # VALIDATION 0: 4-PLANE STRUCTURE (MANDATORY)
+        # =====================================================================
+        errors.extend(ValidationGate._check_four_plane_structure(chapter_id, output))
         
         # =====================================================================
         # VALIDATION 1: OWNERSHIP - Variables must be owned by this chapter
@@ -89,6 +99,62 @@ class ValidationGate:
         
         if errors:
             logger.warning(f"ValidationGate: Chapter {chapter_id} failed with {len(errors)} errors")
+        
+        return errors
+    
+    @staticmethod
+    def _check_four_plane_structure(chapter_id: int, output: Dict[str, Any]) -> List[str]:
+        """
+        Check that chapter has valid 4-plane structure.
+        
+        FAIL-CLOSED: If plane_structure is True, all 4 planes MUST exist.
+        """
+        errors = []
+        
+        # Check if this is a 4-plane structured output
+        if not output.get("plane_structure"):
+            # Not a 4-plane output - this is now an error for chapters 0-12
+            if chapter_id <= 12:
+                errors.append(
+                    f"4-Plane Structure Missing: Chapter {chapter_id} does not have plane_structure=True. "
+                    f"All chapters (0-12) MUST use 4-plane format."
+                )
+            return errors
+        
+        # Check for each plane's existence
+        for plane_name in ["plane_a", "plane_b", "plane_c", "plane_d"]:
+            plane = output.get(plane_name)
+            if not plane:
+                errors.append(
+                    f"Plane Missing: Chapter {chapter_id} is missing '{plane_name}'. "
+                    f"All 4 planes are MANDATORY."
+                )
+        
+        # Check Plane B word count
+        plane_b = output.get("plane_b", {})
+        if plane_b and not plane_b.get("not_applicable"):
+            word_count = plane_b.get("word_count", 0)
+            min_words = 500 if chapter_id == 0 else 300
+            
+            if word_count < min_words:
+                errors.append(
+                    f"Plane B Insufficient: Chapter {chapter_id} narrative has {word_count} words, "
+                    f"minimum is {min_words}. Narratives MUST meet word requirements."
+                )
+        
+        # Check Plane D has Marcel and Petra
+        plane_d = output.get("plane_d", {})
+        if plane_d and not plane_d.get("not_applicable"):
+            if not plane_d.get("marcel"):
+                errors.append(
+                    f"Plane D Incomplete: Chapter {chapter_id} is missing Marcel data. "
+                    f"Plane D MUST have both Marcel and Petra."
+                )
+            if not plane_d.get("petra"):
+                errors.append(
+                    f"Plane D Incomplete: Chapter {chapter_id} is missing Petra data. "
+                    f"Plane D MUST have both Marcel and Petra."
+                )
         
         return errors
     
@@ -222,12 +288,16 @@ class ValidationGate:
         if not output.get('title'):
             errors.append(f"Required Field Missing: 'title' not present in Chapter {chapter_id} output.")
         
-        # Must have main_analysis OR chapter_data.main_analysis
+        # Must have main_analysis OR chapter_data.main_analysis OR plane_b.narrative_text (4-plane)
         main = output.get('main_analysis', '')
         chapter_data = output.get('chapter_data', {})
         cd_main = chapter_data.get('main_analysis', '') if isinstance(chapter_data, dict) else ''
         
-        if not main and not cd_main:
+        # For 4-plane structure, plane_b.narrative_text is the content
+        plane_b = output.get('plane_b', {})
+        plane_narrative = plane_b.get('narrative_text', '') if isinstance(plane_b, dict) else ''
+        
+        if not main and not cd_main and not plane_narrative:
             errors.append(
                 f"Required Field Missing: 'main_analysis' not present in Chapter {chapter_id}. "
                 f"Every chapter must have content."

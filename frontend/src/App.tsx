@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BentoGrid, BentoCard } from './components/layout/BentoLayout';
 import { MagazineChapter } from './components/MagazineChapter';
 import { OrientationChapter } from './components/OrientationChapter';
+import { FourPlaneChapter } from './components/FourPlaneChapter';
 import {
   ChevronRight, Loader2, AlertCircle, Sparkles,
   Plus, FileText, Home, Settings, Zap, Bug, BookOpen
@@ -336,7 +337,6 @@ function App() {
             </div>
           ) : content ? (
             <div className="animate-in fade-in duration-700">
-              {/* CHAPTER 0: ORIENTATION VIEW (not narrative-heavy) */}
               {activeChapterId === "0" ? (
                 <>
                   <OrientationChapter
@@ -353,8 +353,22 @@ function App() {
                     </div>
                   )}
                 </>
+              ) : currentChapter?.plane_structure && currentChapter.plane_a && currentChapter.plane_b && currentChapter.plane_c && currentChapter.plane_d ? (
+                /* 4-PLANE CHAPTER VIEW - MANDATORY FOR CHAPTERS 1-12 */
+                <FourPlaneChapter
+                  chapter={{
+                    chapter_id: parseInt(activeChapterId),
+                    chapter_title: content?.title || currentChapter?.title || `Hoofdstuk ${activeChapterId}`,
+                    plane_a: currentChapter.plane_a as any,
+                    plane_b: currentChapter.plane_b as any,
+                    plane_c: currentChapter.plane_c as any,
+                    plane_d: currentChapter.plane_d as any,
+                  }}
+                  chapterIndex={parseInt(activeChapterId)}
+                  media={report.media_from_db || []}
+                />
               ) : (
-                /* CHAPTERS 1-12: NARRATIVE-FIRST ANALYSIS VIEW */
+                /* LEGACY FALLBACK - Only for non-4-plane content */
                 <MagazineChapter
                   content={content}
                   chapterId={activeChapterId}

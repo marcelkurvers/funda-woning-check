@@ -47,32 +47,29 @@ NARRATIVE_MINIMUM_WORDS = 300
 
 def generate_chapter_with_validation(ctx: PipelineContext, chapter_id: int) -> Dict[str, Any]:
     """
-    Generate a single chapter using the registry context.
+    Generate a single chapter using the 4-PLANE BACKBONE (for 0-12) or legacy (for 13).
     
-    This function:
-    1. Gets owned variables for this chapter
-    2. Builds scoped context from registry
-    3. Calls the intelligence engine (AI or fallback)
-    4. MANDATORY: Generates narrative for chapters 0-12
-    5. Validates narrative word count (minimum 300 words)
-    6. Returns structured output with narrative included
+    FAIL-CLOSED ARCHITECTURE (Chapters 0-12):
+    Every chapter is generated with ALL 4 planes:
+    - Plane A: Visual Intelligence (charts, graphs)
+    - Plane B: Narrative Reasoning (300+ words prose)
+    - Plane C: Factual Anchor (KPIs, data)
+    - Plane D: Human Preference (Marcel vs Petra)
     
-    NARRATIVE ENFORCEMENT (NON-NEGOTIABLE):
-    - For chapters 0-12, narrative generation is MANDATORY
-    - If narrative is missing, raises PipelineViolation
-    - If narrative is < 300 words, raises PipelineViolation
+    No fallback. No partial output. No graceful degradation.
     
-    NOTE: Additional validation is performed by the caller (PipelineSpine).
+    Chapter 13 (Appendix): Uses legacy generation without 4-plane structure.
     
     Args:
         ctx: The locked PipelineContext with canonical registry
         chapter_id: Chapter number (0-13)
     
     Returns:
-        Chapter output dict ready for validation, WITH narrative included
+        Chapter output dict with 4-plane structure (0-12) or legacy format (13)
     
     Raises:
-        PipelineViolation: If registry not locked, or narrative missing/too short
+        PipelineViolation: If registry not locked
+        BackboneEnforcementError: If plane validation fails (chapters 0-12)
     """
     if not ctx.is_registry_locked():
         raise PipelineViolation("Cannot generate chapter - registry is not locked")
@@ -83,38 +80,101 @@ def generate_chapter_with_validation(ctx: PipelineContext, chapter_id: int) -> D
     # Add preferences for AI reasoning
     scoped_data['_preferences'] = ctx.preferences
     
-    # Generate narrative using existing intelligence engine
+    # ==========================================================================
+    # CHAPTER 13 (Appendix): Use legacy generation, NO 4-plane backbone
+    # ==========================================================================
+    if chapter_id == 13:
+        return _generate_legacy_chapter(ctx, chapter_id, scoped_data)
+    
+    # ==========================================================================
+    # STEP 1: Generate narrative using NarrativeGenerator (Chapters 0-12)
+    # ==========================================================================
+    ai_narrative = None
+    if chapter_id in NARRATIVE_REQUIRED_CHAPTERS:
+        try:
+            narrative_output = _generate_and_validate_narrative(ctx, chapter_id, scoped_data)
+            ai_narrative = narrative_output.text
+            logger.info(f"Chapter {chapter_id}: Generated narrative ({narrative_output.word_count} words)")
+        except Exception as e:
+            logger.error(f"Chapter {chapter_id} narrative generation failed: {e}")
+            raise PipelineViolation(f"Narrative generation failed for chapter {chapter_id}: {e}")
+    
+    # ==========================================================================
+    # STEP 2: Generate legacy chapter data for additional context
+    # ==========================================================================
     from backend.intelligence import IntelligenceEngine
     
     try:
-        narrative = IntelligenceEngine.generate_chapter_narrative(chapter_id, scoped_data)
+        legacy_narrative = IntelligenceEngine.generate_chapter_narrative(chapter_id, scoped_data)
     except Exception as e:
-        logger.error(f"Chapter {chapter_id} generation failed: {e}")
-        # Create error output structure - this will fail validation
-        narrative = _create_error_output(chapter_id, str(e))
-    
-    # Structure the output consistently
-    output = _structure_chapter_output(chapter_id, narrative, ctx)
+        logger.warning(f"Chapter {chapter_id} legacy generation failed: {e}")
+        legacy_narrative = {}
     
     # ==========================================================================
-    # MANDATORY NARRATIVE GENERATION (NO EXCEPTIONS)
+    # STEP 3: Generate 4-PLANE structure using backbone (FAIL-CLOSED)
     # ==========================================================================
-    if chapter_id in NARRATIVE_REQUIRED_CHAPTERS:
-        narrative_output = _generate_and_validate_narrative(ctx, chapter_id, scoped_data)
+    from backend.pipeline.four_plane_backbone import (
+        generate_four_plane_chapter,
+        convert_plane_composition_to_dict,
+        BackboneEnforcementError
+    )
+    
+    # Merge legacy data with scoped data for plane generation
+    chapter_data = {
+        **scoped_data,
+        **legacy_narrative,
+        "variables": legacy_narrative.get("variables", {}),
+        "comparison": legacy_narrative.get("comparison", {}),
+        "missing_critical_data": legacy_narrative.get("metadata", {}).get("missing_vars", []),
+        "provenance": legacy_narrative.get("_provenance", {}),
+    }
+    
+    try:
+        # Generate 4-plane composition (validates all planes)
+        composition = generate_four_plane_chapter(
+            ctx=ctx,
+            chapter_id=chapter_id,
+            ai_narrative=ai_narrative,
+            chapter_data=chapter_data
+        )
         
-        # Add narrative to output
-        output["narrative"] = {
-            "text": narrative_output.text,
-            "word_count": narrative_output.word_count
-        }
+        # Convert to dict format for API/frontend
+        output = convert_plane_composition_to_dict(composition)
         
-        # Also add to chapter_data for frontend compatibility
-        if "chapter_data" not in output:
-            output["chapter_data"] = {}
-        output["chapter_data"]["narrative"] = {
-            "text": narrative_output.text,
-            "word_count": narrative_output.word_count
-        }
+        # Add segment and provenance
+        output["segment"] = _get_segment_name(chapter_id)
+        output["provenance"] = legacy_narrative.get("_provenance")
+        output["missing_critical_data"] = chapter_data.get("missing_critical_data", [])
+        
+        # Add main_analysis for legacy compatibility (ValidationGate expects this)
+        if output.get("plane_b") and output["plane_b"].get("narrative_text"):
+            output["main_analysis"] = output["plane_b"]["narrative_text"]
+        
+        logger.info(f"Chapter {chapter_id}: 4-plane generation successful")
+        
+        return output
+        
+    except BackboneEnforcementError as e:
+        # Backbone validation failed - this is FATAL
+        logger.error(f"Chapter {chapter_id}: BACKBONE ENFORCEMENT FAILED - {e}")
+        raise PipelineViolation(str(e))
+
+
+def _generate_legacy_chapter(
+    ctx: PipelineContext, 
+    chapter_id: int, 
+    scoped_data: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Generate a chapter using legacy (non-4-plane) generation.
+    
+    Used for Chapter 13 (Appendix) which doesn't require the 4-plane structure.
+    """
+    from backend.intelligence import IntelligenceEngine
+    
+    output = IntelligenceEngine.generate_chapter_narrative(chapter_id, scoped_data)
+    output = _structure_chapter_output(chapter_id, output, ctx)
+    output["segment"] = _get_segment_name(chapter_id)
     
     return output
 

@@ -350,7 +350,7 @@ persona alignment, and next steps.
     ) -> NarrativeOutput:
         """Generate narrative using AI provider."""
         
-        from ai.bridge import safe_execute_async
+        from backend.ai.bridge import safe_execute_async
         
         async def _async_generate():
             response = await ai_provider.generate(

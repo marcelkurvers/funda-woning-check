@@ -150,9 +150,11 @@ def test_invariant_ownership_enforcement(populated_registry):
         f"FAIL: Chapter 7 displaying 'price' must trigger Ownership Violation. Got: {errors}"
         
     # Scenario: Chapter 7 outputs 'tuin_grootte' (Owned by Ch 7)
+    long_narrative = "This is a very long narrative that describes the garden in great detail to ensure we meet the required word count of at least three hundred words. " * 20
     good_output = {
         "id": "7",
         "title": "Garden Analysis",
+        "plane_structure": True,  # 4-plane structure is now MANDATORY
         "variables": {"tuin_grootte": 50},
         "main_analysis": "Big garden with excellent outdoor space.",
         "comparison": {
@@ -160,9 +162,41 @@ def test_invariant_ownership_enforcement(populated_registry):
             "petra": "Petra geniet van de zon in deze ruime tuin."
         },
         "narrative": {
-            "text": "This is a very long narrative that describes the garden in great detail to ensure we meet the required word count of at least three hundred words. " * 20,
+            "text": long_narrative,
             "word_count": 500
-        }
+        },
+        # 4-PLANE STRUCTURE (MANDATORY)
+        "plane_a": {
+            "plane": "A",
+            "charts": [],
+            "trends": [],
+            "comparisons": [],
+            "data_source_ids": [],
+            "not_applicable": True,
+        },
+        "plane_b": {
+            "plane": "B",
+            "narrative_text": long_narrative,
+            "word_count": 500,
+            "not_applicable": False,
+            "ai_generated": True,
+        },
+        "plane_c": {
+            "plane": "C",
+            "kpis": [],
+            "missing_data": [],
+            "uncertainties": [],
+            "not_applicable": False,
+        },
+        "plane_d": {
+            "plane": "D",
+            "marcel": {"match_score": 75, "mood": "positive", "key_values": [], "concerns": []},
+            "petra": {"match_score": 80, "mood": "positive", "key_values": [], "concerns": []},
+            "comparisons": [],
+            "overlap_points": [],
+            "tension_points": [],
+            "not_applicable": False,
+        },
     }
     errors_good = ValidationGate.validate_chapter_output(7, good_output, registry_ctx)
     assert not errors_good, f"FAIL: Valid ownership flagged as error: {errors_good}"

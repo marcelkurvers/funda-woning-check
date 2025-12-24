@@ -34,6 +34,44 @@ export interface ChapterData {
     missing_critical_data?: string[];
     // MANDATORY NARRATIVE FIELD (chapters 0-12)
     narrative?: NarrativeContract;
+
+    // 4-PLANE STRUCTURE (MANDATORY for chapters 0-12)
+    plane_structure?: boolean;
+    plane_a?: {
+        plane: 'A';
+        charts: any[];
+        trends: any[];
+        comparisons: any[];
+        data_source_ids: string[];
+        not_applicable: boolean;
+        not_applicable_reason?: string;
+    };
+    plane_b?: {
+        plane: 'B';
+        narrative_text: string;
+        word_count: number;
+        not_applicable: boolean;
+        ai_generated: boolean;
+        ai_provider?: string;
+        ai_model?: string;
+    };
+    plane_c?: {
+        plane: 'C';
+        kpis: any[];
+        missing_data: string[];
+        uncertainties: string[];
+        not_applicable: boolean;
+    };
+    plane_d?: {
+        plane: 'D';
+        marcel: any;
+        petra: any;
+        comparisons: any[];
+        overlap_points: string[];
+        tension_points: string[];
+        joint_synthesis?: string;
+        not_applicable: boolean;
+    };
 }
 
 export type SidebarItem =

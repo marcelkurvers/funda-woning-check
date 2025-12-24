@@ -64,10 +64,11 @@ class TestSystemArchitecture:
         # Create a 300+ word narrative for the test
         long_narrative = " ".join(["word"] * 350)
         
-        # CASE A: Good output (includes required fields id, title, AND narrative)
+        # CASE A: Good output (includes required fields AND 4-plane structure)
         output_good = {
             "id": "7",
             "title": "Garden Analysis",
+            "plane_structure": True,  # 4-plane structure is now MANDATORY
             "variables": {"tuin_grootte": "50m2"}, # assuming allowed
             "main_analysis": "Mooie tuin met veel privacy.",
             "comparison": {"marcel": "Prima tuin. Dit is top.", "petra": "Fijne tuin. Ik hou ervan."},
@@ -75,7 +76,39 @@ class TestSystemArchitecture:
             "narrative": {
                 "text": long_narrative,
                 "word_count": 350
-            }
+            },
+            # 4-PLANE STRUCTURE (MANDATORY)
+            "plane_a": {
+                "plane": "A",
+                "charts": [],
+                "trends": [],
+                "comparisons": [],
+                "data_source_ids": [],
+                "not_applicable": True,
+            },
+            "plane_b": {
+                "plane": "B",
+                "narrative_text": long_narrative,
+                "word_count": 350,
+                "not_applicable": False,
+                "ai_generated": True,
+            },
+            "plane_c": {
+                "plane": "C",
+                "kpis": [],
+                "missing_data": [],
+                "uncertainties": [],
+                "not_applicable": False,
+            },
+            "plane_d": {
+                "plane": "D",
+                "marcel": {"match_score": 75, "mood": "positive", "key_values": [], "concerns": []},
+                "petra": {"match_score": 80, "mood": "positive", "key_values": [], "concerns": []},
+                "comparisons": [],
+                "overlap_points": [],
+                "tension_points": [],
+                "not_applicable": False,
+            },
         }
         
         errors = ValidationGate.validate_chapter_output(chapter_id, output_good, registry_ctx)
