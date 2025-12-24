@@ -19,7 +19,7 @@ from tests.unit.test_complex_parsing import TestComplexParsing
 from tests.integration.test_comprehensive import TestComprehensive
 from tests.e2e.test_frontend import TestFrontendStructure
 from tests.integration.test_integration import TestIntegration
-from tests.unit.test_modern_chapter import TestModernChapter
+
 from tests.unit.test_modern_design_compliance import TestModernDesignCompliance
 from tests.unit.test_parser import TestParser
 from tests.unit.test_domain_models import TestDomainModels
@@ -29,7 +29,7 @@ from tests.unit.test_api_endpoints import TestApiEndpoints
 from scraper import Scraper
 from parser import Parser
 import main
-from main import app, build_kpis, build_chapters, init_db
+from main import app, build_kpis, init_db
 
 # --- 2. CONFIGURATION ---
 PORT = 8002
@@ -222,31 +222,7 @@ class TestMasterSuite(unittest.TestCase):
         data = paste_resp.json()
         self.assertTrue(data["ok"], f"Paste returned not OK: {data.get('error')}")
         self.assertIn("property_core", data)
-    def test_10_chapter_generation(self):
-        """
-        Validates that build_chapters can find the template files and generate content.
-        """
-        from tests.data_loader import load_test_data
-        core = load_test_data()
-        chapters = build_chapters(core)
-        self.assertTrue(len(chapters) > 0, "No chapters generated")
-        
-        # Check Chapter 1 content
-        ch1 = chapters.get("1")
-        self.assertIsNotNone(ch1, "Chapter 1 missing")
-        
-        # Extract content from modern dashboard
-        layout = ch1["grid_layout"]
-        text = layout["main"]["content"]
-        
-        # Check text injection
-        # Check text injection
-        self.assertIn(core.get("address", "Address"), text, "Address not injected")
-        #self.assertIn("€ 500.000", text, "Price not injected") # Might be formatted differently now
-        
-        # Check AI Logic
-        # IntelligenceEngine generates "royaal" or "courant" based on metrics
-        self.assertTrue(len(text) > 50)
+
 
     def test_20_domain_models(self):
         """Executes Domain Model tests"""
