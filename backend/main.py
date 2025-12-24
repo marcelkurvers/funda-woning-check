@@ -27,16 +27,16 @@ BACKEND_DIR = Path(__file__).parent
 if str(BACKEND_DIR) not in sys.path:
     sys.path.append(str(BACKEND_DIR))
 
-from __version__ import __version__
-from scraper import Scraper
-from parser import Parser
-from consistency import ConsistencyChecker
-from enrichment import DataEnricher
-from chapters.registry import get_chapter_class
-from intelligence import IntelligenceEngine
-from ai.provider_factory import ProviderFactory
-from ai.dynamic_extractor import DynamicExtractor
-from config.settings import get_settings, reset_settings, AppSettings
+from backend.__version__ import __version__
+from backend.scraper import Scraper
+from backend.parser import Parser
+from backend.consistency import ConsistencyChecker
+from backend.enrichment import DataEnricher
+from backend.chapters.registry import get_chapter_class
+from backend.intelligence import IntelligenceEngine
+from backend.ai.provider_factory import ProviderFactory
+from backend.ai.dynamic_extractor import DynamicExtractor
+from backend.config.settings import get_settings, reset_settings, AppSettings
 from jinja2 import Environment, FileSystemLoader
 try:
     from weasyprint import HTML
@@ -297,13 +297,13 @@ def _startup():
 @app.on_event("shutdown")
 async def _shutdown():
     # Properly close AI Provider shared client (Risk 2 Mitigation)
-    from intelligence import IntelligenceEngine
+    from backend.intelligence import IntelligenceEngine
     provider = IntelligenceEngine._provider
     if provider and hasattr(provider, "close"):
         await provider.close()
 
 # Include configuration router
-from api import config as config_router
+from backend.api import config as config_router
 app.include_router(config_router.router)
 
 # --- PIPELINE ---
@@ -392,7 +392,7 @@ def simulate_pipeline(run_id):
         update_run(run_id, steps_json=json.dumps(steps))
         try:
             # Use safe execution bridge (Risk 1 Mitigation)
-            from ai.bridge import safe_execute_async
+            from backend.ai.bridge import safe_execute_async
             safe_execute_async(run_dynamic_extraction(run_id, row["funda_html"]))
             steps["dynamic_extraction"] = "done"
             update_run(run_id, steps_json=json.dumps(steps))
@@ -423,7 +423,7 @@ def simulate_pipeline(run_id):
             prefs['ai_provider'] = settings.ai.provider
         
         # Execute through the spine - THIS IS THE CRITICAL PATH
-        from pipeline.bridge import execute_report_pipeline
+        from backend.pipeline.bridge import execute_report_pipeline
         chapters, kpis, enriched_core = execute_report_pipeline(
             run_id=run_id,
             raw_data=core,

@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Body
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 
-from config.settings import get_settings, reset_settings
+from backend.config.settings import get_settings, reset_settings
 import sqlite3
 import json
 
@@ -111,7 +111,7 @@ async def update_config_bulk(config: ConfigUpdateRequest):
     # Trigger AI re-init if AI section was updated
     if "ai" in sections_updated:
         try:
-            from main import init_ai_provider
+            from backend.main import init_ai_provider
             init_ai_provider()
         except: pass
         

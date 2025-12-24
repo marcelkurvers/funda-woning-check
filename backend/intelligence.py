@@ -26,8 +26,8 @@ import time
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-from ai.provider_factory import ProviderFactory
-from ai.provider_interface import AIProvider
+from backend.ai.provider_factory import ProviderFactory
+from backend.ai.provider_interface import AIProvider
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +114,7 @@ class IntelligenceEngine:
         All values MUST come from the registry (pre-computed in enrichment layer).
         """
         # Import registry-only fallback templates
-        from domain.presentation_narratives import get_registry_only_narrative
+        from backend.domain.presentation_narratives import get_registry_only_narrative
         
         # Build data context from registry (NO COMPUTATION - just passthrough)
         data = {
@@ -167,7 +167,7 @@ class IntelligenceEngine:
         # AI OVERRIDE - If provider is available, use AI generation
         if IntelligenceEngine._provider:
             try:
-                from ai.bridge import safe_execute_async
+                from backend.ai.bridge import safe_execute_async
                 ai_result = safe_execute_async(IntelligenceEngine._generate_ai_narrative(chapter_id, data, result))
                 
                 if ai_result:
@@ -271,11 +271,11 @@ class IntelligenceEngine:
         cls._request_count += 1
 
         # Filter the data context to ONLY what this chapter is allowed to see/own
-        from domain.ownership import OwnershipMap
+        from backend.domain.ownership import OwnershipMap
         scoped_data = OwnershipMap.get_chapter_context(chapter_id, data)
         
         # Get chapter-specific AI prompt
-        from domain.chapter_variables import get_chapter_ai_prompt, should_show_core_data
+        from backend.domain.chapter_variables import get_chapter_ai_prompt, should_show_core_data
         chapter_specific_prompt = get_chapter_ai_prompt(chapter_id)
         
         # Determine variable focus
