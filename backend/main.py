@@ -302,11 +302,15 @@ async def _shutdown():
     if provider and hasattr(provider, "close"):
         await provider.close()
 
-# Include configuration router
+# Include configuration routers
 from backend.api import config as config_router
 from backend.api import ai_status as ai_status_router
+from backend.api import config_status as config_status_router
+from backend.api import run_status as run_status_router
 app.include_router(config_router.router)
 app.include_router(ai_status_router.router)
+app.include_router(config_status_router.router)
+app.include_router(run_status_router.router)
 
 # --- PIPELINE ---
 def simulate_pipeline(run_id):
@@ -315,15 +319,51 @@ def simulate_pipeline(run_id):
     
     CRITICAL: This function now uses PipelineSpine for chapter generation.
     All chapters pass through ValidationGate before being stored.
+    
+    TELEMETRY: Real-time status is tracked via run_status_router.
     """
+    from backend.api.run_status import (
+        start_run_tracking, track_step, track_warning, 
+        track_error, complete_run_tracking
+    )
+    from backend.domain.app_config import build_app_config, validate_config_for_execution, OperatingMode
+    
     logger.info(f"Pipeline: Starting run {run_id}")
+    
+    # Build configuration and validate
+    config = build_app_config()
+    can_execute, config_error = validate_config_for_execution(config)
+    
+    # Initialize run tracking for real-time UI updates
+    start_run_tracking(
+        run_id=run_id,
+        provider=config.provider,
+        model=config.model,
+        mode=config.mode.value
+    )
+    
+    # FAIL-CLOSED: Check config validity before proceeding
+    if not can_execute:
+        logger.error(f"Pipeline [{run_id}]: Configuration invalid - {config_error}")
+        track_error(run_id, f"Configuration error: {config_error}")
+        complete_run_tracking(run_id, "error")
+        update_run(run_id, status="error")
+        return
+    
+    # Check if mode requires AI
+    if config.mode in (OperatingMode.DEBUG, OperatingMode.OFFLINE):
+        logger.info(f"Pipeline [{run_id}]: Running in {config.mode.value} mode - AI disabled")
+        track_warning(run_id, f"AI disabled by mode: {config.mode.value}")
+    
     # Refresh AI at start of pipeline to ensure latest settings are used
     init_ai_provider()
     
     row = get_run_row(run_id)
-    if not row: return
+    if not row:
+        complete_run_tracking(run_id, "error")
+        return
     
-    logger.info(f"Pipeline [{run_id}]: Starting. Status: {row['status']}")
+    logger.info(f"Pipeline [{run_id}]: Starting. Status: {row['status']}, Mode: {config.mode.value}")
     
     steps = json.loads(row["steps_json"]) if row["steps_json"] else {}
     core = json.loads(row["property_core_json"]) if row["property_core_json"] else {}
@@ -331,6 +371,7 @@ def simulate_pipeline(run_id):
     
     # 1. Scrape / Parse
     logger.info(f"Pipeline [{run_id}]: Starting Scrape/Parse")
+    track_step(run_id, "scrape_funda", "running")
     steps["scrape_funda"] = "running"
     update_run(run_id, steps_json=json.dumps(steps))
     
@@ -369,6 +410,7 @@ def simulate_pipeline(run_id):
             
 
     steps["scrape_funda"] = "done"
+    track_step(run_id, "scrape_funda", "done")
     update_run(run_id, steps_json=json.dumps(steps), property_core_json=json.dumps(core))
     
     # 1a. Consistency Validation
@@ -391,15 +433,20 @@ def simulate_pipeline(run_id):
     if row["funda_html"]:
         logger.info(f"Pipeline [{run_id}]: Starting Dynamic Extraction")
         steps["dynamic_extraction"] = "running"
+        track_step(run_id, "dynamic_extraction", "running")
         update_run(run_id, steps_json=json.dumps(steps))
         try:
             # Use safe execution bridge (Risk 1 Mitigation)
             from backend.ai.bridge import safe_execute_async
             safe_execute_async(run_dynamic_extraction(run_id, row["funda_html"]))
             steps["dynamic_extraction"] = "done"
+            track_step(run_id, "dynamic_extraction", "done")
             update_run(run_id, steps_json=json.dumps(steps))
         except Exception as e:
             logger.error(f"Pipeline [{run_id}]: Dynamic Extraction failed: {e}")
+            track_step(run_id, "dynamic_extraction", "error", str(e))
+            track_error(run_id, f"Dynamic extraction failed: {e}")
+            complete_run_tracking(run_id, "error")
             update_run(run_id, status="error", steps_json=json.dumps(steps))
             return # Stop pipeline on failure
 
@@ -413,6 +460,7 @@ def simulate_pipeline(run_id):
     # =========================================================================
     
     logger.info(f"Pipeline [{run_id}]: Starting Spine-Based Execution")
+    track_step(run_id, "plane_generation", "running", "4-Plane Report Generation")
     steps["compute_kpis"] = "running"
     update_run(run_id, steps_json=json.dumps(steps))
     
@@ -436,10 +484,15 @@ def simulate_pipeline(run_id):
         core = enriched_core
         
         steps["compute_kpis"] = "done"
+        track_step(run_id, "plane_generation", "done")
+        track_step(run_id, "validation", "done")
         update_run(run_id, steps_json=json.dumps(steps), kpis_json=json.dumps(kpis), property_core_json=json.dumps(core))
         
     except Exception as e:
         logger.error(f"Pipeline [{run_id}]: Spine execution failed: {e}")
+        track_step(run_id, "plane_generation", "error", str(e))
+        track_error(run_id, f"Spine execution failed: {e}")
+        complete_run_tracking(run_id, "error")
         update_run(run_id, status="error", steps_json=json.dumps(steps))
         return
     
@@ -469,6 +522,8 @@ def simulate_pipeline(run_id):
     if validation_passed:
         # VALID REPORT: Store chapters and mark as done
         logger.info(f"Pipeline [{run_id}]: ✓ VALIDATION PASSED - Storing chapters")
+        track_step(run_id, "render", "done")
+        complete_run_tracking(run_id, "done")
         update_run(
             run_id, 
             steps_json=json.dumps(steps), 
@@ -498,6 +553,8 @@ def simulate_pipeline(run_id):
             # CRITICAL: status is 'validation_failed', NOT 'done'
             status="validation_failed"
         )
+        track_error(run_id, "Validation failed - report not stored")
+        complete_run_tracking(run_id, "validation_failed")
 
 class BypassBlocked(Exception):
     """Raised when deprecated bypass functions are called."""

@@ -5,63 +5,217 @@
     <meta charset="UTF-8">
     <title>Multi-Check Pro: Instellingen</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            width: 400px;
-            padding: 20px;
+            width: 450px;
+            padding: 24px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
             color: #f8fafc;
+            margin: 0;
         }
 
         h2 {
             margin-top: 0;
+            margin-bottom: 20px;
             color: #60a5fa;
             font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section {
+            margin-bottom: 24px;
+            padding: 16px;
+            background: rgba(51, 65, 85, 0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(71, 85, 105, 0.5);
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: 500;
             color: #cbd5e1;
+            font-size: 13px;
         }
 
-        input[type="text"] {
+        input[type="text"],
+        select {
             width: 100%;
-            padding: 10px;
+            padding: 10px 12px;
             border: 1px solid #475569;
-            border-radius: 6px;
+            border-radius: 8px;
             background: #1e293b;
             color: #f8fafc;
             font-size: 14px;
-            box-sizing: border-box;
+            margin-bottom: 12px;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        input[type="text"]:focus {
+        input[type="text"]:focus,
+        select:focus {
             outline: none;
             border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+        }
+
+        select {
+            cursor: pointer;
         }
 
         .help-text {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: -8px;
+            margin-bottom: 12px;
+        }
+
+        .mode-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .mode-option {
+            padding: 12px;
+            border: 2px solid #475569;
+            border-radius: 8px;
+            background: #1e293b;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .mode-option:hover {
+            border-color: #60a5fa;
+            background: rgba(96, 165, 250, 0.1);
+        }
+
+        .mode-option.selected {
+            border-color: #60a5fa;
+            background: rgba(96, 165, 250, 0.2);
+        }
+
+        .mode-option .icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .mode-option .label {
+            font-weight: 600;
             font-size: 12px;
+            color: #f8fafc;
+        }
+
+        .mode-option .desc {
+            font-size: 10px;
             color: #94a3b8;
-            margin-top: 4px;
+            margin-top: 2px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: rgba(51, 65, 85, 0.5);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.online {
+            background: #4ade80;
+        }
+
+        .status-dot.offline {
+            background: #f87171;
+        }
+
+        .status-dot.unconfigured {
+            background: #94a3b8;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .key-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: rgba(51, 65, 85, 0.5);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .key-status .provider {
+            font-weight: 600;
+            color: #f8fafc;
+        }
+
+        .key-status .status {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .key-status .status.present {
+            color: #4ade80;
+        }
+
+        .key-status .status.missing {
+            color: #f87171;
         }
 
         .button-group {
-            margin-top: 20px;
             display: flex;
             gap: 10px;
+            margin-top: 20px;
         }
 
         button {
             flex: 1;
-            padding: 10px;
+            padding: 12px;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            font-size: 14px;
         }
 
         #btn-save {
@@ -71,6 +225,8 @@
 
         #btn-save:hover {
             background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
         }
 
         #btn-reset {
@@ -83,47 +239,54 @@
         }
 
         #status {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 6px;
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
             text-align: center;
-            font-size: 14px;
+            font-size: 13px;
             display: none;
         }
 
         #status.success {
-            background: rgba(74, 222, 128, 0.2);
+            background: rgba(74, 222, 128, 0.15);
             color: #4ade80;
+            border: 1px solid rgba(74, 222, 128, 0.3);
             display: block;
         }
 
         #status.error {
-            background: rgba(251, 113, 133, 0.2);
+            background: rgba(251, 113, 133, 0.15);
             color: #fb7185;
+            border: 1px solid rgba(251, 113, 133, 0.3);
             display: block;
         }
 
-        .example {
-            margin-top: 15px;
-            padding: 10px;
-            background: rgba(51, 65, 85, 0.5);
-            border-radius: 6px;
-            font-size: 12px;
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 20px;
+            color: #94a3b8;
         }
 
-        .example strong {
-            color: #60a5fa;
-            display: block;
-            margin-bottom: 8px;
+        .loading.active {
+            display: flex;
         }
 
-        .example code {
-            display: block;
-            padding: 6px;
-            background: #0f172a;
-            border-radius: 4px;
-            margin-top: 4px;
-            color: #4ade80;
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #475569;
+            border-top-color: #60a5fa;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
@@ -131,28 +294,93 @@
 <body>
     <h2>⚙️ Multi-Check Pro Instellingen</h2>
 
-    <div>
-        <label for="api-url">API Server URL</label>
-        <input type="text" id="api-url" placeholder="http://your-server-ip:8000">
-        <div class="help-text">
-            De URL van je Multi-Check Pro server
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <span>Configuratie laden...</span>
+    </div>
+
+    <div id="content" style="display: none;">
+        <!-- Server Connection -->
+        <div class="section">
+            <div class="section-title">🔌 Server Verbinding</div>
+
+            <label for="api-url">Server URL</label>
+            <input type="text" id="api-url" placeholder="http://localhost:8000">
+            <div class="help-text">De URL van je Multi-Check Pro server</div>
+
+            <div class="status-indicator" id="server-status">
+                <div class="status-dot unconfigured" id="server-dot"></div>
+                <span id="server-status-text">Niet verbonden</span>
+            </div>
         </div>
-    </div>
 
-    <div class="example">
-        <strong>Voorbeelden:</strong>
-        <code>http://localhost:8000</code>
-        <code>http://192.168.1.100:8000</code>
-        <code>http://nas.local:8000</code>
-        <code>https://funda.yourdomain.com</code>
-    </div>
+        <!-- AI Provider Selection -->
+        <div class="section">
+            <div class="section-title">🤖 AI Provider</div>
 
-    <div class="button-group">
-        <button id="btn-save">Opslaan</button>
-        <button id="btn-reset">Reset</button>
-    </div>
+            <label for="provider">Provider</label>
+            <select id="provider">
+                <option value="ollama">Ollama (Lokaal)</option>
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+                <option value="gemini">Google Gemini</option>
+            </select>
 
-    <div id="status"></div>
+            <label for="model">Model</label>
+            <select id="model">
+                <option value="">Selecteer eerst een provider...</option>
+            </select>
+            <div class="help-text">Model afhankelijk van beschikbaarheid op de server</div>
+        </div>
+
+        <!-- Operating Mode -->
+        <div class="section">
+            <div class="section-title">⚡ Uitvoeringsmodus</div>
+
+            <div class="mode-grid" id="mode-grid">
+                <div class="mode-option" data-mode="fast">
+                    <div class="icon">⚡</div>
+                    <div class="label">FAST</div>
+                    <div class="desc">Snelle analyse</div>
+                </div>
+                <div class="mode-option selected" data-mode="full">
+                    <div class="icon">📊</div>
+                    <div class="label">FULL</div>
+                    <div class="desc">Volledige analyse</div>
+                </div>
+                <div class="mode-option" data-mode="debug">
+                    <div class="icon">🔧</div>
+                    <div class="label">DEBUG</div>
+                    <div class="desc">Geen AI calls</div>
+                </div>
+                <div class="mode-option" data-mode="offline">
+                    <div class="icon">📴</div>
+                    <div class="label">OFFLINE</div>
+                    <div class="desc">Lokale verwerking</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Status (Read Only) -->
+        <div class="section">
+            <div class="section-title">🔑 API Key Status</div>
+
+            <div id="key-status-list">
+                <!-- Populated by JS -->
+            </div>
+
+            <div class="help-text" style="margin-top: 8px; margin-bottom: 0;">
+                Keys worden op de server ingesteld via omgevingsvariabelen
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button id="btn-save">💾 Opslaan</button>
+            <button id="btn-reset">↩️ Reset</button>
+        </div>
+
+        <div id="status"></div>
+    </div>
 
     <script src="settings.js"></script>
 </body>

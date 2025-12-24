@@ -176,3 +176,10 @@ async def get_available_models(provider: str):
         }
     
     return {"provider": provider, "models": [], "error": "Unknown provider"}
+
+
+@router.get("/providers")
+async def get_providers():
+    """Get all available providers with their models."""
+    from backend.ai.provider_factory import ProviderFactory
+    return ProviderFactory.list_providers()
