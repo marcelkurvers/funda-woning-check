@@ -211,21 +211,27 @@ def build_app_config(show_fingerprints: bool = False) -> AppConfig:
     
     settings = get_settings()
     
+    # Read API keys directly from environment variables
+    # Note: docker-compose passes OPENAI_API_KEY (not AI_OPENAI_API_KEY)
+    openai_key = os.environ.get("OPENAI_API_KEY") or settings.ai.openai_api_key
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY") or settings.ai.anthropic_api_key
+    gemini_key = os.environ.get("GEMINI_API_KEY") or settings.ai.gemini_api_key
+    
     # Build safe key status
     key_status = {
         "openai": KeyStatus.from_key(
-            settings.ai.openai_api_key,
-            source="env" if os.environ.get("OPENAI_API_KEY") else "config",
+            openai_key,
+            source="env" if os.environ.get("OPENAI_API_KEY") else ("config" if settings.ai.openai_api_key else "none"),
             show_fingerprint=show_fingerprints
         ),
         "anthropic": KeyStatus.from_key(
-            settings.ai.anthropic_api_key,
-            source="env" if os.environ.get("ANTHROPIC_API_KEY") else "config",
+            anthropic_key,
+            source="env" if os.environ.get("ANTHROPIC_API_KEY") else ("config" if settings.ai.anthropic_api_key else "none"),
             show_fingerprint=show_fingerprints
         ),
         "gemini": KeyStatus.from_key(
-            settings.ai.gemini_api_key,
-            source="env" if os.environ.get("GEMINI_API_KEY") else "config",
+            gemini_key,
+            source="env" if os.environ.get("GEMINI_API_KEY") else ("config" if settings.ai.gemini_api_key else "none"),
             show_fingerprint=show_fingerprints
         ),
     }
