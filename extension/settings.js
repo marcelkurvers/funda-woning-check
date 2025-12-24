@@ -178,8 +178,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const url = currentSettings.apiUrl;
 
         try {
-            // Check health
-            const healthRes = await fetch(`${url}/api/config/health`, {
+            // Check health - use the dedicated config-status endpoint
+            const healthRes = await fetch(`${url}/api/config-status/health`, {
                 method: 'GET',
                 signal: AbortSignal.timeout(5000)
             });
@@ -188,8 +188,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 serverDot.className = 'status-dot online';
                 serverStatusText.textContent = 'Verbonden';
 
-                // Fetch full config
-                const statusRes = await fetch(`${url}/api/config/status`);
+                // Fetch full config status
+                const statusRes = await fetch(`${url}/api/config-status/status`);
                 if (statusRes.ok) {
                     serverConfig = await statusRes.json();
                     updateKeyStatusList();
@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function pushSettingsToServer(url) {
-        const res = await fetch(`${url}/api/config/update`, {
+        const res = await fetch(`${url}/api/config-status/update`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

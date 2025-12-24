@@ -17,7 +17,14 @@ import os
 class SQLiteSettingsSource(PydanticBaseSettingsSource):
     """
     A custom settings source that loads configuration from a SQLite kv_store table.
+    
+    IMPORTANT: Only loads keys that match nested section names (ai, market, validation, etc.)
+    Top-level keys like 'mode' are ignored to prevent Pydantic validation errors.
     """
+    
+    # Only these section names are valid at the AppSettings level
+    VALID_SECTIONS = {'ai', 'market', 'fit_score', 'validation', 'pipeline', 'preferences', 'chapters'}
+    
     def get_field_value(self, field_name: str, field_class_name: str) -> Tuple[Any, str, bool]:
         # This source is designed to return the whole nested dict for each section
         return None, field_name, False
@@ -53,6 +60,11 @@ class SQLiteSettingsSource(PydanticBaseSettingsSource):
             rows = cur.fetchall()
             for row in rows:
                 section_name = row['key'].replace("config.", "")
+                
+                # SECURITY: Only load known nested sections to prevent injection
+                if section_name not in self.VALID_SECTIONS:
+                    continue
+                
                 try:
                     d[section_name] = json.loads(row['value'])
                 except json.JSONDecodeError:

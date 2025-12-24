@@ -86,8 +86,8 @@ export function SettingsPage() {
         setLoading(true);
         try {
             const [statusRes, modesRes] = await Promise.all([
-                fetch(`/api/config/status?show_fingerprint=${showFingerprints}`),
-                fetch('/api/config/modes')
+                fetch(`/api/config-status/status?show_fingerprint=${showFingerprints}`),
+                fetch('/api/config-status/modes')
             ]);
 
             if (!statusRes.ok) throw new Error('Failed to fetch configuration');
@@ -130,7 +130,7 @@ export function SettingsPage() {
         setTesting(true);
         setTestResult(null);
         try {
-            const res = await fetch('/api/config/test-provider', {
+            const res = await fetch('/api/config-status/test-provider', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -155,7 +155,7 @@ export function SettingsPage() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            const res = await fetch('/api/config/update', {
+            const res = await fetch('/api/config-status/update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

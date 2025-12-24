@@ -32,7 +32,7 @@ from backend.ai.provider_factory import ProviderFactory
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/config", tags=["configuration-status"])
+router = APIRouter(prefix="/api/config-status", tags=["configuration-status"])
 
 
 # === Response Models ===
@@ -398,10 +398,16 @@ async def update_config(update: ConfigUpdateRequest):
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
         
-        # Persist AI config (without keys)
+        # Update mode in settings if provided
+        if update.mode is not None:
+            settings.ai.mode = update.mode
+            updated_fields.append("mode")
+        
+        # Persist AI config (without keys) - mode is now included here
         ai_config = {
             "provider": settings.ai.provider,
             "model": settings.ai.model,
+            "mode": settings.ai.mode,  # Store mode as part of ai section
             "timeout": settings.ai.timeout,
             "fallback_enabled": settings.ai.fallback_enabled,
         }
@@ -410,13 +416,8 @@ async def update_config(update: ConfigUpdateRequest):
             ("config.ai", json.dumps(ai_config))
         )
         
-        # Store mode if provided
-        if update.mode is not None:
-            cur.execute(
-                "INSERT OR REPLACE INTO kv_store (key, value) VALUES (?, ?)",
-                ("config.mode", json.dumps(update.mode))
-            )
-            updated_fields.append("mode")
+        # Clean up any legacy config.mode key
+        cur.execute("DELETE FROM kv_store WHERE key = 'config.mode'")
         
         conn.commit()
         conn.close()
