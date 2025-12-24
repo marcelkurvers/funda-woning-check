@@ -35,6 +35,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const serverDot = document.getElementById('server-dot');
     const serverStatusText = document.getElementById('server-status-text');
     const keyStatusList = document.getElementById('key-status-list');
+    const providerStatusEl = document.getElementById('provider-status');
+    const modelStatusEl = document.getElementById('model-status');
 
     // Show loading
     loadingEl.classList.add('active');
@@ -69,6 +71,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentSettings.provider = provider;
         updateModelDropdown(provider);
         updateKeyStatusList();
+        updateTrafficLights();
     });
 
     // Model change
@@ -174,6 +177,46 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    function updateTrafficLights() {
+        const provider = currentSettings.provider;
+
+        // Update provider status
+        if (!serverConfig) {
+            setTrafficLight(providerStatusEl, 'gray', 'Onbekend');
+            setTrafficLight(modelStatusEl, 'gray', 'Onbekend');
+            return;
+        }
+
+        const providerInfo = serverConfig.providers?.[provider];
+
+        if (!providerInfo) {
+            setTrafficLight(providerStatusEl, 'gray', 'Onbekend');
+        } else if (providerInfo.available || provider === 'ollama') {
+            setTrafficLight(providerStatusEl, 'green', 'Beschikbaar');
+        } else if (providerInfo.key_present) {
+            setTrafficLight(providerStatusEl, 'yellow', 'Key aanwezig');
+        } else {
+            setTrafficLight(providerStatusEl, 'red', 'Key ontbreekt');
+        }
+
+        // Update model status based on provider availability
+        if (!providerInfo) {
+            setTrafficLight(modelStatusEl, 'gray', 'Onbekend');
+        } else if (providerInfo.available || provider === 'ollama') {
+            setTrafficLight(modelStatusEl, 'green', 'Klaar');
+        } else if (providerInfo.key_present) {
+            setTrafficLight(modelStatusEl, 'yellow', 'Niet getest');
+        } else {
+            setTrafficLight(modelStatusEl, 'red', 'Niet beschikbaar');
+        }
+    }
+
+    function setTrafficLight(element, color, tooltip) {
+        const light = element.querySelector('.light');
+        light.className = `light ${color}`;
+        element.title = tooltip;
+    }
+
     async function fetchServerConfig() {
         const url = currentSettings.apiUrl;
 
@@ -193,16 +236,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (statusRes.ok) {
                     serverConfig = await statusRes.json();
                     updateKeyStatusList();
+                    updateTrafficLights();
                 }
             } else {
                 serverDot.className = 'status-dot offline';
                 serverStatusText.textContent = 'Server error';
+                updateTrafficLights();
             }
         } catch (e) {
             serverDot.className = 'status-dot offline';
             serverStatusText.textContent = 'Niet bereikbaar';
             serverConfig = null;
             updateKeyStatusList();
+            updateTrafficLights();
         }
     }
 
