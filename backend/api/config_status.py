@@ -293,9 +293,12 @@ async def test_provider_authentication(
         
         # Create provider instance
         if provider == "ollama":
+            # Use settings URL, or detect Docker environment
+            import os
+            default_url = "http://ollama:11434" if os.path.exists("/.dockerenv") else "http://localhost:11434"
             instance = ProviderFactory.create_provider(
                 provider,
-                base_url=settings.ai.ollama_base_url or "http://localhost:11434",
+                base_url=settings.ai.ollama_base_url or default_url,
                 model=test_model,
                 timeout=10
             )
@@ -310,7 +313,7 @@ async def test_provider_authentication(
         # Send test prompt
         response = await instance.generate(
             "Reply with exactly: 'OK'",
-            system_prompt="You are a test assistant. Reply only with 'OK'.",
+            system="You are a test assistant. Reply only with 'OK'.",
             max_tokens=10,
             temperature=0
         )
