@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: offline_structural_mode=True
 """
 Frontend Compatibility Tests - Using Correct Pipeline API
 
@@ -21,17 +23,40 @@ class TestRegression(unittest.TestCase):
     
     @classmethod
     def setUpClass(cls):
+        # T4f: Enable Offline Structural Mode
+        # MUST reset singleton FIRST to ensure it reads TEST environment
+        from backend.domain.governance_state import GovernanceStateManager
+        GovernanceStateManager._instance = None
+        
+        from backend.domain.governance_state import get_governance_state
+        from backend.domain.config import GovernanceConfig, DeploymentEnvironment
+        cls.gov_state = get_governance_state()
+        cls.original_config = cls.gov_state.get_current_config()
+        cls.gov_state.apply_config(
+            GovernanceConfig(
+                environment=DeploymentEnvironment.TEST,
+                offline_structural_mode=True
+            ),
+            source="test_frontend_compatibility"
+        )
+        
         cls.core_data = {
             "address": "Test Street 1",
             "asking_price_eur": 500000,
             "living_area_m2": 100,
             "description": "Test property"
         }
-        cls.chapters, cls.kpis, cls.enriched = execute_report_pipeline(
+        cls.chapters, cls.kpis, cls.enriched, cls.core_summary = execute_report_pipeline(
             run_id="test-frontend-compat",
             raw_data=cls.core_data,
             preferences={}
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        from backend.domain.governance_state import GovernanceStateManager
+        # Reset singleton so the next test gets a fresh state
+        GovernanceStateManager._instance = None
     
     def test_chapter_id_present(self):
         """Verify that every generated chapter has an 'id' field for frontend sorting."""

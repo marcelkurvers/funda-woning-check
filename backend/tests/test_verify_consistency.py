@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: None (fixture-based verification)
 import os
 import pytest
 from backend.consistency import ConsistencyChecker

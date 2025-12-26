@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: None (API endpoint tests)
 """
 Tests for Configuration Management API.
 """

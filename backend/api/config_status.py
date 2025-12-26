@@ -103,7 +103,7 @@ async def check_ollama_health(base_url: str) -> HealthStatus:
     import httpx
     
     if not base_url:
-        return HealthStatus(status="unknown", message="Base URL not configured")
+        return HealthStatus(status="not_configured", message="Base URL not configured")
     
     try:
         start = time.time()
@@ -193,8 +193,10 @@ async def get_config_status(show_fingerprint: bool = False):
     # Check Ollama health if configured or if it's the selected provider
     ollama_health = None
     if config.provider == "ollama" or config.ollama_base_url:
-        base_url = config.ollama_base_url or "http://localhost:11434"
-        ollama_health = await check_ollama_health(base_url)
+        if config.ollama_base_url:
+             ollama_health = await check_ollama_health(config.ollama_base_url)
+        else:
+             ollama_health = HealthStatus(status="not_configured", message="Ollama URL missing")
     
     # Convert providers to dict format
     providers_dict = {
@@ -293,12 +295,16 @@ async def test_provider_authentication(
         
         # Create provider instance
         if provider == "ollama":
-            # Use settings URL, or detect Docker environment
-            import os
-            default_url = "http://ollama:11434" if os.path.exists("/.dockerenv") else "http://localhost:11434"
+            if not settings.ai.ollama_base_url:
+                 return ProviderTestResult(
+                    success=False,
+                    provider=provider,
+                    model=test_model,
+                    message="Ollama base URL not configured."
+                )
             instance = ProviderFactory.create_provider(
                 provider,
-                base_url=settings.ai.ollama_base_url or default_url,
+                base_url=settings.ai.ollama_base_url,
                 model=test_model,
                 timeout=10
             )
@@ -355,8 +361,10 @@ async def get_health_summary():
     
     ollama_health = None
     if config.provider == "ollama":
-        base_url = config.ollama_base_url or "http://localhost:11434"
-        ollama_health = await check_ollama_health(base_url)
+        if config.ollama_base_url:
+            ollama_health = await check_ollama_health(config.ollama_base_url)
+        else:
+            ollama_health = HealthStatus(status="not_configured", message="Ollama URL missing")
     
     return {
         "status": "ok",

@@ -167,8 +167,9 @@ class AIAuthority:
         # Ollama base URL
         self._ollama_base_url = os.environ.get("OLLAMA_BASE_URL")
         if not self._ollama_base_url:
-            # Auto-detect Docker vs local
-            self._ollama_base_url = "http://ollama:11434" if os.path.exists("/.dockerenv") else "http://localhost:11434"
+            # NO auto-detection. Logic must be explicit.
+            # If not configured, it stays None, and status becomes NOT_CONFIGURED.
+            pass
         
         self._keys_loaded = True
         
@@ -202,7 +203,7 @@ class AIAuthority:
         elif provider == "anthropic":
             return bool(self._anthropic_key)
         elif provider == "ollama":
-            return True  # Always "configured" (local service)
+            return bool(self._ollama_base_url)
         return False
     
     def get_api_key(self, provider: str) -> Optional[str]:
@@ -219,10 +220,10 @@ class AIAuthority:
             return self._anthropic_key
         return None
     
-    def get_ollama_base_url(self) -> str:
-        """Get Ollama base URL."""
+    def get_ollama_base_url(self) -> Optional[str]:
+        """Get Ollama base URL. Returns None if not configured."""
         self._load_keys()
-        return self._ollama_base_url or "http://localhost:11434"
+        return self._ollama_base_url
     
     async def _check_provider_operational(self, provider: str) -> Tuple[bool, ProviderStatus, str]:
         """
@@ -282,6 +283,8 @@ class AIAuthority:
             return True, ProviderStatus.AVAILABLE, "Key present (verified on first use)"
             
         elif provider == "ollama":
+            if not self._ollama_base_url:
+                return False, ProviderStatus.NOT_CONFIGURED, "Base URL not configured"
             try:
                 async with httpx.AsyncClient(timeout=5.0) as client:
                     resp = await client.get(f"{self._ollama_base_url}/api/tags")

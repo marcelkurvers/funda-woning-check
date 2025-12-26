@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: None (template logic tests)
 import pytest
 from chapters.formatter import EditorialEngine
 

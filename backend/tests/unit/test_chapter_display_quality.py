@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: offline_structural_mode=True
 """
 Chapter Display Quality Tests - Using Correct Pipeline API
 
@@ -21,6 +23,23 @@ class TestChapterDisplayQuality(unittest.TestCase):
     
     @classmethod
     def setUpClass(cls):
+        # T4f: Enable Offline Structural Mode
+        # MUST reset singleton FIRST to ensure it reads TEST environment
+        from backend.domain.governance_state import GovernanceStateManager
+        GovernanceStateManager._instance = None
+        
+        from backend.domain.governance_state import get_governance_state
+        from backend.domain.config import GovernanceConfig, DeploymentEnvironment
+        cls.gov_state = get_governance_state()
+        cls.original_config = cls.gov_state.get_current_config()
+        cls.gov_state.apply_config(
+            GovernanceConfig(
+                environment=DeploymentEnvironment.TEST,
+                offline_structural_mode=True
+            ),
+            source="test_chapter_display_quality"
+        )
+        
         cls.core_data = {
             "address": "Prinsengracht 123",
             "asking_price_eur": 850000,
@@ -29,7 +48,7 @@ class TestChapterDisplayQuality(unittest.TestCase):
             "energy_label": "A",
             "description": "Beautiful Amsterdam property"
         }
-        cls.chapters, cls.kpis, cls.enriched = execute_report_pipeline(
+        cls.chapters, cls.kpis, cls.enriched, cls.core_summary = execute_report_pipeline(
             run_id="test-display-quality",
             raw_data=cls.core_data,
             preferences={
@@ -37,6 +56,12 @@ class TestChapterDisplayQuality(unittest.TestCase):
                 "petra": {"priorities": ["light"]}
             }
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        from backend.domain.governance_state import GovernanceStateManager
+        # Reset singleton so the next test gets a fresh state
+        GovernanceStateManager._instance = None
 
     def test_chapter_0_exists(self):
         """CRITICAL: Chapter 0 must exist."""

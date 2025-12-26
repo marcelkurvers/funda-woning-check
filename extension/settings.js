@@ -7,8 +7,8 @@ const DEFAULT_API_URL = 'http://localhost:8000';
 // State - providers will be populated from backend
 let currentSettings = {
     apiUrl: DEFAULT_API_URL,
-    provider: 'openai',  // Default per hierarchy
-    model: 'gpt-4o-mini',
+    provider: null,  // Set from runtime
+    model: null,     // Set from runtime
     mode: 'full'
 };
 
@@ -36,11 +36,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadingEl.classList.add('active');
 
     // Load saved settings from Chrome storage
+    // Load saved settings (but no hardcoded defaults for provider/model)
     const saved = await chrome.storage.sync.get(['apiUrl', 'provider', 'model', 'mode']);
     currentSettings = {
         apiUrl: saved.apiUrl || DEFAULT_API_URL,
-        provider: saved.provider || 'openai',  // Default to OpenAI per hierarchy
-        model: saved.model || 'gpt-4o-mini',
+        provider: saved.provider || null,
+        model: saved.model || null,
         mode: saved.mode || 'full'
     };
 
@@ -123,8 +124,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnReset.addEventListener('click', async () => {
         currentSettings = {
             apiUrl: DEFAULT_API_URL,
-            provider: 'openai',  // Default per hierarchy
-            model: 'gpt-4o-mini',
+            provider: null,
+            model: null,
             mode: 'full'
         };
 
@@ -147,7 +148,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         providerSelect.innerHTML = '';
 
         // Use provider_hierarchy from backend for ordering
-        const hierarchy = runtimeStatus.provider_hierarchy || ['openai', 'gemini', 'anthropic', 'ollama'];
+        const hierarchy = runtimeStatus.provider_hierarchy || [];
 
         for (const providerName of hierarchy) {
             const provider = runtimeStatus.providers[providerName];
@@ -197,6 +198,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Set current model
         if (models.length > 0 && !models.includes(currentSettings.model)) {
+            // If saved model is invalid/unavailable, use active model from runtime
             currentSettings.model = runtimeStatus.active_model || models[0];
         }
     }
@@ -308,7 +310,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // Show providers in hierarchy order
-        const hierarchy = runtimeStatus.provider_hierarchy || ['openai', 'gemini', 'anthropic', 'ollama'];
+        const hierarchy = runtimeStatus.provider_hierarchy || [];
 
         keyStatusList.innerHTML = hierarchy
             .filter(name => name !== 'ollama')  // Skip Ollama (no key needed)

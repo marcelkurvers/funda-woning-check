@@ -1,5 +1,29 @@
 <!DOCTYPE html>
 <html lang="nl">
+<!--
+    ===============================================================================
+    FOUR-PLANE PDF REPORT TEMPLATE
+    ===============================================================================
+    
+    This template MUST render ALL Four Planes or fail loudly.
+    
+    PLANES:
+    🟦 PLANE A  — Visual Intelligence (Deterministic Charts)
+    🟦 PLANE A2 — Synthesized Visual Intelligence (Hero Infographics)  
+    🟩 PLANE B  — Narrative Reasoning (Minimum 300 words per chapter)
+    🟨 PLANE C  — Factual Anchor (KPIs with provenance status)
+    🟥 PLANE D  — Human Preference (Marcel & Petra full analysis)
+    
+    CONTRACT REQUIREMENTS:
+    - plane_structure MUST be True for chapters 1-12
+    - Plane A2 MUST be visible or explicitly marked as OPERATIONALLY_LIMITED
+    - Plane D MUST show 5 positives + 5 concerns per persona
+    - Plane C MUST show KPI uncertainty status
+    - No truncation of persona analysis
+    - No silent degradation
+    
+    ===============================================================================
+-->
 
 <head>
     <meta charset="UTF-8">
@@ -14,7 +38,7 @@
             margin: 0;
 
             @top-right {
-                content: "KURVERS PROPERTY CONSULTING";
+                content: "KURVERS PROPERTY CONSULTING • FOUR-PLANE REPORT";
                 font-family: 'Outfit', sans-serif;
                 font-size: 5.5pt;
                 font-weight: 700;
@@ -71,24 +95,684 @@
             font-style: italic;
         }
 
-        /* --- MAGAZINE ELEMENTS --- */
-        .pull-quote {
-            font-family: 'Playfair Display', serif;
-            font-size: 14pt;
-            font-style: italic;
-            color: #1e40af;
-            border-left: 4px solid #3b82f6;
-            padding: 20px 0 20px 25px;
-            margin: 30px 0;
-            line-height: 1.5;
-            background: linear-gradient(to right, #f8fafc 0%, transparent 100%);
+        /* --- FOUR-PLANE LAYOUT --- */
+        .four-plane-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 15px;
+            height: calc(100% - 80px);
+            margin-top: 15px;
         }
 
+        .plane-column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .plane-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .plane-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid;
+        }
+
+        .plane-header-a {
+            border-color: #3b82f6;
+        }
+
+        .plane-header-a2 {
+            border-color: #6366f1;
+        }
+
+        .plane-header-b {
+            border-color: #10b981;
+        }
+
+        .plane-header-c {
+            border-color: #f59e0b;
+        }
+
+        .plane-header-d {
+            border-color: #ef4444;
+        }
+
+        .plane-badge {
+            font-size: 6pt;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .plane-badge-a {
+            background: #3b82f6;
+        }
+
+        .plane-badge-a2 {
+            background: #6366f1;
+        }
+
+        .plane-badge-b {
+            background: #10b981;
+        }
+
+        .plane-badge-c {
+            background: #f59e0b;
+        }
+
+        .plane-badge-d {
+            background: #ef4444;
+        }
+
+        .plane-title {
+            font-size: 7pt;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* --- ERROR/STATUS BOXES --- */
+        .error-box {
+            background: #fef2f2;
+            border: 2px solid #ef4444;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            color: #dc2626;
+        }
+
+        .error-box h3 {
+            color: #dc2626;
+            margin-bottom: 10px;
+        }
+
+        .warning-box {
+            background: #fffbeb;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 12px;
+            color: #b45309;
+            font-size: 8pt;
+        }
+
+        .limited-box {
+            background: #fef3c7;
+            border: 2px dashed #d97706;
+            border-radius: 8px;
+            padding: 12px;
+            color: #92400e;
+            font-size: 8pt;
+        }
+
+        .limited-badge {
+            display: inline-block;
+            background: #d97706;
+            color: white;
+            font-size: 6pt;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        /* --- CHAPTER HEADER --- */
+        .chapter-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .chapter-number {
+            font-size: 48pt;
+            font-weight: 900;
+            color: #3b82f6;
+            line-height: 1;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .chapter-info {
+            flex: 1;
+        }
+
+        .chapter-tag {
+            font-size: 6pt;
+            font-weight: 800;
+            color: #3b82f6;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .chapter-title {
+            font-size: 22pt;
+            font-weight: 800;
+            color: #0c121e;
+            line-height: 1.1;
+        }
+
+        /* --- PLANE A: CHARTS --- */
+        .chart-container {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .chart-title {
+            font-size: 7pt;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .bar-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bar-label {
+            font-size: 7pt;
+            color: #64748b;
+            width: 60px;
+            flex-shrink: 0;
+        }
+
+        .bar-track {
+            flex: 1;
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+            border-radius: 6px;
+            transition: width 0.3s;
+        }
+
+        .bar-value {
+            font-size: 7pt;
+            font-weight: 700;
+            color: #1e293b;
+            width: 50px;
+            text-align: right;
+        }
+
+        /* --- PLANE A2: INFOGRAPHICS --- */
+        .infographic-box {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #bae6fd;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .concept-item {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+
+        .concept-title {
+            font-size: 8pt;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .concept-type {
+            font-size: 6pt;
+            color: #6366f1;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .concept-insight {
+            font-size: 7pt;
+            color: #64748b;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+
+        /* --- PLANE B: NARRATIVE --- */
+        .narrative-content {
+            font-size: 9pt;
+            color: #334155;
+            line-height: 1.7;
+            text-align: justify;
+        }
+
+        .narrative-content p {
+            margin: 0 0 12px 0;
+        }
+
+        .word-count-badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            font-size: 6pt;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 8px;
+        }
+
+        /* --- PLANE C: KPIs --- */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .kpi-card {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 10px;
+            border-left: 3px solid;
+        }
+
+        .kpi-card.status-fact {
+            border-color: #10b981;
+        }
+
+        .kpi-card.status-inferred {
+            border-color: #f59e0b;
+        }
+
+        .kpi-card.status-unknown {
+            border-color: #ef4444;
+        }
+
+        .kpi-label {
+            font-size: 6pt;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .kpi-value {
+            font-size: 11pt;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        .kpi-status {
+            font-size: 5pt;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+            display: inline-block;
+        }
+
+        .kpi-status.fact {
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        .kpi-status.inferred {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .kpi-status.unknown {
+            background: #fecaca;
+            color: #dc2626;
+        }
+
+        .missing-data-box {
+            background: #fff7ed;
+            border: 1px dashed #fb923c;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .missing-data-title {
+            font-size: 6pt;
+            font-weight: 700;
+            color: #c2410c;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .missing-data-item {
+            font-size: 7pt;
+            color: #9a3412;
+            margin-bottom: 3px;
+        }
+
+        /* --- PLANE D: PERSONA --- */
+        .persona-section {
+            margin-bottom: 15px;
+        }
+
+        .persona-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        .persona-header.marcel {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left: 4px solid #3b82f6;
+        }
+
+        .persona-header.petra {
+            background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+            border-left: 4px solid #ec4899;
+        }
+
+        .persona-name {
+            font-size: 10pt;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        .persona-score {
+            font-size: 14pt;
+            font-weight: 900;
+            margin-left: auto;
+        }
+
+        .persona-score.marcel {
+            color: #3b82f6;
+        }
+
+        .persona-score.petra {
+            color: #ec4899;
+        }
+
+        .persona-mood {
+            font-size: 6pt;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .mood-positive {
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        .mood-negative {
+            background: #fecaca;
+            color: #dc2626;
+        }
+
+        .mood-neutral {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .mood-mixed {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .persona-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .persona-list-section {
+            margin-bottom: 10px;
+        }
+
+        .persona-list-title {
+            font-size: 6pt;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .persona-list li {
+            font-size: 7.5pt;
+            color: #334155;
+            padding: 4px 0;
+            padding-left: 12px;
+            position: relative;
+            line-height: 1.4;
+        }
+
+        .persona-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .persona-list.positives li {
+            color: #047857;
+        }
+
+        .persona-list.positives li::before {
+            color: #10b981;
+        }
+
+        .persona-list.concerns li {
+            color: #b45309;
+        }
+
+        .persona-list.concerns li::before {
+            color: #f59e0b;
+        }
+
+        .overlap-tensions-box {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+
+        .overlap-section,
+        .tension-section {
+            margin-bottom: 12px;
+        }
+
+        .overlap-title,
+        .tension-title {
+            font-size: 6pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .overlap-title {
+            color: #047857;
+        }
+
+        .tension-title {
+            color: #dc2626;
+        }
+
+        .overlap-item,
+        .tension-item {
+            font-size: 7pt;
+            padding: 6px 10px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+        }
+
+        .overlap-item {
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        .tension-item {
+            background: #fecaca;
+            color: #dc2626;
+        }
+
+        /* --- COVER PAGE --- */
+        .cover-page {
+            padding: 0;
+            background: linear-gradient(135deg, #0c121e 0%, #1e3a8a 50%, #0c121e 100%);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cover-visual {
+            flex: 1;
+            position: relative;
+            min-height: 50%;
+        }
+
+        .cover-gradient {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(to top, #0c121e 30%, transparent 100%);
+        }
+
+        .cover-content {
+            padding: 2cm;
+            color: white;
+        }
+
+        .brand-name {
+            font-size: 8pt;
+            font-weight: 700;
+            letter-spacing: 4px;
+            color: #60a5fa;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .report-title {
+            font-size: 48pt;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 30px;
+        }
+
+        .property-address {
+            font-size: 14pt;
+            color: #94a3b8;
+            margin-bottom: 40px;
+        }
+
+        .cover-footer {
+            display: flex;
+            gap: 30px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-stat label {
+            font-size: 6pt;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .footer-stat span {
+            font-size: 12pt;
+            font-weight: 700;
+            color: white;
+        }
+
+        /* --- DIAGNOSTICS PAGE --- */
+        .diagnostics-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .diagnostics-title {
+            font-size: 7pt;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .diagnostics-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 7pt;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .diagnostics-label {
+            color: #64748b;
+        }
+
+        .diagnostics-value {
+            font-weight: 600;
+        }
+
+        .diagnostics-value.ok {
+            color: #10b981;
+        }
+
+        .diagnostics-value.warning {
+            color: #f59e0b;
+        }
+
+        .diagnostics-value.error {
+            color: #ef4444;
+        }
+
+        /* --- PHOTO GRID --- */
         .photo-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 8px;
-            margin: 20px 0;
+            margin: 15px 0;
         }
 
         .photo-grid-item {
@@ -104,769 +788,30 @@
             object-fit: cover;
         }
 
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            font-size: 8.5pt;
-        }
-
-        .data-table th {
-            background: #f8fafc;
-            padding: 10px;
-            text-align: left;
-            font-weight: 700;
-            color: #475569;
-            border-bottom: 2px solid #e2e8f0;
-            font-size: 7pt;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .data-table td {
-            padding: 10px;
-            border-bottom: 1px solid #f1f5f9;
-            color: #334155;
-        }
-
-        .data-table tr:hover {
-            background: #fafbfc;
-        }
-
-        .stat-highlight {
-            display: inline-block;
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-            color: white;
-            padding: 3px 10px;
-            border-radius: 6px;
-            font-weight: 700;
-            font-size: 9pt;
-        }
-
-        .sidebar-callout {
-            background: #fffbeb;
-            border: 2px solid #fbbf24;
-            border-radius: 12px;
-            padding: 15px;
-            margin: 15px 0;
-        }
-
-        .sidebar-callout h5 {
-            color: #b45309;
-            font-size: 8pt;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 8px;
-            font-weight: 800;
-        }
-
-        .sidebar-callout p {
-            color: #78350f;
-            font-size: 8pt;
-            line-height: 1.5;
-            margin: 0;
-        }
-
-        .two-column {
-            column-count: 2;
-            column-gap: 25px;
-            text-align: justify;
-        }
-
-        .infographic-box {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border-radius: 16px;
-            padding: 20px;
-            margin: 20px 0;
-            border: 1px solid #bae6fd;
-        }
-
-        /* --- COVER PAGE --- */
-        .cover-page {
-            padding: 0;
-            background: #fff;
-        }
-
-        .cover-visual {
-            height: 65%;
-            background: linear-gradient(135deg, #0c121e 0%, #1e293b 100%);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .cover-pattern {
+        /* --- FOOTER --- */
+        .page-footer {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0.1;
-            background-image:
-                radial-gradient(#3b82f6 1px, transparent 1px),
-                radial-gradient(#3b82f6 1px, transparent 1px);
-            background-size: 20px 20px;
-            background-position: 0 0, 10px 10px;
-        }
-
-        .cover-gradient {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100px;
-            background: linear-gradient(to top, #fff, transparent);
-        }
-
-        .cover-content {
-            height: 40%;
-            padding: 2cm;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-        }
-
-        .brand-name {
-            font-size: 10pt;
-            font-weight: 800;
-            letter-spacing: 4px;
-            color: #3b82f6;
-            margin-bottom: 30px;
-            text-transform: uppercase;
-        }
-
-        .report-title {
-            font-size: 48pt;
-            font-weight: 300;
-            color: #0c121e;
-            line-height: 0.9;
-            margin-bottom: 10px;
-            letter-spacing: -2px;
-        }
-
-        .property-address {
-            font-size: 18pt;
-            color: #64748b;
-            font-weight: 400;
-            margin-bottom: 40px;
-        }
-
-        .cover-footer {
-            margin-top: auto;
+            bottom: 0.8cm;
+            left: 0.8cm;
+            right: 0.8cm;
             display: flex;
             justify-content: space-between;
-            gap: 20px;
-            padding-top: 20px;
             border-top: 1px solid #f1f5f9;
-        }
-
-        .footer-stat {
-            flex: 1;
-        }
-
-        .footer-stat label {
-            font-size: 6pt;
-            color: #94a3b8;
-            text-transform: uppercase;
-            font-weight: 800;
-            display: block;
-            margin-bottom: 3px;
-        }
-
-        .footer-stat span {
-            font-size: 10pt;
-            font-weight: 600;
-            color: #1e293b;
-        }
-
-        /* --- CHAPTER DECORATION --- */
-        .chapter-header {
-            margin-bottom: 40px;
-            position: relative;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .chapter-number {
-            font-size: 120pt;
-            color: #f8fafc;
-            font-weight: 800;
-            line-height: 0.8;
-            position: absolute;
-            right: -20px;
-            top: -20px;
-            z-index: 1;
-        }
-
-        .chapter-info {
-            position: relative;
-            z-index: 2;
-        }
-
-        .chapter-tag {
-            font-size: 7pt;
-            font-weight: 800;
-            color: #3b82f6;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-            display: block;
-        }
-
-        .chapter-title {
-            font-size: 32pt;
-            font-weight: 800;
-            letter-spacing: -1px;
-            color: #0c121e;
-        }
-
-        /* --- VISUALS --- */
-        .visual-grid {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .metric-card {
-            flex: 1;
-            background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%);
-            padding: 18px;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            text-align: center;
-            box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .metric-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-        }
-
-        .metric-icon {
-            width: 32px;
-            height: 32px;
-            margin: 0 auto 10px;
-            color: #3b82f6;
-        }
-
-        .metric-label {
-            font-size: 7pt;
-            font-weight: 800;
-            color: #94a3b8;
-            text-transform: uppercase;
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .metric-value {
-            font-size: 14pt;
-            font-weight: 800;
-            color: #1e293b;
-            display: block;
-        }
-
-        .progress-bar {
-            height: 4px;
-            background: #f1f5f9;
-            border-radius: 2px;
-            margin-top: 10px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: #3b82f6;
-        }
-
-        .content-layout {
-            display: flex;
-            gap: 25px;
-        }
-
-        .main-narrative {
-            flex: 1.4;
-            font-size: 10pt;
-            color: #334155;
-        }
-
-        .main-narrative p {
-            margin-bottom: 15px;
-            text-align: justify;
-        }
-
-        /* --- ADVISORY BOXES --- */
-        .advisory-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .expert-insight {
-            background: #f8fafc;
-            padding: 20px;
-            border-radius: 16px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .expert-insight h4 {
-            font-size: 8pt;
-            color: #3b82f6;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .strategy-plan {
-            background: #fff;
-            padding: 20px;
-            border-left: 4px solid #3b82f6;
-            border-radius: 0 16px 16px 0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-        }
-
-        .strategy-plan h4 {
-            font-size: 8pt;
-            color: #1a1a1a;
-            text-transform: uppercase;
-            margin-bottom: 12px;
-        }
-
-        .action-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .action-item {
-            font-size: 8.5pt;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-        }
-
-        .action-bullet {
-            color: #3b82f6;
-            font-weight: 800;
-        }
-
-        .client-profile-grid {
-            display: flex;
-            gap: 30px;
-            margin-top: 40px;
-        }
-
-        /* --- VISUAL CHARTS --- */
-        .chart-container {
-            margin: 20px 0;
-            padding: 20px;
-            background: #f8fafc;
-            border-radius: 16px;
-            text-align: center;
-        }
-
-        .heatmap-grid {
-            display: flex;
-            flex-wrap: wrap;
-            width: 150px;
-            gap: 2px;
-            margin: 0 auto;
-        }
-
-        .heatmap-cell {
-            width: 48px;
-            height: 48px;
-            background: #f1f5f9;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 6pt;
-            font-weight: 800;
-        }
-
-        .heatmap-cell.active {
-            background: #3b82f6;
-            color: #fff;
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
-        }
-
-        .scale-bar {
-            height: 8px;
-            background: linear-gradient(to right, #ef4444, #f59e0b, #10b981);
-            border-radius: 4px;
-            position: relative;
-            margin: 20px 0;
-        }
-
-        .scale-marker {
-            position: absolute;
-            top: -10px;
-            width: 2px;
-            height: 28px;
-            background: #0c121e;
-        }
-
-        /* Profile Cards Enhancement */
-        .profile-card {
-            flex: 1;
-            padding: 30px;
-            border-radius: 24px;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .marcel-card {
-            background: #f0f7ff;
-            color: #1e3a8a;
-        }
-
-        .petra-card {
-            background: #fff1f2;
-            color: #881337;
-        }
-
-        .profile-label {
-            font-size: 7pt;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 15px;
-            display: block;
-        }
-
-        .profile-name {
-            font-size: 18pt;
-            font-weight: 800;
-            margin-bottom: 10px;
-        }
-
-        .profile-desc {
-            font-size: 9pt;
-            opacity: 0.8;
-        }
-
-        /* Icon Wrapper */
-        .icon-box {
-            width: 20px;
-            height: 20px;
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 5px;
-        }
-
-        /* --- VARIABLE DISPLAY GRID --- */
-        .variables-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin: 20px 0;
-        }
-
-        .variable-item {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.2s;
-        }
-
-        .variable-item:hover {
-            border-color: #3b82f6;
-            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.1);
-        }
-
-        .variable-icon {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .variable-content {
-            flex: 1;
-        }
-
-        .variable-label {
-            font-size: 6.5pt;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 700;
-            margin-bottom: 2px;
-        }
-
-        .variable-value {
-            font-size: 10pt;
-            color: #0f172a;
-            font-weight: 700;
-        }
-
-        /* --- FEATURE HIGHLIGHTS --- */
-        .feature-row {
-            display: flex;
-            gap: 15px;
-            margin: 15px 0;
-        }
-
-        .feature-badge {
-            flex: 1;
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-            border: 1px solid #86efac;
-            border-radius: 10px;
-            padding: 12px;
-            text-align: center;
-        }
-
-        .feature-badge.warning {
-            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-            border-color: #fcd34d;
-        }
-
-        .feature-badge.alert {
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-            border-color: #fca5a5;
-        }
-
-        .feature-badge-label {
-            font-size: 6pt;
-            text-transform: uppercase;
-            font-weight: 800;
-            letter-spacing: 1.5px;
-            margin-bottom: 5px;
-        }
-
-        .feature-badge-value {
-            font-size: 11pt;
-            font-weight: 800;
-        }
-
-        /* --- PHOTO SHOWCASE --- */
-        .photo-showcase {
-            margin: 25px 0;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-        }
-
-        .photo-showcase img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .photo-caption {
-            background: #f8fafc;
-            padding: 10px 15px;
-            font-size: 7pt;
-            color: #64748b;
-            text-align: center;
-            font-style: italic;
-        }
-
-        /* --- MAGAZINE V3 (The New Standard) --- */
-        .mag-v3-container {
-            display: flex;
-            gap: 35px;
-            align-items: flex-start;
-        }
-
-        .mag-v3-main {
-            flex: 1.6;
-        }
-
-        .mag-v3-sidebar {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
             padding-top: 10px;
-        }
-
-        /* Narrative Styling */
-        .mag-v3-intro {
-            font-family: 'Playfair Display', serif;
-            font-size: 11pt;
-            font-style: italic;
-            color: #1e293b;
-            line-height: 1.6;
-            margin-bottom: 25px;
-            border-left: 3px solid #3b82f6;
-            padding-left: 20px;
-        }
-
-        .mag-v3-text {
-            font-family: 'Inter', sans-serif;
-            font-size: 9.5pt;
-            line-height: 1.7;
-            color: #334155;
-            text-align: justify;
-            margin-bottom: 25px;
-        }
-
-        .mag-v3-text p {
-            margin-bottom: 15px;
-        }
-
-        .mag-v3-pull-quote {
-            background: linear-gradient(to right, #f0f9ff 0%, rgba(255, 255, 255, 0) 100%);
-            border-left: 4px solid #3b82f6;
-            padding: 20px;
-            margin: 30px 0;
-            font-family: 'Playfair Display', serif;
-            font-size: 12pt;
-            font-style: italic;
-            color: #0369a1;
-            border-radius: 0 12px 12px 0;
-        }
-
-        /* Sidebar Widgets */
-        .mag-v3-widget {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 15px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        }
-
-        .mag-v3-widget-title {
-            font-size: 7pt;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: #94a3b8;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* Fact File (Variables) */
-        .mag-v3-fact-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            padding: 8px 0;
-            border-bottom: 1px dashed #f1f5f9;
-            font-size: 8.5pt;
-        }
-
-        .mag-v3-fact-row:last-child {
-            border-bottom: none;
-        }
-
-        .mag-v3-fact-label {
-            color: #64748b;
-            font-weight: 500;
-        }
-
-        .mag-v3-fact-value {
-            color: #0f172a;
-            font-weight: 700;
-            text-align: right;
-        }
-
-        /* KPI Cards (Metrics) */
-        .mag-v3-kpi-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .mag-v3-kpi-card {
-            background: #f8fafc;
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .mag-v3-kpi-val {
-            font-size: 14pt;
-            font-weight: 800;
-            color: #0f172a;
-            display: block;
-            line-height: 1;
-            margin-bottom: 4px;
-        }
-
-        .mag-v3-kpi-label {
             font-size: 6pt;
-            color: #64748b;
-            text-transform: uppercase;
-            font-weight: 700;
-        }
-
-        /* Advisory Box */
-        .mag-v3-advisory {
-            background: #f0fdf4;
-            border-color: #bbf7d0;
-        }
-
-        .mag-v3-advisory .mag-v3-widget-title {
-            color: #166534;
-        }
-
-        .mag-v3-advisory-text {
-            font-size: 8.5pt;
-            color: #15803d;
-            line-height: 1.5;
-        }
-
-        /* AI Box */
-        .mag-v3-ai-box {
-            background: #f8fafc;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .mag-v3-ai-box::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: #64748b;
+            color: #94a3b8;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- COVER PAGE -->
+    <!-- ===================================================================
+         COVER PAGE
+         =================================================================== -->
     <div class="page cover-page">
         <div class="cover-visual"
-            style="background: {% if property_core.media_urls %}url('{{ property_core.media_urls[0] }}'){% else %}#0c121e{% endif %} center/cover no-repeat;">
-            <div class="cover-pattern"></div>
-            {% if not property_core.media_urls %}
-            <!-- Abstract Architecture Line Art (Only if no photo) -->
-            <div style="position: absolute; bottom: 10%; right: 10%; width: 300px; height: 300px; opacity: 0.2;">
-                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
-                    <path d="M10 90 L10 10 L90 10 L90 90 Z" fill="none" stroke="white" stroke-width="0.5" />
-                    <path d="M30 90 L30 30 L70 30 L70 90" fill="none" stroke="white" stroke-width="0.5" />
-                    <circle cx="50" cy="50" r="20" fill="none" stroke="white" stroke-width="0.5" />
-                </svg>
-            </div>
-            {% endif %}
+            style="background: {% if property_core.media_urls %}url('{{ property_core.media_urls[0] }}'){% else %}linear-gradient(135deg, #1e3a8a, #0c121e){% endif %} center/cover no-repeat;">
             <div class="cover-gradient"></div>
         </div>
         <div class="cover-content">
@@ -877,98 +822,71 @@
             <div class="cover-footer">
                 <div class="footer-stat">
                     <label>Investering</label>
-                    <span style="font-weight: 800; color: #1e293b;">{{ property_core.asking_price_eur }}</span>
+                    <span>{{ property_core.asking_price_eur }}</span>
                 </div>
                 <div class="footer-stat">
                     <label>Woonoppervlak</label>
-                    <span style="font-weight: 800; color: #1e293b;">{{ property_core.living_area_m2 or '0' }} m²</span>
+                    <span>{{ property_core.living_area_m2 or '0' }} m²</span>
                 </div>
                 <div class="footer-stat">
                     <label>Bouwjaar</label>
-                    <span style="font-weight: 800; color: #1e293b;">{{ property_core.build_year or 'Onbekend' }}</span>
+                    <span>{{ property_core.build_year or 'Onbekend' }}</span>
                 </div>
                 <div class="footer-stat">
                     <label>Energielabel</label>
-                    <span
-                        style="font-weight: 800; color: {% if property_core.energy_label in ['A', 'A+', 'A++'] %}#10b981{% elif property_core.energy_label in ['B', 'C'] %}#f59e0b{% else %}#ef4444{% endif %};">{{
-                        property_core.energy_label or 'N/B' }}</span>
-                </div>
-            </div>
-
-            <!-- Additional Cover Stats -->
-            <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #f1f5f9; display: flex; gap: 20px;">
-                <div class="footer-stat">
-                    <label>Type</label>
-                    <span style="font-weight: 600; color: #64748b;">{{ property_core.property_type or 'Woning' }}</span>
+                    <span>{{ property_core.energy_label or 'N/B' }}</span>
                 </div>
                 <div class="footer-stat">
-                    <label>Kamers</label>
-                    <span style="font-weight: 600; color: #64748b;">{{ property_core.rooms or 'N/B' }}</span>
-                </div>
-                <div class="footer-stat">
-                    <label>Publicatiedatum</label>
-                    <span style="font-weight: 600; color: #64748b;">{{ date }}</span>
+                    <label>Rapport Datum</label>
+                    <span>{{ date }}</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- CLIENT FOCUS PAGE -->
+    <!-- ===================================================================
+         CORE SUMMARY PAGE
+         =================================================================== -->
+    {% if core_summary %}
     <div class="page">
         <div class="chapter-header">
             <div class="chapter-info">
-                <span class="chapter-tag">Personalized Advisory</span>
-                <h1 class="chapter-title serif">Marcel & Petra</h1>
+                <span class="chapter-tag">Kernoverzicht</span>
+                <h1 class="chapter-title">Samenvatting Kerngegevens</h1>
             </div>
         </div>
 
-        <p style="font-size: 11pt; color: #64748b; margin-bottom: 40px; max-width: 600px;">
-            Elk aspect van dit rapport is gewogen tegen jullie unieke zoekprofiel. We combineren technische integriteit
-            met een diepgaand begrip van wooncomfort.
-        </p>
-
-        <div class="client-profile-grid">
-            <div class="profile-card marcel-card">
-                <span class="profile-label">Focus: Infra & Rendement</span>
-                <h2 class="profile-name">Marcel</h2>
-                <p class="profile-desc">Kritische blik op installatietechniek, smart-home fundamenten,
-                    funderingsrisico's en onderhoudscycli.</p>
-                <div style="margin-top: 20px;">
-                    <svg width="40" height="4" style="border-radius: 2px;">
-                        <rect width="40" height="4" fill="#3b82f6" />
-                    </svg>
-                </div>
+        <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
+            <div class="kpi-card status-{{ core_summary.asking_price.status }}">
+                <div class="kpi-label">Vraagprijs</div>
+                <div class="kpi-value">{{ core_summary.asking_price.value }}</div>
+                <span class="kpi-status {{ core_summary.asking_price.status }}">{{ core_summary.asking_price.status
+                    }}</span>
             </div>
-            <div class="profile-card petra-card">
-                <span class="profile-label">Focus: Sfeer & Beleving</span>
-                <h2 class="profile-name">Petra</h2>
-                <p class="profile-desc">Beoordeling van daglichttoetreding, flow, esthetische consistentie en de match
-                    met het gewenste interieurconcept.</p>
-                <div style="margin-top: 20px;">
-                    <svg width="40" height="4" style="border-radius: 2px;">
-                        <rect width="40" height="4" fill="#f472b6" />
-                    </svg>
-                </div>
+            <div class="kpi-card status-{{ core_summary.living_area.status }}">
+                <div class="kpi-label">Woonoppervlak</div>
+                <div class="kpi-value">{{ core_summary.living_area.value }}</div>
+                <span class="kpi-status {{ core_summary.living_area.status }}">{{ core_summary.living_area.status
+                    }}</span>
             </div>
-        </div>
-
-        <div style="margin-top: 60px; padding: 40px; background: #f8fafc; border-radius: 32px; text-align: center;">
-            <p
-                style="font-family: 'Playfair Display', serif; font-size: 14pt; font-style: italic; color: #1e293b; line-height: 1.6;">
-                "Onze missie is om data te vertalen naar woonplezier. Kurvers Property Consulting staat voor een
-                onderbouwd besluit met oog voor mens en techniek."
-            </p>
-        </div>
-
-        <div
-            style="position: absolute; bottom: 30px; left: 2cm; right: 2cm; display: flex; align-items: center; gap: 20px; opacity: 0.3;">
-            <div style="flex: 1; height: 1px; background: #e2e8f0;"></div>
-            <div style="font-size: 7pt; font-weight: 800; letter-spacing: 3px;">KURVERS METHODOLOGY</div>
-            <div style="flex: 1; height: 1px; background: #e2e8f0;"></div>
+            <div class="kpi-card status-{{ core_summary.location.status }}">
+                <div class="kpi-label">Locatie</div>
+                <div class="kpi-value">{{ core_summary.location.value }}</div>
+                <span class="kpi-status {{ core_summary.location.status }}">{{ core_summary.location.status }}</span>
+            </div>
+            <div class="kpi-card status-{{ core_summary.match_score.status }}">
+                <div class="kpi-label">Match Score</div>
+                <div class="kpi-value">{{ core_summary.match_score.value }}</div>
+                <span class="kpi-status {{ core_summary.match_score.status }}">{{ core_summary.match_score.status
+                    }}</span>
+            </div>
         </div>
     </div>
+    {% endif %}
 
-    <!-- TABLE OF CONTENTS -->
+    <!-- ===================================================================
+         TABLE OF CONTENTS
+         =================================================================== -->
     <div class="page">
         <div class="chapter-header">
             <div class="chapter-info">
@@ -977,503 +895,530 @@
             </div>
         </div>
 
-        <div style="margin-top: 50px;">
+        <div style="margin-top: 30px;">
             {% for ch in chapters %}
             <div
-                style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; border-bottom: 1px solid #f8fafc; padding-bottom: 8px;">
+                style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; border-bottom: 1px dotted #e2e8f0; padding-bottom: 8px;">
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <span style="font-size: 8pt; font-weight: 800; color: #3b82f6; width: 30px;">0{{ loop.index0
-                        }}</span>
-                    <a href="#ch-{{ loop.index0 }}"
-                        style="text-decoration: none; color: #1a1a1a; font-size: 11pt; font-weight: 400;">{{ ch.title
-                        }}</a>
+                    <span style="font-size: 10pt; font-weight: 800; color: #3b82f6; width: 30px;">{{ '%02d' %
+                        loop.index0 }}</span>
+                    <span style="font-size: 10pt; color: #1a1a1a;">{{ ch.title }}</span>
+                    {% if ch.plane_structure %}
+                    <span
+                        style="font-size: 5pt; background: #10b981; color: white; padding: 2px 6px; border-radius: 3px; font-weight: 700;">4-PLANE</span>
+                    {% endif %}
                 </div>
-                <div style="flex: 1; border-bottom: 1px dotted #e2e8f0; margin: 0 15px; height: 10px;"></div>
-                <span style="font-size: 9pt; color: #94a3b8; font-weight: 600;">{{ loop.index + 2 }}</span>
+                <span style="font-size: 8pt; color: #94a3b8;">{{ loop.index + 2 }}</span>
             </div>
             {% endfor %}
         </div>
 
-        <div style="margin-top: 100px; padding: 30px; border: 1px solid #f1f5f9; border-radius: 20px;">
+        <div
+            style="margin-top: 40px; padding: 20px; border: 1px solid #f1f5f9; border-radius: 12px; background: #f8fafc;">
             <h4
                 style="font-size: 7pt; letter-spacing: 2px; color: #3b82f6; text-transform: uppercase; margin-bottom: 10px;">
-                Leeswijzer</h4>
-            <p style="font-size: 8.5pt; color: #64748b; line-height: 1.6;">
-                Dit rapport is opgebouwd uit twaalf kerngebieden van vastgoedanalyse. Elk hoofdstuk bevat een technische
-                samenvatting, een visuele weergave van de kern-KPI's en een persoonlijke interpretatie voor Marcel en
-                Petra. In de kantlijn vindt u de 'Kurvers Advisory' met concrete actiepunten.
+                Leeswijzer — Four-Plane Architecture</h4>
+            <p style="font-size: 8pt; color: #64748b; line-height: 1.6;">
+                Dit rapport is opgebouwd volgens de Four-Plane architectuur. Elk hoofdstuk bevat:
+                <br><strong>🟦 Plane A — Visuele analyse</strong> (grafieken, trends)
+                <br><strong>🟦 Plane A2 — Infographics</strong> (gesynthetiseerde visualisaties)
+                <br><strong>🟩 Plane B — Narratief</strong> (uitleg en interpretatie)
+                <br><strong>🟨 Plane C — Feiten</strong> (KPIs met zekerheidsgraad)
+                <br><strong>🟥 Plane D — Persona analyse</strong> (Marcel & Petra match)
             </p>
         </div>
     </div>
 
-    <!-- CHAPTERS -->
+    <!-- ===================================================================
+         CHAPTERS - FOUR-PLANE RENDERING
+         =================================================================== -->
     {% for ch in chapters %}
-    <div class="page">
-        <div class="chapter-number">0{{ loop.index0 if loop.index0 < 10 else loop.index0 }}</div>
 
-                <div class="chapter-header">
-                    <div class="chapter-info">
-                        <span class="chapter-tag">{{ ch.segment or 'Strategische Analyse' }}</span>
-                        <h1 class="chapter-title">{{ ch.title }}</h1>
-                    </div>
+    {# === GUARD: plane_structure MUST be True for chapters 1-12 === #}
+    {% set chapter_id = ch.id|int if ch.id is defined else loop.index0 %}
+    {% set requires_four_plane = chapter_id >= 1 and chapter_id <= 12 %} {% set has_four_plane=ch.plane_structure is
+        defined and ch.plane_structure==true %} {% if requires_four_plane and not has_four_plane %} <!-- CONTRACTBREUK:
+        Chapter {{ chapter_id }} missing plane_structure -->
+        <div class="page">
+            <div class="error-box" style="margin-top: 100px;">
+                <h3>⛔ FOUR-PLANE CONTRACT VIOLATION</h3>
+                <p style="font-size: 10pt; margin: 20px 0;">
+                    Hoofdstuk {{ chapter_id }} (<strong>{{ ch.title }}</strong>) heeft geen valide Four-Plane structuur.
+                </p>
+                <div style="text-align: left; background: #fff; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                    <p style="font-size: 8pt; color: #64748b; margin-bottom: 10px;">
+                        <strong>Contract Requirement:</strong> plane_structure = True
+                    </p>
+                    <p style="font-size: 8pt; color: #64748b; margin-bottom: 10px;">
+                        <strong>Actual Value:</strong> {{ ch.plane_structure | default('MISSING') }}
+                    </p>
+                    <p style="font-size: 8pt; color: #64748b;">
+                        Dit hoofdstuk kan niet worden gerenderd zonder valide Four-Plane data.
+                        Check de backend pipeline en/of regenereer het rapport.
+                    </p>
                 </div>
+            </div>
+        </div>
 
-                {% if loop.index0 == 0 %}
-                <!-- CHAPTER 0 SPECIAL VISUALS -->
-                <div
-                    style="display: flex; gap: 40px; margin-bottom: 40px; background: #fff; padding: 30px; border-radius: 24px; border: 1px solid #f1f5f9;">
-                    <div style="flex: 1; text-align: center;">
-                        <h4 style="font-size: 7pt; color: #94a3b8; text-transform: uppercase; margin-bottom: 20px;">
-                            Marktpositie (Vraagprijs vs. Waarde)</h4>
-                        <div class="scale-bar">
-                            <div class="scale-marker"
-                                style="left: {% if property_core.price_deviation_percent %}{{ (property_core.price_deviation_percent + 15) * 3.3 }}{% else %}50{% endif %}%;">
-                            </div>
-                        </div>
-                        <div
-                            style="display: flex; justify-content: space-between; font-size: 6pt; color: #94a3b8; font-weight: 800;">
-                            <span>ONDERWAARDE</span>
-                            <span>MARKTCONFORM</span>
-                            <span>OVERWAARDE</span>
-                        </div>
-                    </div>
-                    <div style="flex: 1; text-align: center;">
-                        <h4 style="font-size: 7pt; color: #94a3b8; text-transform: uppercase; margin-bottom: 20px;">
-                            Strategisch Profiel Match</h4>
-                        <div style="width: 150px; height: 150px; margin: 0 auto; position: relative;">
-                            <svg viewBox="0 0 100 100" style="width: 100%; height: 100%;">
-                                <circle cx="50" cy="50" r="40" fill="none" stroke="#f1f5f9" stroke-width="0.5" />
-                                <circle cx="50" cy="50" r="25" fill="none" stroke="#f1f5f9" stroke-width="0.5" />
-                                <line x1="50" y1="10" x2="50" y2="90" stroke="#f1f5f9" stroke-width="0.5" />
-                                <line x1="10" y1="50" x2="90" y2="50" stroke="#f1f5f9" stroke-width="0.5" />
-                                <polygon points="50,20 75,50 50,80 25,50" fill="rgba(59, 130, 246, 0.4)"
-                                    stroke="#3b82f6" stroke-width="1" />
-                            </svg>
-                            <div
-                                style="position: absolute; top:0; width: 100%; font-size: 5pt; font-weight: 800; color: #94a3b8;">
-                                LOCATIE</div>
-                            <div
-                                style="position: absolute; bottom:0; width: 100%; font-size: 5pt; font-weight: 800; color: #94a3b8;">
-                                INVESTERING</div>
-                            <div
-                                style="position: absolute; left:-20px; top:45%; font-size: 5pt; font-weight: 800; color: #94a3b8; transform: rotate(-90deg);">
-                                ONDERHOUD</div>
-                            <div
-                                style="position: absolute; right:-20px; top:45%; font-size: 5pt; font-weight: 800; color: #94a3b8; transform: rotate(90deg);">
-                                DUURZAAMHEID</div>
-                        </div>
-                    </div>
+        {% else %}
+
+        <div class="page">
+            <!-- Chapter Header -->
+            <div class="chapter-header">
+                <div class="chapter-number">{{ '%02d' % chapter_id }}</div>
+                <div class="chapter-info">
+                    <span class="chapter-tag">{{ ch.segment | default('Strategische Analyse') }}</span>
+                    <h1 class="chapter-title">{{ ch.title }}</h1>
                 </div>
-                {% endif %}
+            </div>
 
-                {% if loop.index0 == 4 %}
-                <!-- CHAPTER 4 SPECIAL VISUALS -->
-                <div class="chart-container">
-                    <h4 style="font-size: 7pt; color: #94a3b8; text-transform: uppercase; margin-bottom: 20px;">
-                        Duurzaamheids-Potentieel</h4>
-                    <div
-                        style="display: flex; gap: 10px; justify-content: center; height: 100px; align-items: flex-end;">
-                        {% set energy_val = (property_core.energy_future_score or 50) %}
-                        <div
-                            style="flex: 1; background: #e2e8f0; height: 40px; border-radius: 4px; position: relative;">
-                            <div
-                                style="position: absolute; bottom: 0; width: 100%; height: {{ energy_val }}%; background: #10b981; border-radius: 4px;">
-                            </div>
-                            <span
-                                style="font-size: 5pt; position: absolute; bottom: -15px; width: 100%; font-weight: 800;">HUIDIG</span>
+            <!-- FOUR-PLANE GRID LAYOUT -->
+            {% if has_four_plane %}
+            <div class="four-plane-grid">
+
+                <!-- LEFT COLUMN: PLANE A + PLANE A2 -->
+                <div class="plane-column">
+
+                    <!-- PLANE A: Deterministic Visuals -->
+                    <div class="plane-box">
+                        <div class="plane-header plane-header-a">
+                            <span class="plane-badge plane-badge-a">A</span>
+                            <span class="plane-title">Visual Intelligence</span>
                         </div>
-                        <div
-                            style="flex: 1; background: #e2e8f0; height: 100px; border-radius: 4px; position: relative; opacity: 0.5; border: 1px dashed #10b981;">
-                            <div
-                                style="position: absolute; bottom: 0; width: 100%; height: 95%; background: #10b981; border-radius: 4px;">
-                            </div>
-                            <span
-                                style="font-size: 5pt; position: absolute; bottom: -15px; width: 100%; font-weight: 800;">POTENTIEEL</span>
-                        </div>
-                    </div>
-                    <p style="font-size: 7pt; color: #64748b; margin-top: 25px;">Met gerichte isolatie en hybride
-                        technieken is een sprong naar label A+ technisch haalbaar.</p>
-                </div>
-                {% endif %}
 
-                {% if loop.index0 == 10 %}
-                <!-- CHAPTER 10 SPECIAL VISUALS -->
-                <div class="chart-container">
-                    <h4 style="font-size: 7pt; color: #94a3b8; text-transform: uppercase; margin-bottom: 25px;">
-                        Investerings Waterfall (Inductie)</h4>
-                    <div style="display: flex; align-items: flex-end; height: 120px; gap: 5px; padding: 0 40px;">
-                        <div
-                            style="flex: 2; background: #3b82f6; height: 70%; border-radius: 4px 4px 0 0; position: relative;">
-                            <span
-                                style="position: absolute; top: -15px; width: 100%; font-size: 6pt; font-weight: 800;">AANKOOP</span>
-                        </div>
-                        <div
-                            style="flex: 1; background: #ef4444; height: 15%; margin-bottom: 70%; border-radius: 4px; position: relative;">
-                            <span
-                                style="position: absolute; top: -15px; width: 100%; font-size: 6pt; font-weight: 800; color: #ef4444;">K.K.</span>
-                        </div>
-                        <div
-                            style="flex: 1; background: #f59e0b; height: 10%; margin-bottom: 85%; border-radius: 4px; position: relative;">
-                            <span
-                                style="position: absolute; top: -15px; width: 100%; font-size: 6pt; font-weight: 800; color: #f59e0b;">RENO</span>
-                        </div>
-                        <div
-                            style="flex: 1; background: #10b981; height: 100%; border-radius: 4px 4px 0 0; position: relative; border: 2px solid #0c121e;">
-                            <span
-                                style="position: absolute; top: -15px; width: 100%; font-size: 6pt; font-weight: 800;">TOTAAL</span>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
+                        {% if ch.plane_a and ch.plane_a.charts %}
+                        {% for chart in ch.plane_a.charts %}
+                        <div class="chart-container">
+                            <div class="chart-title">{{ chart.title }}</div>
 
-                {% if loop.index0 == 12 or loop.last %}
-                <!-- CHAPTER 12 SPECIAL VISUALS: RISK HEATMAP -->
-                <div class="chart-container">
-                    <h4 style="font-size: 7pt; color: #94a3b8; text-transform: uppercase; margin-bottom: 25px;">
-                        Strategische Risico-Matrix</h4>
-                    <div class="heatmap-grid">
-                        <div class="heatmap-cell">L | L</div>
-                        <div class="heatmap-cell">L | M</div>
-                        <div class="heatmap-cell" style="background: #fef2f2; color: #ef4444;">H | L</div>
-                        <div class="heatmap-cell">M | L</div>
-                        <div class="heatmap-cell active">M | M</div>
-                        <div class="heatmap-cell" style="background: #fee2e2; color: #ef4444;">H | M</div>
-                        <div class="heatmap-cell" style="background: #f1f5f9;">M | H</div>
-                        <div class="heatmap-cell" style="background: #fee2e2;">L | H</div>
-                        <div class="heatmap-cell" style="background: #ef4444; color: #fff;">H | H</div>
-                    </div>
-                    <div
-                        style="display: flex; justify-content: center; gap: 20px; font-size: 6pt; color: #94a3b8; font-weight: 800; margin-top: 15px;">
-                        <span>X: WAARSCHIJNLIJKHEID</span>
-                        <span>Y: IMPACT</span>
-                    </div>
-                </div>
-                {% endif %}
-
-                <!-- PROPERTY PHOTOS SHOWCASE -->
-                {% if property_core.media_urls and property_core.media_urls|length > 1 %}
-                <div class="photo-grid" style="margin: 25px 0;">
-                    {% for photo_url in property_core.media_urls[1:7] %}
-                    <div class="photo-grid-item">
-                        <img src="{{ photo_url }}" alt="Property view {{ loop.index }}"
-                            onerror="this.style.display='none'">
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-
-                <!-- MAGAZINE V3 CONTENT LAYOUT -->
-                <div class="mag-v3-container">
-
-                    <!-- LEFT COLUMN: NARRATIVE -->
-                    <div class="mag-v3-main">
-                        {% if ch.chapter_data %}
-
-                        {% if ch.chapter_data.intro %}
-                        <div class="mag-v3-intro">
-                            {{ ch.chapter_data.intro | striptags | safe }}
-                        </div>
-                        {% endif %}
-
-                        {% if ch.chapter_data.main_analysis %}
-                        <div class="mag-v3-text">
-                            {{ ch.chapter_data.main_analysis | safe }}
-                        </div>
-                        {% endif %}
-
-                        {% if ch.chapter_data.conclusion %}
-                        <div class="mag-v3-pull-quote">
-                            {{ ch.chapter_data.conclusion | striptags | safe }}
-                        </div>
-                        {% endif %}
-
-                        {% elif ch.grid_layout and ch.grid_layout.main %}
-                        <div class="mag-v3-text">
-                            {{ ch.grid_layout.main.content | safe }}
-                        </div>
-                        {% endif %}
-
-                        <div style="margin-top: 30px; font-size: 7pt; color: #94a3b8;">
-                            <strong>BRONNEN:</strong> Funda, Kadaster, Ruimtelijke Plannen,
-                            <span style="color: #64748b;">Kurvers Extensie v2.1</span>
-                        </div>
-                    </div>
-
-                    <!-- RIGHT COLUMN: DATA SIDEBAR -->
-                    <div class="mag-v3-sidebar">
-
-                        <!-- 1. KEY METRICS (KPIs) -->
-                        {% if ch.grid_layout and ch.grid_layout.metrics %}
-                        <div class="mag-v3-widget">
-                            <div class="mag-v3-widget-title">
-                                <svg class="icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <path d="M12 2v20M2 12h20" />
-                                </svg>
-                                KERN DATA
-                            </div>
-                            <div class="mag-v3-kpi-grid">
-                                {% for m in ch.grid_layout.metrics[:4] %}
-                                <div class="mag-v3-kpi-card">
-                                    <span class="mag-v3-kpi-val">{{ m.value }}</span>
-                                    <span class="mag-v3-kpi-label">{{ m.label }}</span>
+                            {% if chart.chart_type == 'bar' %}
+                            <div class="bar-chart">
+                                {% for dp in chart.data[:6] %}
+                                <div class="bar-item">
+                                    <span class="bar-label">{{ dp.label[:10] }}</span>
+                                    <div class="bar-track">
+                                        <div class="bar-fill"
+                                            style="width: {{ (dp.value / (chart.max_value or 100)) * 100 }}%;"></div>
+                                    </div>
+                                    <span class="bar-value">{{ dp.value }}{{ dp.unit or '' }}</span>
                                 </div>
                                 {% endfor %}
                             </div>
+
+                            {% elif chart.chart_type == 'gauge' %}
+                            <div style="text-align: center; padding: 15px;">
+                                <div style="font-size: 28pt; font-weight: 900; color: #3b82f6;">
+                                    {{ chart.data[0].value if chart.data else 'N/A' }}
+                                </div>
+                                <div style="font-size: 7pt; color: #64748b;">{{ chart.data[0].label if chart.data else
+                                    '' }}</div>
+                            </div>
+
+                            {% else %}
+                            <!-- Fallback: Table representation -->
+                            <table style="width: 100%; font-size: 7pt;">
+                                {% for dp in chart.data[:6] %}
+                                <tr>
+                                    <td style="padding: 4px 0; color: #64748b;">{{ dp.label }}</td>
+                                    <td style="padding: 4px 0; text-align: right; font-weight: 700;">{{ dp.value }}{{
+                                        dp.unit or '' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        {% elif ch.plane_a and ch.plane_a.not_applicable %}
+                        <div class="warning-box">
+                            <strong>Niet van toepassing:</strong> {{ ch.plane_a.not_applicable_reason | default('Geen
+                            visuele data beschikbaar') }}
+                        </div>
+                        {% else %}
+                        <div class="warning-box">Geen grafieken beschikbaar voor dit hoofdstuk.</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- PLANE A2: Synthesized Visuals -->
+                    <div class="plane-box">
+                        <div class="plane-header plane-header-a2">
+                            <span class="plane-badge plane-badge-a2">A2</span>
+                            <span class="plane-title">Synthesized Intelligence</span>
+                        </div>
+
+                        {% if ch.plane_a2 %}
+                        {% if ch.plane_a2.not_applicable %}
+                        <!-- EXPLICIT NOT APPLICABLE STATE -->
+                        <div class="limited-box">
+                            <span class="limited-badge">OPERATIONALLY LIMITED</span>
+                            <p style="margin: 0; font-size: 7pt;">
+                                {{ ch.plane_a2.not_applicable_reason | default('AI visuele synthese is tijdelijk
+                                beperkt.') }}
+                            </p>
+                        </div>
+                        {% else %}
+                        <!-- Hero Infographic -->
+                        {% if ch.plane_a2.hero_infographic %}
+                        <div class="infographic-box" style="margin-bottom: 10px;">
+                            <div style="font-size: 8pt; font-weight: 700; color: #1e293b; margin-bottom: 6px;">
+                                {{ ch.plane_a2.hero_infographic.title }}
+                            </div>
+                            {% if ch.plane_a2.hero_infographic.image_uri %}
+                            <img src="{{ ch.plane_a2.hero_infographic.image_uri }}"
+                                alt="{{ ch.plane_a2.hero_infographic.title }}"
+                                style="width: 100%; border-radius: 8px; margin-bottom: 8px;">
+                            {% endif %}
+                            <div style="font-size: 6pt; color: #6366f1; text-transform: uppercase; font-weight: 600;">
+                                {{ ch.plane_a2.hero_infographic.visual_type }}
+                            </div>
+                            {% if ch.plane_a2.hero_infographic.generation_status != 'generated' %}
+                            <div style="font-size: 6pt; color: #9ca3af; margin-top: 4px;">
+                                Status: {{ ch.plane_a2.hero_infographic.generation_status }}
+                                {% if ch.plane_a2.hero_infographic.generation_error %}
+                                — {{ ch.plane_a2.hero_infographic.generation_error }}
+                                {% endif %}
+                            </div>
+                            {% endif %}
                         </div>
                         {% endif %}
 
-                        <!-- 2. VARIABLES (Fact File) -->
-                        {% if ch.chapter_data and ch.chapter_data.variables %}
-                        <div class="mag-v3-widget">
-                            <div class="mag-v3-widget-title">
-                                <svg class="icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                                </svg>
-                                DETAILS
+                        <!-- Visual Concepts -->
+                        {% if ch.plane_a2.concepts %}
+                        {% for concept in ch.plane_a2.concepts[:3] %}
+                        <div class="concept-item">
+                            <div class="concept-title">{{ concept.title }}</div>
+                            <div class="concept-type">{{ concept.visual_type }}</div>
+                            <div class="concept-insight">{{ concept.insight_explained[:150] }}{% if
+                                concept.insight_explained|length > 150 %}...{% endif %}</div>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                        {% endif %}
+                        {% else %}
+                        <!-- FAIL-LOUD: A2 missing entirely -->
+                        <div class="error-box" style="padding: 10px;">
+                            <p style="font-size: 7pt; margin: 0; color: #dc2626;">
+                                <strong>⚠️ Plane A2 data niet aanwezig.</strong><br>
+                                Dit is een contractbreuk — A2 moet altijd zichtbaar zijn of expliciet gelimiteerd.
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- CENTER COLUMN: PLANE B + PLANE C -->
+                <div class="plane-column">
+
+                    <!-- PLANE B: Narrative Reasoning -->
+                    <div class="plane-box" style="flex: 2;">
+                        <div class="plane-header plane-header-b">
+                            <span class="plane-badge plane-badge-b">B</span>
+                            <span class="plane-title">Narratieve Duiding</span>
+                            {% if ch.plane_b and ch.plane_b.word_count %}
+                            <span class="word-count-badge">{{ ch.plane_b.word_count }} woorden</span>
+                            {% endif %}
+                        </div>
+
+                        {% if ch.plane_b and ch.plane_b.narrative_text %}
+                        <div class="narrative-content">
+                            {{ ch.plane_b.narrative_text | safe }}
+                        </div>
+                        {% else %}
+                        <div class="error-box" style="padding: 15px;">
+                            <p style="font-size: 8pt; margin: 0;">
+                                <strong>⛔ Narratief ontbreekt</strong><br>
+                                Plane B vereist minimaal 300 woorden narratieve tekst.
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- PLANE C: Factual Anchor -->
+                    <div class="plane-box" style="flex: 1;">
+                        <div class="plane-header plane-header-c">
+                            <span class="plane-badge plane-badge-c">C</span>
+                            <span class="plane-title">Feitelijke Data</span>
+                        </div>
+
+                        {% if ch.plane_c and ch.plane_c.kpis %}
+                        <div class="kpi-grid">
+                            {% for kpi in ch.plane_c.kpis[:8] %}
+                            <div class="kpi-card status-{{ kpi.provenance | default('unknown') }}">
+                                <div class="kpi-label">{{ kpi.label }}</div>
+                                <div class="kpi-value">{{ kpi.value | default('—') }}{{ kpi.unit or '' }}</div>
+                                <span class="kpi-status {{ kpi.provenance | default('unknown') }}">
+                                    {{ kpi.provenance | default('unknown') }}
+                                </span>
                             </div>
-                            {% for key, var_data in ch.chapter_data.variables.items() %}
-                            <div class="mag-v3-fact-row">
-                                <span class="mag-v3-fact-label">{{ key.replace('_', ' ') }}</span>
-                                <span class="mag-v3-fact-value">{{ var_data.value if var_data.value else '-' }}</span>
-                            </div>
+                            {% endfor %}
+                        </div>
+
+                        {% if ch.plane_c.missing_data and ch.plane_c.missing_data|length > 0 %}
+                        <div class="missing-data-box">
+                            <div class="missing-data-title">⚠️ Ontbrekende Data</div>
+                            {% for missing in ch.plane_c.missing_data[:4] %}
+                            <div class="missing-data-item">• {{ missing }}</div>
                             {% endfor %}
                         </div>
                         {% endif %}
 
-                        <!-- 3. AI INTERPRETATION -->
-                        {% if ch.chapter_data and ch.chapter_data.interpretation %}
-                        <div class="mag-v3-widget mag-v3-ai-box">
-                            <div class="mag-v3-widget-title" style="color: #475569;">
-                                🔍 ANALYST NOTE
-                            </div>
-                            <div style="font-size: 8pt; color: #334155; line-height: 1.5; font-style: italic;">
-                                {{ ch.chapter_data.interpretation | safe }}
-                            </div>
+                        {% if ch.plane_c.uncertainties and ch.plane_c.uncertainties|length > 0 %}
+                        <div style="margin-top: 10px; font-size: 6pt; color: #9ca3af;">
+                            <strong>Onzekerheden:</strong>
+                            {% for unc in ch.plane_c.uncertainties[:3] %}
+                            {{ unc }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
                         </div>
                         {% endif %}
 
-                        <!-- 4. ADVISORY -->
-                        {% if ch.chapter_data and ch.chapter_data.advice %}
-                        <div class="mag-v3-widget mag-v3-advisory">
-                            <div class="mag-v3-widget-title">
-                                ⚡ ACTIE PLAN
+                        {% else %}
+                        <div class="warning-box">Geen KPIs beschikbaar voor dit hoofdstuk.</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: PLANE D -->
+                <div class="plane-column">
+                    <div class="plane-box" style="flex: 1;">
+                        <div class="plane-header plane-header-d">
+                            <span class="plane-badge plane-badge-d">D</span>
+                            <span class="plane-title">Persona Analyse</span>
+                        </div>
+
+                        {% if ch.plane_d %}
+
+                        <!-- MARCEL -->
+                        <div class="persona-section">
+                            <div class="persona-header marcel">
+                                <span class="persona-name">Marcel</span>
+                                {% if ch.plane_d.marcel.mood %}
+                                <span class="persona-mood mood-{{ ch.plane_d.marcel.mood }}">{{ ch.plane_d.marcel.mood
+                                    }}</span>
+                                {% endif %}
+                                {% if ch.plane_d.marcel.match_score %}
+                                <span class="persona-score marcel">{{ ch.plane_d.marcel.match_score|round(0)|int
+                                    }}</span>
+                                {% endif %}
                             </div>
-                            <div class="mag-v3-advisory-text">
-                                {{ ch.chapter_data.advice | striptags | safe }}
+
+                            <!-- Marcel Positives (5 required) -->
+                            {% if ch.plane_d.marcel.key_values and ch.plane_d.marcel.key_values|length > 0 %}
+                            <div class="persona-list-section">
+                                <div class="persona-list-title">✓ Positieve Punten</div>
+                                <ul class="persona-list positives">
+                                    {% for val in ch.plane_d.marcel.key_values[:5] %}
+                                    <li>{{ val }}</li>
+                                    {% endfor %}
+                                </ul>
                             </div>
+                            {% endif %}
+
+                            <!-- Marcel Concerns (5 required) -->
+                            {% if ch.plane_d.marcel.concerns and ch.plane_d.marcel.concerns|length > 0 %}
+                            <div class="persona-list-section">
+                                <div class="persona-list-title">⚠ Aandachtspunten</div>
+                                <ul class="persona-list concerns">
+                                    {% for concern in ch.plane_d.marcel.concerns[:5] %}
+                                    <li>{{ concern }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+
+                            <!-- Marcel Summary (no truncation) -->
+                            {% if ch.plane_d.marcel.summary %}
+                            <div
+                                style="font-size: 7pt; color: #475569; font-style: italic; padding: 8px; background: #f1f5f9; border-radius: 6px; margin-top: 8px;">
+                                {{ ch.plane_d.marcel.summary }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- PETRA -->
+                        <div class="persona-section">
+                            <div class="persona-header petra">
+                                <span class="persona-name">Petra</span>
+                                {% if ch.plane_d.petra.mood %}
+                                <span class="persona-mood mood-{{ ch.plane_d.petra.mood }}">{{ ch.plane_d.petra.mood
+                                    }}</span>
+                                {% endif %}
+                                {% if ch.plane_d.petra.match_score %}
+                                <span class="persona-score petra">{{ ch.plane_d.petra.match_score|round(0)|int }}</span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Petra Positives (5 required) -->
+                            {% if ch.plane_d.petra.key_values and ch.plane_d.petra.key_values|length > 0 %}
+                            <div class="persona-list-section">
+                                <div class="persona-list-title">✓ Positieve Punten</div>
+                                <ul class="persona-list positives">
+                                    {% for val in ch.plane_d.petra.key_values[:5] %}
+                                    <li>{{ val }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+
+                            <!-- Petra Concerns (5 required) -->
+                            {% if ch.plane_d.petra.concerns and ch.plane_d.petra.concerns|length > 0 %}
+                            <div class="persona-list-section">
+                                <div class="persona-list-title">⚠ Aandachtspunten</div>
+                                <ul class="persona-list concerns">
+                                    {% for concern in ch.plane_d.petra.concerns[:5] %}
+                                    <li>{{ concern }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+
+                            <!-- Petra Summary (no truncation) -->
+                            {% if ch.plane_d.petra.summary %}
+                            <div
+                                style="font-size: 7pt; color: #475569; font-style: italic; padding: 8px; background: #fdf2f8; border-radius: 6px; margin-top: 8px;">
+                                {{ ch.plane_d.petra.summary }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- OVERLAPS & TENSIONS -->
+                        {% if (ch.plane_d.overlap_points and ch.plane_d.overlap_points|length > 0) or
+                        (ch.plane_d.tension_points and ch.plane_d.tension_points|length > 0) %}
+                        <div class="overlap-tensions-box">
+                            {% if ch.plane_d.overlap_points and ch.plane_d.overlap_points|length > 0 %}
+                            <div class="overlap-section">
+                                <div class="overlap-title">✓ Overlap (Beide Eens)</div>
+                                {% for overlap in ch.plane_d.overlap_points[:3] %}
+                                <div class="overlap-item">{{ overlap }}</div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            {% if ch.plane_d.tension_points and ch.plane_d.tension_points|length > 0 %}
+                            <div class="tension-section">
+                                <div class="tension-title">⚡ Spanning (Verschil)</div>
+                                {% for tension in ch.plane_d.tension_points[:3] %}
+                                <div class="tension-item">{{ tension }}</div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
                         </div>
                         {% endif %}
 
-                        <!-- 5. MATCH -->
-                        {% if ch.chapter_data and ch.chapter_data.comparison %}
-                        <div class="mag-v3-widget" style="background: #f0f7ff; border-color: #bfdbfe;">
-                            <div class="mag-v3-widget-title" style="color: #1e40af;">
-                                👥 PROFIEL MATCH
-                            </div>
-                            <div style="font-size: 7.5pt; margin-bottom: 8px;">
-                                <strong style="color: #2563eb;">M:</strong>
-                                <span style="color: #1e3a8a;">{{ ch.chapter_data.comparison.marcel | striptags |
-                                    truncate(60) }}</span>
-                            </div>
-                            <div style="font-size: 7.5pt;">
-                                <strong style="color: #db2777;">P:</strong>
-                                <span style="color: #831843;">{{ ch.chapter_data.comparison.petra | striptags |
-                                    truncate(60) }}</span>
-                            </div>
+                        {% else %}
+                        <div class="error-box" style="padding: 15px;">
+                            <p style="font-size: 8pt; margin: 0;">
+                                <strong>⛔ Persona data ontbreekt</strong><br>
+                                Plane D vereist Marcel & Petra analyse met 5 positives en 5 concerns per persona.
+                            </p>
                         </div>
                         {% endif %}
-
-                    </div>
-                </div>
-
-                <div
-                    style="position: absolute; bottom: 30px; left: 2cm; right: 2cm; display: flex; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 20px; font-size: 7pt; color: #94a3b8;">
-                    <div>{{ property_core.address }}</div>
-                    <div style="font-weight: 800; color: #3b82f6; letter-spacing: 2px;">KURVERS PROPERTY CONSULTING
-                    </div>
-                </div>
-        </div>
-        {% endfor %}
-
-        <!-- FINAL SUMMARY PAGE -->
-        <div class="page">
-            <div class="chapter-header">
-                <div class="chapter-info">
-                    <span class="chapter-tag">Conclusie</span>
-                    <h1 class="chapter-title serif">Conclusie & Aanbevelingen</h1>
-                </div>
-            </div>
-
-            <!-- Property Highlight Banner -->
-            <div
-                style="background: linear-gradient(135deg, #0c121e 0%, #1e3a8a 100%); padding: 25px; border-radius: 20px; margin-bottom: 30px; color: white;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h2 style="font-size: 20pt; color: white; margin-bottom: 8px;">{{ property_core.address }}</h2>
-                        <p style="font-size: 9pt; color: #bfdbfe; margin: 0;">Premium Vastgoed Analyse - Kurvers
-                            Property Consulting</p>
-                    </div>
-                    <div style="text-align: right;">
-                        <div style="font-size: 28pt; font-weight: 900; color: #60a5fa;">{{
-                            (property_core.combined_match_score / 10) | round(1) if property_core.combined_match_score
-                            else '8.5' }}</div>
-                        <div
-                            style="font-size: 6pt; color: #93c5fd; text-transform: uppercase; letter-spacing: 2px; font-weight: 800;">
-                            Overall Score</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Key Metrics Summary -->
-            <div class="feature-row" style="margin-bottom: 25px;">
-                <div class="feature-badge">
-                    <div class="feature-badge-label" style="color: #059669;">Investering</div>
-                    <div class="feature-badge-value" style="color: #047857;">{{ property_core.asking_price_eur }}</div>
-                </div>
-                <div class="feature-badge">
-                    <div class="feature-badge-label" style="color: #059669;">Oppervlak</div>
-                    <div class="feature-badge-value" style="color: #047857;">{{ property_core.living_area_m2 or 'N/B' }}
-                        m²</div>
-                </div>
-                <div
-                    class="feature-badge {% if property_core.energy_label in ['A', 'A+', 'A++'] %}{% elif property_core.energy_label in ['B', 'C'] %}warning{% else %}alert{% endif %}">
-                    <div class="feature-badge-label">Energielabel</div>
-                    <div class="feature-badge-value">{{ property_core.energy_label or 'N/B' }}</div>
-                </div>
-                <div class="feature-badge">
-                    <div class="feature-badge-label" style="color: #059669;">Bouwjaar</div>
-                    <div class="feature-badge-value" style="color: #047857;">{{ property_core.build_year or 'N/B' }}
-                    </div>
-                </div>
-            </div>
+            {% else %}
+            <!-- LEGACY FALLBACK for Chapter 0 or non-4-plane chapters -->
+            <div style="padding: 20px;">
+                {% if ch.chapter_data and ch.chapter_data.intro %}
+                <p style="font-size: 11pt; color: #64748b; margin-bottom: 20px;">{{ ch.chapter_data.intro | safe }}</p>
+                {% endif %}
 
-            <!-- Property Photos Gallery -->
-            {% if property_core.media_urls and property_core.media_urls|length > 0 %}
-            <div class="photo-grid" style="margin: 25px 0;">
-                {% for photo_url in property_core.media_urls[:6] %}
-                <div class="photo-grid-item">
-                    <img src="{{ photo_url }}" alt="Property view {{ loop.index }}" onerror="this.style.display='none'">
-                </div>
-                {% endfor %}
+                {% if ch.chapter_data and ch.chapter_data.main_analysis %}
+                <div class="narrative-content">{{ ch.chapter_data.main_analysis | safe }}</div>
+                {% elif ch.grid_layout and ch.grid_layout.main %}
+                <div class="narrative-content">{{ ch.grid_layout.main.content | safe }}</div>
+                {% endif %}
             </div>
             {% endif %}
 
-            <!-- Key Findings -->
-            <div class="infographic-box" style="margin: 25px 0;">
-                <h3 style="font-size: 11pt; color: #0c121e; margin-bottom: 15px; font-weight: 800;">🎯 Belangrijkste
-                    Bevindingen</h3>
-                <div class="two-column" style="font-size: 8.5pt; line-height: 1.7; color: #334155;">
-                    <p><strong>Locatie & Bereikbaarheid:</strong> De woning is strategisch gelegen met uitstekende
-                        verbindingen naar belangrijke voorzieningen. De nabijheid van openbaar vervoer en hoofdwegen
-                        maakt dit een aantrekkelijke optie voor zowel woon- als investeringsdoeleinden.</p>
-                    <p><strong>Bouwkundige Staat:</strong> Het object vertoont een goede basisconstructie met moderne
-                        updates waar nodig. De energetische prestaties bieden ruimte voor verbetering, wat kansen
-                        creëert voor waardestijging door gerichte investeringen.</p>
-                    <p><strong>Financiële Positie:</strong> De vraagprijs ligt in lijn met de huidige marktwaarde,
-                        rekening houdend met de locatie en staat van onderhoud. Er is potentieel voor waardegroei door
-                        strategische renovaties.</p>
-                    <p><strong>Wooncomfort:</strong> De indeling en lichtinval voldoen aan moderne woonstandaarden. De
-                        ruimtelijke opzet biedt flexibiliteit voor verschillende woonconcepten en levensstijlen.</p>
+            <!-- Page Footer -->
+            <div class="page-footer">
+                <div>{{ property_core.address }}</div>
+                <div style="font-weight: 700; color: #3b82f6; letter-spacing: 2px;">KURVERS PROPERTY CONSULTING</div>
+            </div>
+        </div>
+
+        {% endif %} {# end of plane_structure guard #}
+        {% endfor %}
+
+        <!-- ===================================================================
+         DIAGNOSTICS PAGE (OPTIONAL - for debugging)
+         =================================================================== -->
+        <div class="page">
+            <div class="chapter-header">
+                <div class="chapter-info">
+                    <span class="chapter-tag">Technische Verificatie</span>
+                    <h1 class="chapter-title">Four-Plane Diagnostics</h1>
                 </div>
             </div>
 
-            <!-- Recommendation Matrix -->
-            <div style="margin: 25px 0;">
-                <h3 style="font-size: 11pt; color: #0c121e; margin-bottom: 15px; font-weight: 800;">📋
-                    Aanbevelingsmatrix</h3>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Categorie</th>
-                            <th>Status</th>
-                            <th>Prioriteit</th>
-                            <th>Actie</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Energetische Verbetering</strong></td>
-                            <td><span class="stat-highlight"
-                                    style="background: linear-gradient(135deg, #f59e0b, #d97706);">Aandacht</span></td>
-                            <td>Hoog</td>
-                            <td>Isolatie & HR++ beglazing</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Installatietechniek</strong></td>
-                            <td><span class="stat-highlight"
-                                    style="background: linear-gradient(135deg, #10b981, #059669);">Goed</span></td>
-                            <td>Laag</td>
-                            <td>Regulier onderhoud</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Bouwkundige Staat</strong></td>
-                            <td><span class="stat-highlight"
-                                    style="background: linear-gradient(135deg, #10b981, #059669);">Uitstekend</span>
-                            </td>
-                            <td>Laag</td>
-                            <td>Preventief onderhoud</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Smart Home Integratie</strong></td>
-                            <td><span class="stat-highlight"
-                                    style="background: linear-gradient(135deg, #f59e0b, #d97706);">Potentieel</span>
-                            </td>
-                            <td>Middel</td>
-                            <td>Upgrade naar IoT-systemen</td>
-                        </tr>
-                        <tr>
-                            <td><strong>ROI Optimalisatie</strong></td>
-                            <td><span class="stat-highlight"
-                                    style="background: linear-gradient(135deg, #10b981, #059669);">Positief</span></td>
-                            <td>Hoog</td>
-                            <td>Gerichte renovaties</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="diagnostics-box">
+                <div class="diagnostics-title">Rapport Metadata</div>
+                <div class="diagnostics-row">
+                    <span class="diagnostics-label">Gegenereerd op</span>
+                    <span class="diagnostics-value">{{ date }}</span>
+                </div>
+                <div class="diagnostics-row">
+                    <span class="diagnostics-label">Run ID</span>
+                    <span class="diagnostics-value">{{ run_id }}</span>
+                </div>
+                <div class="diagnostics-row">
+                    <span class="diagnostics-label">Adres</span>
+                    <span class="diagnostics-value">{{ property_core.address }}</span>
+                </div>
+                <div class="diagnostics-row">
+                    <span class="diagnostics-label">Totaal Hoofdstukken</span>
+                    <span class="diagnostics-value">{{ chapters|length }}</span>
+                </div>
             </div>
 
-            <!-- Final Verdict -->
-            <div class="pull-quote"
-                style="margin: 30px 0; background: linear-gradient(to right, #eff6ff 0%, transparent 100%); border-left-color: #1e40af;">
-                "Dit object biedt een solide basis voor zowel direct woongenot als langetermijn vermogensopbouw. Met
-                gerichte investeringen in energetische verbetering en moderne voorzieningen kan de waarde significant
-                worden verhoogd. De combinatie van locatie, bouwkwaliteit en toekomstpotentieel maakt dit een
-                aanbevelenswaardig object voor Marcel en Petra."
+            <div class="diagnostics-box">
+                <div class="diagnostics-title">Four-Plane Status per Hoofdstuk</div>
+                {% for ch in chapters %}
+                {% set chapter_id = ch.id|int if ch.id is defined else loop.index0 %}
+                <div class="diagnostics-row">
+                    <span class="diagnostics-label">Hoofdstuk {{ '%02d' % chapter_id }}: {{ ch.title[:30] }}{% if
+                        ch.title|length > 30 %}...{% endif %}</span>
+                    <span class="diagnostics-value {% if ch.plane_structure %}ok{% else %}error{% endif %}">
+                        {% if ch.plane_structure %}
+                        ✓ 4-PLANE OK
+                        {% else %}
+                        ✗ LEGACY/MISSING
+                        {% endif %}
+                    </span>
+                </div>
+                {% endfor %}
             </div>
 
-            <!-- Final Recommendations -->
-            <div class="sidebar-callout" style="background: #f0fdf4; border-color: #86efac;">
-                <h5 style="color: #166534;">✅ Eindadvies</h5>
-                <p style="color: #166534; font-size: 9pt; line-height: 1.7;">
-                    <strong>Aankoopadvies: POSITIEF</strong><br>
-                    Dit object voldoet aan de gestelde criteria en biedt uitstekende mogelijkheden voor
-                    waardeontwikkeling.
-                    Aanbevolen wordt om binnen 2 weken een bod uit te brengen, rekening houdend met de huidige
-                    marktdynamiek.
-                    Budget voor initiële verbeteringen: circa 15-20% van de aankoopprijs voor optimale ROI.
-                </p>
-            </div>
-
-            <!-- Contact Footer -->
-            <div
-                style="position: absolute; bottom: 30px; left: 0.8cm; right: 0.8cm; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <div style="font-size: 9pt; font-weight: 800; color: #0c121e; margin-bottom: 5px;">Kurvers
-                            Property Consulting</div>
-                        <div style="font-size: 7pt; color: #64748b;">Premium Vastgoedadvies | Data-Driven Beslissingen
-                        </div>
+            <div class="diagnostics-box">
+                <div class="diagnostics-title">Plane Status Legenda</div>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="plane-badge plane-badge-a">A</span>
+                        <span style="font-size: 7pt;">Visual Intelligence (Charts)</span>
                     </div>
-                    <div style="text-align: right;">
-                        <div
-                            style="font-size: 6pt; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800;">
-                            Rapport Datum</div>
-                        <div style="font-size: 8pt; color: #475569; font-weight: 600;">{{ date }}</div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="plane-badge plane-badge-a2">A2</span>
+                        <span style="font-size: 7pt;">Synthesized Visuals (AI)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="plane-badge plane-badge-b">B</span>
+                        <span style="font-size: 7pt;">Narrative Reasoning</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="plane-badge plane-badge-c">C</span>
+                        <span style="font-size: 7pt;">Factual Anchor (KPIs)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="plane-badge plane-badge-d">D</span>
+                        <span style="font-size: 7pt;">Human Preference</span>
                     </div>
                 </div>
+            </div>
+
+            <div style="margin-top: 40px; text-align: center; color: #94a3b8; font-size: 7pt;">
+                <p>Dit rapport is gegenereerd met de Four-Plane AI Architecture v2.0</p>
+                <p>© {{ date.split(' ')[0] if date and ' ' in date else date }} Kurvers Property Consulting — Alle
+                    rechten voorbehouden</p>
             </div>
         </div>
 

@@ -81,6 +81,8 @@ def enrich_into_context(ctx: PipelineContext, raw_data: Dict[str, Any]) -> None:
     reg("address", raw_data.get('address', ''), "Adres", source="parse")
     reg("postal_code", raw_data.get('postal_code', ''), "Postcode", source="parse")
     reg("city", raw_data.get('city', ''), "Plaats", source="parse")
+    reg("property_type", raw_data.get('property_type', ''), "Woningtype", source="parse")
+    reg("woz_value", raw_data.get('woz_value', 0), "WOZ Waarde", unit="EUR", source="parse")
     
     # =========================================================================
     # 3. DERIVE METRICS

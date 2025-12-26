@@ -41,6 +41,10 @@ class ValidationFailure(Exception):
         super().__init__(f"Chapter {chapter_id} validation failed: {'; '.join(errors)}")
 
 
+from backend.domain.guardrails import TruthPolicy, CURRENT_POLICY, PolicyLevel
+
+from backend.domain.governance_state import get_governance_state
+
 @dataclass
 class PipelineContext:
     """
@@ -52,6 +56,9 @@ class PipelineContext:
     
     # The canonical registry - single source of truth
     registry: CanonicalRegistry = field(default_factory=CanonicalRegistry)
+    
+    # Truth Policy - The architectural law
+    truth_policy: TruthPolicy = field(default_factory=lambda: get_governance_state().get_effective_policy(), repr=False)
     
     # Pipeline state
     run_id: str = ""
@@ -102,7 +109,23 @@ class PipelineContext:
                       confidence: float = 1.0) -> None:
         """Register a fact in the canonical registry."""
         if self._registry_locked:
+            if self.truth_policy.prevent_post_lock_registration == PolicyLevel.STRICT:
+                raise PipelineViolation(
+                    f"Cannot register fact '{key}' - registry is locked "
+                    f"(Policy: prevent_post_lock_registration)"
+                )
+            # Legacy fallthrough (if policy were OFF) would raise here anyway
             raise PipelineViolation(f"Cannot register fact '{key}' - registry is locked")
+        
+        # Policy Check: fail_on_registry_conflict
+        existing = self.registry.get(key)
+        if existing and existing.value != value:
+            if self.truth_policy.fail_on_registry_conflict == PolicyLevel.STRICT:
+                 raise RegistryConflict(
+                    f"FATAL CONFLICT: Registry ID '{key}' redefined. "
+                    f"Old: {existing.value}, New: {value}. "
+                    f"(Policy: fail_on_registry_conflict)"
+                )
         
         entry = RegistryEntry(
             id=key,

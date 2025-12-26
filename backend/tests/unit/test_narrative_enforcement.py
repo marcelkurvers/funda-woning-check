@@ -78,44 +78,42 @@ class TestNarrativeGenerator:
             }
         }
     
-    def test_generate_returns_narrative_output(self, sample_context):
-        """NarrativeGenerator.generate returns NarrativeOutput."""
-        result = NarrativeGenerator.generate(
-            chapter_id=1,
-            context=sample_context,
-            ai_provider=None
-        )
-        assert isinstance(result, NarrativeOutput)
-    
-    def test_generate_meets_minimum_word_count(self, sample_context):
-        """Generated narrative meets minimum 300 word requirement."""
-        for chapter_id in range(13):
-            result = NarrativeGenerator.generate(
-                chapter_id=chapter_id,
+    def test_generate_fails_without_provider(self, sample_context):
+        """NarrativeGenerator.generate raises error without AI provider (Fail-Closed)."""
+        with pytest.raises(NarrativeGenerationError):
+            NarrativeGenerator.generate(
+                chapter_id=1,
                 context=sample_context,
                 ai_provider=None
             )
-            assert result.word_count >= 300, f"Chapter {chapter_id} has {result.word_count} words"
     
-    def test_generate_has_text(self, sample_context):
-        """Generated narrative has non-empty text."""
-        result = NarrativeGenerator.generate(
-            chapter_id=0,
-            context=sample_context,
-            ai_provider=None
-        )
-        assert result.text.strip() != ""
+    def test_generate_fails_for_all_chapters_without_ai(self, sample_context):
+        """All chapters raise error without AI (no partial fallbacks)."""
+        for chapter_id in range(13):
+            with pytest.raises(NarrativeGenerationError):
+                NarrativeGenerator.generate(
+                    chapter_id=chapter_id,
+                    context=sample_context,
+                    ai_provider=None
+                )
     
-    def test_narrative_word_count_matches_text(self, sample_context):
-        """Reported word count approximately matches actual words."""
-        result = NarrativeGenerator.generate(
-            chapter_id=5,
-            context=sample_context,
-            ai_provider=None
-        )
-        actual_words = len(result.text.split())
-        # Allow some tolerance for word counting differences
-        assert abs(actual_words - result.word_count) < 10
+    def test_generate_raises_on_missing_ai(self, sample_context):
+        """NarrativeGenerator raises error if no AI provider."""
+        with pytest.raises(NarrativeGenerationError):
+             NarrativeGenerator.generate(
+                chapter_id=0,
+                context=sample_context,
+                ai_provider=None
+            )
+    
+    def test_narrative_word_count_fails_without_ai(self, sample_context):
+        """Cannot check word count if generation fails."""
+        with pytest.raises(NarrativeGenerationError):
+            NarrativeGenerator.generate(
+                chapter_id=5,
+                context=sample_context,
+                ai_provider=None
+            )
     
     def test_validate_narrative_raises_on_short(self):
         """validate_narrative raises NarrativeWordCountError for short text."""

@@ -122,19 +122,21 @@ class IntelligenceEngine:
         """
         Returns a dictionary with 'title', 'intro', 'main_analysis', and 'conclusion'.
         
-        ARCHITECTURAL INVARIANT (NO EXCEPTIONS):
-        - When AI is available: AI generates the narrative
-        - When AI is NOT available: Registry-only templates are used
-        - NO heuristics, NO estimation, NO computation in fallback path
+        STRICT DELEGATION TO NARRATIVE GENERATOR:
+        - Calls NarrativeGenerator.generate() which enforces 300-word contract and fail-closed behavior.
+        - If AI fails or is missing, this method RAISES an error.
+        - NO fallbacks, NO registry-only templates for narrative content.
         
-        All values MUST come from the registry (pre-computed in enrichment layer).
+        Visual Audit (Chapter 0) is preserved as an enhancement.
         """
-        # Import registry-only fallback templates
+        # Import registry-only templates ONLY for structural skeleton (Title, Intro)
+        # The 'main_analysis' from this skeleton will be OVERWRITTEN by AI.
         from backend.domain.presentation_narratives import get_registry_only_narrative
+        from backend.domain.narrative_generator import NarrativeGenerator
+        from backend.ai.bridge import safe_execute_async
         
-        # Build data context from registry (NO COMPUTATION - just passthrough)
+        # Build data context from registry
         data = {
-            # All values come from context (which comes from locked registry)
             "price": ctx.get('asking_price_eur', 0),
             "area": ctx.get('living_area_m2', 0),
             "plot": ctx.get('plot_area_m2', 0),
@@ -150,7 +152,7 @@ class IntelligenceEngine:
             "features": ctx.get('features', []),
             "media_urls": ctx.get('media_urls', []),
             "_preferences": ctx.get('_preferences', {}),
-            # Pre-computed enriched values (from enrichment layer)
+            # Pre-computed enriched values
             "volume_m3": ctx.get('volume_m3'),
             "rooms": ctx.get('rooms'),
             "bedrooms": ctx.get('bedrooms'),
@@ -163,7 +165,7 @@ class IntelligenceEngine:
             "estimated_reno_cost": ctx.get('estimated_reno_cost'),
             "energy_invest": ctx.get('energy_invest'),
             "construction_invest": ctx.get('construction_invest'),
-            # Pre-computed scores (from enrichment layer)
+            # Pre-computed scores
             "ai_score": ctx.get('ai_score', 0),
             "marcel_match_score": ctx.get('marcel_match_score', 0),
             "petra_match_score": ctx.get('petra_match_score', 0),
@@ -172,43 +174,88 @@ class IntelligenceEngine:
             "total_match_score": ctx.get('total_match_score', 0)
         }
 
-        # REGISTRY-ONLY FALLBACK (NO COMPUTATION)
-        # This is the baseline - no heuristics, no estimation
-        result = get_registry_only_narrative(chapter_id, data)
+        # 1. Get Structural Skeleton (Title, Intro)
+        structure = get_registry_only_narrative(chapter_id, data)
         
-        # For Chapter 0, include property core for dashboard
-        if chapter_id == 0:
-            result["property_core"] = data
-
-        # AI OVERRIDE - If provider is available, use AI generation
-        if IntelligenceEngine._provider:
-            try:
-                from backend.ai.bridge import safe_execute_async
-                ai_result = safe_execute_async(IntelligenceEngine._generate_ai_narrative(chapter_id, data, result))
-                
-                if ai_result:
-                    p_core = result.get("property_core")
-                    result.update(ai_result)
-                    if p_core: 
-                        result["property_core"] = p_core
-            except Exception as e:
-                logger.error(f"AI Generation failed for Chapter {chapter_id}: {e}")
-                raise  # Re-raise to stop pipeline - NO silent fallback to heuristics
-        
-        # Ensure provenance tracking (allowed metadata)
-        if '_provenance' not in result:
-            provider_name = IntelligenceEngine._provider.name if IntelligenceEngine._provider else "Registry Template"
-            model_name = getattr(IntelligenceEngine._provider, 'default_model', 'Presentation-Only') if IntelligenceEngine._provider else "Presentation-Only"
-            result['_provenance'] = { 
-                "provider": provider_name.capitalize() if hasattr(provider_name, 'capitalize') else str(provider_name),
-                "model": model_name, 
-                "confidence": "high" if IntelligenceEngine._provider else "low",
-                "request_count": IntelligenceEngine._request_count
+        # 2. FAIL-CLOSED CHECK: Provider must be present
+        if not IntelligenceEngine._provider:
+            from backend.domain.governance_state import get_governance_state
+            from backend.domain.guardrails import PolicyLevel
+            
+            policy = get_governance_state().get_effective_policy()
+            
+            if policy.require_ai_provider == PolicyLevel.STRICT:
+                 # We strictly raise here. No fallback return.
+                 raise ValueError(f"IntelligenceEngine: No AI provider configured for Chapter {chapter_id}. Cannot generate narrative. (Policy: require_ai_provider)")
+            
+            # If policy allows (e.g. OFF for structural testing), we don't raise
+            # But wait, if provider is missing, how can we generate narrative?
+            # If policy is OFF, it implies we want to bypass generation or return dummy.
+            # NarrativeGenerator.generate also expects provider.
+            # If this guardrail is relaxed, we likely want to return skeletal structure 
+            # or skip the "generate" call.
+            
+            # Since T4a/b explicitly allows 'offline_structural_mode' to relax this,
+            # we must handle the bypass here.
+            # Return structure with placeholder text.
+            return {
+                "title": structure.get("title"),
+                "intro": structure.get("intro"),
+                "main_analysis": "[NARRATIVE GENERATION SKIPPED - OFFLINE MODE]",
+                "conclusion": structure.get("conclusion"),
+                "variables": structure.get("variables", {}),
+                "metadata": {"source": "skipped", "confidence": "none"},
+                "_provenance": {"provider": "none", "model": "none"},
+                "chapter_id": chapter_id
             }
-        else:
-            result['_provenance']["request_count"] = IntelligenceEngine._request_count
 
-        result['chapter_id'] = chapter_id
+        # 3. Generate Narrative via Canonical Generator
+        # This will raise NarrativeGenerationError if AI fails.
+        narrative_output = NarrativeGenerator.generate(
+            chapter_id=chapter_id, 
+            context=data, 
+            ai_provider=IntelligenceEngine._provider
+        )
+        
+        # 4. Construct Result
+        result = {
+            "title": structure.get("title"),
+            "intro": structure.get("intro"),
+            "main_analysis": narrative_output.text,  # The AI narrative
+            "conclusion": structure.get("conclusion"), # Keep structural conclusion or replace?
+                                                       # Structure conclusion often says "AI Required".
+                                                       # But NarrativeGenerator doesn't grant a conclusion field yet.
+                                                       # We keep it as is for now, main content is what matters for Plane B.
+            "variables": structure.get("variables", {}),
+            "metadata": {
+                "word_count": narrative_output.word_count,
+                "confidence": "high",
+                "source": "ai_generated"
+            },
+            "_provenance": {
+                "provider": getattr(IntelligenceEngine._provider, 'name', 'unknown'),
+                "model": getattr(IntelligenceEngine._provider, 'default_model', 'unknown'),
+                "confidence": "high",
+                "timestamp": datetime.now().isoformat(),
+                "request_count": IntelligenceEngine._request_count
+            },
+            "chapter_id": chapter_id
+        }
+        
+        # 5. Chapter 0 Visual Audit Enhancement
+        if chapter_id == 0 and data.get("media_urls"):
+            try:
+                # We need safe async execution for visual audit if it's not already safe
+                # process_visuals is async. We are in a static blocking context? 
+                # generate_chapter_narrative is synchronous staticmethod
+                # NarrativeGenerator used safe_execute_async internaly. We need to do same here for visual audit.
+                vision_audit = safe_execute_async(IntelligenceEngine.process_visuals(data))
+                if vision_audit:
+                     result["main_analysis"] = vision_audit + "\n\n" + result["main_analysis"]
+            except Exception as e:
+                logger.error(f"Vision Audit failed for Ch 0: {e}")
+                # We do NOT fail the pipeline for visual audit failure, as strict text contract is met.
+                
         return result
 
     @classmethod
@@ -253,9 +300,12 @@ class IntelligenceEngine:
                 resolved_paths.append(url)
 
         try:
-            model = property_data.get('_preferences', {}).get('ai_model', 'gpt-4o')
-            if 'gpt-3.5' in model:
-                model = 'gpt-4o'
+            # Authority-based model resolution
+            model = property_data.get('_preferences', {}).get('ai_model')
+            if not model:
+                 from backend.ai.ai_authority import get_ai_authority
+                 # Use authority default for current provider
+                 model = get_ai_authority().get_default_model(cls._provider.name)
             
             audit = await cls._provider.generate(user_prompt, system=system_prompt, model=model, images=resolved_paths)
             return f"<div className='p-4 bg-blue-50/50 border border-blue-100 rounded-xl mb-6'><h4>🔍 Visuele Audit Insights</h4>{audit}</div>"
@@ -274,129 +324,16 @@ class IntelligenceEngine:
             return 0
         except:
             return 0
-
-    @classmethod
-    async def _generate_ai_narrative(cls, chapter_id: int, data: Dict[str, Any], fallback: Dict[str, str]) -> Optional[Dict[str, Any]]:
-        """
-        Uses AI provider to generate the narrative with strict data adherence.
-        Uses the PAGE_NARRATIVE_SYSTEM_PROMPT for high-quality editorial content.
-        """
-        if not cls._provider:
-            return None
-
-        cls._request_count += 1
-
-        # Filter the data context to ONLY what this chapter is allowed to see/own
-        from backend.domain.ownership import OwnershipMap
-        scoped_data = OwnershipMap.get_chapter_context(chapter_id, data)
-        
-        # Get chapter-specific AI prompt
-        from backend.domain.chapter_variables import get_chapter_ai_prompt, should_show_core_data
-        chapter_specific_prompt = get_chapter_ai_prompt(chapter_id)
-        
-        # Determine variable focus
-        chapter_vars_description = {
-            0: "Status: Core Data. Focus: Executive overview.",
-            1: "Status: Derived. Focus: Building classification & characteristics.",
-            2: "Status: Matching. Focus: Marcel & Petra specific preferences.",
-            3: "Status: Technical. Focus: Maintenance, construction state.",
-            4: "Status: Energy. Focus: Sustainability, insulation, costs.",
-            5: "Status: Layout. Focus: Space usage, light, flow.",
-            6: "Status: Finish. Focus: Kitchen, bath, materials.",
-            7: "Status: Outdoor. Focus: Garden, privacy, orientation.",
-            8: "Status: Mobility. Focus: Parking, transport.",
-            9: "Status: Legal. Focus: Ownership, VvE, obligations.",
-            10: "Status: Financial. Focus: Costs, investment, TCO.",
-            11: "Status: Market. Focus: Value, comparison, strategy.",
-            12: "Status: Advice. Focus: Final verdict & bidding."
-        }
-        target_vars = chapter_vars_description.get(chapter_id, "Chapter specific variables")
-
-        prefs = data.get('_preferences', {})
-        provider_name = getattr(cls._provider, 'name', 'unknown')
-        model_name = prefs.get('ai_model', 'unknown')
-
-        # Construct User Prompt following the System Prompt structure
-        user_prompt = f"""
-CONTEXT (SYSTEEMGELEVERD):
-
-TITEL EN DOEL VAN DEZE PAGINA:
-Chapter {chapter_id}
-Doel: {chapter_specific_prompt}
-
-RELEVANTE VARIABELEN EN KPI'S:
-{target_vars}
-
-DATA UIT REGISTRY (ALLEEN DEZE GEBRUIKEN):
-{json.dumps(scoped_data, default=str)}
-
-ONZEKERHEDEN / DATAKWALITEIT:
-Missing/Unknown: {[k for k,v in scoped_data.items() if v in [None, '?', 'onbekend', 'Onbekend']]}
-
-GEBRUIKERS CONTEXT (Marcel & Petra):
-Marcel: {json.dumps(prefs.get('marcel', {}), default=str)}
-Petra: {json.dumps(prefs.get('petra', {}), default=str)}
-Match Scores: Marcel={data.get('marcel_match_score', 0)}%, Petra={data.get('petra_match_score', 0)}%
-"""
-
-        try:
-            # We use json_mode=True to enforce the OUTPUT FORMAT
-            response_text = await cls._provider.generate(
-                user_prompt, 
-                system=PAGE_NARRATIVE_SYSTEM_PROMPT, 
-                model=model_name, 
-                json_mode=True
-            )
-            
-            if not response_text or not isinstance(response_text, str):
-                raise ValueError(f"Provider returned invalid response type: {type(response_text)}")
-
-            result_json = json.loads(cls._clean_json(response_text))
-            
-            # Map the new output format to the application's expected structure
-            # The prompt returns { "narrative_text": "...", "word_count": ... }
-            # We map "narrative_text" to "main_analysis"
-            
-            narrative_text = result_json.get("narrative_text", "")
-            
-            final_result = {
-                "main_analysis": narrative_text,
-                # Preserve title/intro/conclusion from fallback or keep empty if desired
-                # The user requested specific narrative generation, usually replacing the main body.
-                "title": fallback.get("title"), 
-                "intro": fallback.get("intro"), 
-                "conclusion": fallback.get("conclusion"),
-                "variables": fallback.get("variables", {}), # Keep variable list structure if present
-                "metadata": {
-                    "word_count": result_json.get("word_count", 0),
-                    "confidence": "high",
-                    "source": "ai_generated"
-                }
-            }
-            
-            # Enrich with Provenance
-            final_result['_provenance'] = {
-                "provider": provider_name,
-                "model": model_name,
-                "confidence": "high",
-                "timestamp": datetime.now().isoformat()
-            }
-
-            # Vision Audit for Chapter 0 (keep existing logic)
-            if chapter_id == 0 and data.get("media_urls") and IntelligenceEngine._provider:
-                try:
-                    vision_audit = await IntelligenceEngine.process_visuals(data)
-                    if vision_audit:
-                        final_result["main_analysis"] = vision_audit + "\n\n" + final_result.get("main_analysis", "")
-                except Exception as e:
-                    logger.error(f"Vision Audit failed for Ch 0: {e}")
-
-            return final_result
-
-        except Exception as e:
-            logger.error(f"AI generation failed for Ch {chapter_id}: {e}")
-            # Return None to trigger fallback to registry templates
-            return None
+    
+    @staticmethod
+    def _clean_json(text: str) -> str:
+        """Clean JSON from markdown code blocks. Used by legacy methods, kept for safety."""
+        clean_text = text.strip()
+        if clean_text.startswith("```json"):
+            clean_text = clean_text.split("```json")[1].split("```")[0]
+        elif clean_text.startswith("```"):
+            clean_text = clean_text.split("```")[1].split("```")[0]
+        return clean_text
 
     @staticmethod
     def _clean_json(text: str) -> str:

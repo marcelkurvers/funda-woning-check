@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: offline_structural_mode=True
 """
 Test CoreSummary Backbone Contract
 
@@ -258,25 +260,21 @@ class TestCoreSummaryBackboneContract:
         restored = json.loads(json_str)
         assert restored["asking_price"]["value"] == "€ 550.000"
     
-    def test_core_summary_fallback_from_dict(self):
+    def test_core_summary_create_empty(self):
         """
-        LAW 8: CoreSummary can be built from legacy dict for backward compatibility.
-        """
-        legacy_data = {
-            "asking_price_eur": "400000",
-            "living_area_m2": "90",
-            "address": "Den Haag, Zuid-Holland",
-            "total_match_score": "71"
-        }
+        LAW 8: Empty CoreSummary is valid (unknown status) for legacy/missing data.
         
-        # === ASSERTION: Can build from dict ===
-        core_summary = CoreSummaryBuilder.build_from_dict(legacy_data)
+        It must clearly indicate that data is UNKNOWN and not invented.
+        """
+        # === ASSERTION: Can create empty summary ===
+        core_summary = CoreSummaryBuilder.create_empty()
         
         assert core_summary is not None
-        assert core_summary.asking_price.status == DataStatus.PRESENT
-        assert "400" in core_summary.asking_price.value
-        assert core_summary.living_area.status == DataStatus.PRESENT
-        assert "90" in core_summary.living_area.value
+        assert core_summary.asking_price.status == DataStatus.UNKNOWN
+        assert core_summary.asking_price.value == "onbekend"
+        assert core_summary.living_area.status == DataStatus.UNKNOWN
+        assert core_summary.completeness_score == 0.0
+        assert core_summary.provenance.get("note") == "created_empty"
 
 
 class TestCoreSummaryPipelineIntegration:

@@ -15,11 +15,9 @@ class OllamaProvider(AIProvider):
     """
 
     def __init__(self, base_url: Optional[str] = None, timeout: int = 180, model: Optional[str] = None):
-        # Base URL should be provided by AIAuthority, but we keep a sensible fallback
-        # since Ollama doesn't require API keys
+        # Base URL should be provided by AIAuthority.
         if not base_url:
-            import os
-            base_url = "http://ollama:11434" if os.path.exists("/.dockerenv") else "http://localhost:11434"
+            raise ValueError("Ollama base_url is required.")
 
         self.base_url = base_url.rstrip('/')
         self.timeout = timeout

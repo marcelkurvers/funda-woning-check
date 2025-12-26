@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: offline_structural_mode=True
 # filename: backend/tests/test_four_plane_max.py
 """
 4-PLANE MAXIMALIZATION TESTS
@@ -15,6 +17,7 @@ INTEGRATION REQUIREMENTS:
 - Output must be renderable in UI
 """
 
+import os
 import pytest
 from typing import Dict, Any
 
@@ -82,8 +85,8 @@ def create_registry_from_data(data: Dict[str, Any]) -> CanonicalRegistry:
 
 
 @pytest.fixture
-def pipeline_output(sample_property_data) -> Dict[str, Any]:
-    """Execute full pipeline and return output."""
+def pipeline_output(sample_property_data, structural_policy) -> Dict[str, Any]:
+    """Execute full pipeline and return output with governance enabled."""
     spine, output = PipelineSpine.execute_full_pipeline(
         run_id='test-max-contract',
         raw_data=sample_property_data,

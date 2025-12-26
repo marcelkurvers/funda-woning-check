@@ -395,48 +395,38 @@ class CoreSummaryBuilder:
         )
     
     @staticmethod
-    def build_from_dict(data: Dict[str, Any]) -> CoreSummary:
+    def create_empty() -> CoreSummary:
         """
-        Build CoreSummary from a flat dictionary (legacy fallback).
+        Create a CoreSummary with all fields set to UNKNOWN.
         
-        This is used when we don't have access to the registry directly,
-        but should be avoided in normal flow.
+        This is used when no valid registry is available.
+        It does NOT attempt to reconstruct data from raw dicts.
         
-        Args:
-            data: Flat dictionary with property data
-            
         Returns:
-            CoreSummary: Always returns a valid CoreSummary
+            CoreSummary: Valid object but with all fields statuses=UNKNOWN
         """
-        # Create a minimal mock registry structure for the builder
-        from backend.domain.registry import CanonicalRegistry, RegistryEntry, RegistryType
+        provenance = {"note": "created_empty"}
         
-        registry = CanonicalRegistry()
-        
-        # Map common keys
-        key_mapping = {
-            "asking_price_eur": ["asking_price_eur", "asking_price", "price"],
-            "living_area_m2": ["living_area_m2", "living_area", "woonoppervlak"],
-            "address": ["address", "adres"],
-            "total_match_score": ["total_match_score", "match_score"],
-            "property_type": ["property_type", "woningtype"],
-            "build_year": ["build_year", "bouwjaar"],
-            "energy_label": ["energy_label", "energielabel"],
-            "plot_area_m2": ["plot_area_m2", "plot_area", "perceeloppervlak"],
-            "bedrooms": ["bedrooms", "slaapkamers"],
-        }
-        
-        for registry_key, possible_keys in key_mapping.items():
-            for key in possible_keys:
-                if key in data and data[key] is not None:
-                    registry.register(RegistryEntry(
-                        id=registry_key,
-                        type=RegistryType.FACT,
-                        value=data[key],
-                        name=registry_key.replace("_", " ").title(),
-                        source="legacy_dict"
-                    ))
-                    break
-        
-        registry.lock()
-        return CoreSummaryBuilder.build_from_registry(registry)
+        def unknown_field(name: str) -> CoreField:
+            return CoreField(
+                value="onbekend",
+                raw_value=None,
+                status=DataStatus.UNKNOWN,
+                source="missing_registry",
+                unit=None
+            )
+            
+        return CoreSummary(
+            asking_price=unknown_field("asking_price"),
+            living_area=unknown_field("living_area"),
+            location=unknown_field("location"),
+            match_score=unknown_field("match_score"),
+            property_type=None,
+            build_year=None,
+            energy_label=None,
+            plot_area=None,
+            bedrooms=None,
+            completeness_score=0.0,
+            registry_entry_count=0,
+            provenance=provenance
+        )

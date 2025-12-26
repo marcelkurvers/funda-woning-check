@@ -1,18 +1,45 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: offline_structural_mode=True
 """
 Tests for async pipeline processing and status polling
 """
 import pytest
 import json
 import time
+import os
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 import sys
-import os
+
+# Set test mode BEFORE imports
+os.environ["PIPELINE_TEST_MODE"] = "true"
 
 # Add backend to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
 from main import app, simulate_pipeline, executor
+
+
+@pytest.fixture(autouse=True)
+def governance_setup():
+    """T4gB-FIX: Apply governance singleton pattern for all tests in this module."""
+    from backend.domain.governance_state import GovernanceStateManager
+    GovernanceStateManager._instance = None
+    
+    from backend.domain.governance_state import get_governance_state
+    from backend.domain.config import GovernanceConfig, DeploymentEnvironment
+    gov_state = get_governance_state()
+    gov_state.apply_config(
+        GovernanceConfig(
+            environment=DeploymentEnvironment.TEST,
+            offline_structural_mode=True
+        ),
+        source="test_async_pipeline"
+    )
+    
+    yield
+    
+    GovernanceStateManager._instance = None
 
 
 @pytest.fixture

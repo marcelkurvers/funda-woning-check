@@ -9,7 +9,7 @@ import pytest
 import json
 from unittest.mock import MagicMock, patch
 from backend.domain.pipeline_context import create_pipeline_context, PipelineViolation
-from backend.domain.narrative_generator import NarrativeGenerator, NarrativeOutput
+from backend.domain.narrative_generator import NarrativeGenerator, NarrativeOutput, NarrativeGenerationError
 from backend.domain.models import NarrativeContract
 from backend.pipeline.spine import PipelineSpine
 from backend.pipeline.dashboard_generator import generate_dashboard_with_validation
@@ -28,22 +28,12 @@ class TestMandatoryNarrative:
     
     def test_law_1_chapter_narrative_mandatory(self, mock_context):
         """
-        LAW 1: Every page MUST include a narrative of at least 300 words.
+        LAW 1: Every page MUST include a narrative.
+        If AI is missing, it MUST fail (Fail-Closed).
         """
-        # We can rely on fallback template if AI is not mocked,
-        # ensuring the fallback is robust enough.
-        
-        # 1. Generate Chapter 1 (Standard)
-        # We assume NarrativeGenerator is used by ChapterGenerator
-        output = NarrativeGenerator.generate(1, mock_context.get_registry_dict())
-        
-        # Assertions
-        assert output.text is not None, "Narrative text missing"
-        assert output.word_count >= 300, f"Narrative too short: {output.word_count} words"
-        
-        # Verify strict model validation
-        contract = NarrativeContract(text=output.text, word_count=output.word_count)
-        assert contract.validate_minimum(300)
+        # NarrativeGenerator must raise error if no AI provider
+        with pytest.raises(NarrativeGenerationError):
+            NarrativeGenerator.generate(1, mock_context.get_registry_dict())
     
     def test_law_2_dashboard_first_class(self, mock_context):
         """

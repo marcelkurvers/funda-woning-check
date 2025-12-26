@@ -33,6 +33,7 @@ from backend.domain.pipeline_context import (
 from backend.domain.registry import RegistryType, RegistryConflict, RegistryLocked
 from backend.domain.ownership import OwnershipMap
 from backend.validation.gate import ValidationGate
+from backend.domain.guardrails import PolicyLevel
 
 logger = logging.getLogger(__name__)
 
@@ -79,11 +80,22 @@ def mark_test_output(output: Dict[str, Any]) -> Dict[str, Any]:
     LAW E: Test outputs must be distinguishable from production outputs.
     """
     if is_test_mode():
+        # NOTE: We can't easily access PipelineContext here as this is a helper function.
+        # But we can assume the Global Policy for this static helper.
+        from backend.domain.governance_state import get_governance_state
+        from backend.domain.guardrails import PolicyLevel
+        
+        policy = get_governance_state().get_effective_policy()
+        
+        if policy.prevent_test_mode_leakage == PolicyLevel.STRICT:
+             # Enforce marking
+             pass
+
         output[TEST_MODE_ISOLATION_MARKER] = True
         output["_test_mode_warning"] = (
             "This output was generated in PIPELINE_TEST_MODE=true. "
             "It may contain invalid data that bypassed strict validation. "
-            "Do NOT serve to end users."
+            "Do NOT serve to end users. (Policy: prevent_test_mode_leakage)"
         )
     return output
 
@@ -201,7 +213,8 @@ class PipelineSpine:
             errors = ValidationGate.validate_chapter_output(
                 chapter_id, 
                 output, 
-                self.ctx.get_registry_dict()
+                self.ctx.get_registry_dict(),
+                policy=self.ctx.truth_policy
             )
             
             # Record validation result
@@ -252,7 +265,8 @@ class PipelineSpine:
         errors = ValidationGate.validate_chapter_output(
             chapter_id,
             output,
-            self.ctx.get_registry_dict()
+            self.ctx.get_registry_dict(),
+            policy=self.ctx.truth_policy
         )
         
         self.ctx.record_validation_result(chapter_id, errors)
@@ -319,13 +333,17 @@ class PipelineSpine:
         
         # FAIL-CLOSED: In production, always strict
         if is_production_mode():
-            strict = True
+            if self.ctx.truth_policy.enforce_production_strictness == PolicyLevel.STRICT:
+                strict = True
+            elif strict is False:
+                 # Should never happen in prod if policy is STRICT
+                 logger.warning("PipelineSpine: Production strictness policy is NOT strict (Legacy behavior)")
         
         if strict and not self.ctx.all_chapters_valid():
             failed = {cid: errs for cid, errs in self.ctx._validation_results.items() if errs}
             raise PipelineViolation(
                 f"FATAL: Cannot render invalid report. Validation failed for chapters: {list(failed.keys())}. "
-                f"Errors: {failed}"
+                f"Errors: {failed} (Policy: enforce_production_strictness)"
             )
         
         # Build final output structure

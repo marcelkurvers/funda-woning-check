@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: None (registry extraction tests)
 """
 TEST: Page 1 (Chapter 1: Kerngegevens) Maximalization Verification
 

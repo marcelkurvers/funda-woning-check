@@ -58,6 +58,31 @@ def sample_property_core():
         "media_urls": [],
         "extra_facts": ""
     }
+
+@pytest.fixture(autouse=True)
+def reset_governance():
+    """
+    Automatic governance reset before and after every test.
+    Ensures no test inherits a relaxed state from a previous test.
+    Enforces the 'No Accidental Relaxation' rule.
+    """
+    from backend.domain.governance_state import get_governance_state
+    state = get_governance_state()
+    state._current_config = None # Reset to strictly default
+    yield
+    state._current_config = None # Clean up
+
 @pytest.fixture
 def anyio_backend():
     return "asyncio"
+
+from backend.domain.guardrails import TruthPolicy, PolicyLevel
+
+@pytest.fixture
+def strict_policy():
+    """
+    Returns a default STRICT TruthPolicy.
+    Used for asserting compliance with architectural guardrails.
+    """
+    return TruthPolicy()
+

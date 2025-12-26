@@ -1,9 +1,13 @@
-
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: offline_structural_mode=True
 import sys
 import os
 import json
 from pathlib import Path
 import pytest
+
+# Set test mode BEFORE imports
+os.environ["PIPELINE_TEST_MODE"] = "true"
 
 # Add project root to path (one level up from backend)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
@@ -13,6 +17,29 @@ from backend.domain.registry import CanonicalRegistry, RegistryEntry, RegistryTy
 from backend.domain.ownership import OwnershipMap
 from backend.validation.gate import ValidationGate
 from backend.enrichment import DataEnricher
+
+
+@pytest.fixture(autouse=True)
+def governance_setup():
+    """T4gB-FIX: Apply governance singleton pattern for all tests in this module."""
+    from backend.domain.governance_state import GovernanceStateManager
+    GovernanceStateManager._instance = None
+    
+    from backend.domain.governance_state import get_governance_state
+    from backend.domain.config import GovernanceConfig, DeploymentEnvironment
+    gov_state = get_governance_state()
+    gov_state.apply_config(
+        GovernanceConfig(
+            environment=DeploymentEnvironment.TEST,
+            offline_structural_mode=True
+        ),
+        source="test_system_architecture"
+    )
+    
+    yield
+    
+    GovernanceStateManager._instance = None
+
 
 class TestSystemArchitecture:
     """

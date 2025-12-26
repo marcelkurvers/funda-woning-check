@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: offline_structural_mode=True
 """
 Pipeline Spine Enforcement Tests
 
@@ -198,7 +200,7 @@ class TestChapterGenerationRequiresLock:
 class TestValidationEnforcement:
     """Test that validation is always enforced."""
     
-    def test_validation_runs_for_every_chapter(self, sample_raw_data, sample_preferences):
+    def test_validation_runs_for_every_chapter(self, sample_raw_data, sample_preferences, structural_policy):
         """Every chapter output is validated."""
         spine, output = PipelineSpine.execute_full_pipeline(
             run_id="test-val-1",
@@ -283,7 +285,7 @@ class TestRawDataImmutability:
 class TestRenderBlocking:
     """Test that rendering is blocked on validation failure (strict mode)."""
     
-    def test_strict_render_blocks_on_failure(self, sample_raw_data, sample_preferences):
+    def test_strict_render_blocks_on_failure(self, sample_raw_data, sample_preferences, structural_policy):
         """Strict mode raises on validation failure."""
         # This test may pass or fail depending on whether the sample data
         # generates chapters that pass validation. We test the mechanism.
@@ -300,7 +302,7 @@ class TestRenderBlocking:
             
             assert "validation failed" in str(exc_info.value).lower()
     
-    def test_non_strict_render_includes_error_markers(self, sample_raw_data, sample_preferences):
+    def test_non_strict_render_includes_error_markers(self, sample_raw_data, sample_preferences, structural_policy):
         """Non-strict mode includes error markers in output."""
         spine, output = PipelineSpine.execute_full_pipeline(
             run_id="test-render-2",
@@ -320,7 +322,7 @@ class TestRenderBlocking:
 class TestFullPipelineExecution:
     """Test complete pipeline execution."""
     
-    def test_execute_pipeline_returns_structured_output(self, sample_raw_data, sample_preferences):
+    def test_execute_pipeline_returns_structured_output(self, sample_raw_data, sample_preferences, structural_policy):
         """execute_pipeline returns a complete structured output."""
         output = execute_pipeline(
             run_id="test-full-1",
@@ -339,7 +341,7 @@ class TestFullPipelineExecution:
             f"Expected 14 chapters (0-13), got {len(output['chapters'])}"
         )
     
-    def test_pipeline_preserves_registry_values(self, sample_raw_data, sample_preferences):
+    def test_pipeline_preserves_registry_values(self, sample_raw_data, sample_preferences, structural_policy):
         """Pipeline output contains registry-derived values."""
         spine, output = PipelineSpine.execute_full_pipeline(
             run_id="test-full-2",
@@ -352,7 +354,7 @@ class TestFullPipelineExecution:
         assert spine.ctx.get_registry_value("living_area_m2") == 120
         assert spine.ctx.get_registry_value("energy_label") == "C"
     
-    def test_pipeline_locks_registry(self, sample_raw_data):
+    def test_pipeline_locks_registry(self, sample_raw_data, structural_policy):
         """Pipeline locks the registry."""
         spine, output = PipelineSpine.execute_full_pipeline(
             run_id="test-full-3",

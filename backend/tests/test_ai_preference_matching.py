@@ -14,16 +14,22 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: offline_structural_mode=True
+
 import pytest
 import asyncio
-from intelligence import IntelligenceEngine
-from ai.provider_interface import AIProvider
-from ai.providers.ollama_provider import OllamaProvider
+from backend.intelligence import IntelligenceEngine
+from backend.ai.provider_interface import AIProvider
+from backend.ai.providers.ollama_provider import OllamaProvider
 
 
 @pytest.fixture(autouse=True)
-def cleanup_provider():
-    """Ensure provider is reset before and after each test"""
+def cleanup_and_policy(structural_policy):
+    """
+    Ensure provider is reset before and after each test.
+    Also ensures structural_policy (offline mode) is active.
+    """
     IntelligenceEngine.set_provider(None)
     yield
     IntelligenceEngine.set_provider(None)

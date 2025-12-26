@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: None (schema validation tests)
 """
 Schema Validation Tests for AI System
 

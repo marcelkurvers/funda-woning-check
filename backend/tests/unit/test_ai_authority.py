@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: none (tests AI orchestration, not execution)
 """
 Tests for AI Authority - Single Source of Truth
 

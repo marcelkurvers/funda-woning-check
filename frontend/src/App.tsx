@@ -5,7 +5,7 @@ import { OrientationChapter } from './components/OrientationChapter';
 import { FourPlaneChapter } from './components/FourPlaneChapter';
 import {
   ChevronRight, Loader2, AlertCircle, Sparkles,
-  Plus, FileText, Home, Settings, Zap, Bug, BookOpen
+  Plus, FileText, Home, Settings, Zap, Bug, BookOpen, Shield
 } from 'lucide-react';
 import { LandingPage } from './components/LandingPage';
 import { SettingsModal } from './components/common/SettingsModal';
@@ -13,6 +13,7 @@ import { DiscoveryBento } from './components/common/DiscoveryBento';
 import { MediaGallery } from './components/common/MediaGallery';
 import { AIStatusIndicator } from './components/common/AIStatusIndicator';
 import { GlobalCapabilityBanner } from './components/common/GlobalCapabilityBanner';
+import { GovernanceView } from './components/GovernanceView';
 
 
 import type { ReportData } from './types';
@@ -213,6 +214,13 @@ function App() {
 
         <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-2">
           <button
+            onClick={() => setActiveChapterId('governance')}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent transition-all font-medium ${activeChapterId === 'governance' ? 'text-blue-600 bg-white border-slate-200 shadow-sm' : 'text-slate-500 hover:text-blue-600 hover:bg-white hover:border-slate-200'}`}
+          >
+            <Shield className="w-4 h-4 text-emerald-600" />
+            <span>Governance</span>
+          </button>
+          <button
             onClick={() => window.location.href = '/static/preferences.html'}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-white border border-transparent hover:border-slate-200 transition-all font-medium"
           >
@@ -239,10 +247,10 @@ function App() {
             <div className="h-6 w-px bg-slate-200 mx-2" />
             <div className="flex items-center gap-3">
               <div className="bg-blue-600 text-white font-bold px-2.5 py-1 rounded-md text-[10px] shadow-sm shadow-blue-200 uppercase tracking-wider">
-                Hfdst {currentChapter?.id || 0}
+                {activeChapterId === 'governance' ? 'SYS' : `Hfdst ${currentChapter?.id || 0}`}
               </div>
               <h1 className="text-lg font-bold text-slate-800 tracking-tight">
-                {content?.title || currentChapter?.title || "Analyse"}
+                {activeChapterId === 'governance' ? 'Governance & Truth Policy' : (content?.title || currentChapter?.title || "Analyse")}
               </h1>
             </div>
           </div>
@@ -264,211 +272,220 @@ function App() {
         <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} debugMode={debugMode} setDebugMode={setDebugMode} />
 
         <div className={`flex-1 overflow-y-auto custom-scrollbar ${activeChapterId ? 'p-0' : 'p-0 md:p-6'}`}>
-          {/* AI Provenance Status Bar (Global) - Hide when in Magazine View */}
-          {!activeChapterId && (
-            <div className="mb-6 bg-emerald-50 text-emerald-900 rounded-xl shadow-lg p-4 flex flex-wrap items-center justify-between gap-4 border border-emerald-200 mx-6">
-              <div className="flex items-center gap-4">
-                <div className={`p-2 rounded-lg ${currentChapter?.provenance ? 'bg-blue-600' : 'bg-slate-200'}`}>
-                  <Sparkles className={`w-4 h-4 ${currentChapter?.provenance ? 'text-white' : 'text-slate-500'}`} />
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                    {currentChapter?.provenance ? 'AI Enrichment Status' : 'AI Offline / Cached'}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm">
-                      {currentChapter?.provenance ? 'AI-Geresumeerd' : 'Geen AI Data'}
-                    </span>
-                    {currentChapter?.provenance && (
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${currentChapter.provenance.confidence === 'high' ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
-                        {currentChapter.provenance.confidence} Confidence
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Provider & Model</span>
-                  <span className="text-xs font-medium text-blue-600">
-                    {currentChapter?.provenance?.provider || "Local"} / {currentChapter?.provenance?.model || "Mock/Cached"}
-                  </span>
-                </div>
-                <div className="w-px h-8 bg-emerald-200" />
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Laatste Update</span>
-                  <span className="text-xs font-medium text-slate-600">
-                    {currentChapter?.provenance?.timestamp
-                      ? new Date(currentChapter.provenance.timestamp).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
-                      : "Onbekend"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Property Summary Header - Hide when in Magazine View */}
-          {!activeChapterId && (
-            <div className="mb-6 bg-white rounded-xl border border-slate-100 shadow-sm p-3 flex flex-col md:flex-row items-center gap-4 mx-6">
-              <div className="relative shrink-0 w-full md:w-40 h-24 rounded-lg overflow-hidden ring-1 ring-slate-100 group">
-                <img
-                  src={report.property_core?.media_urls?.[0] || report.media_from_db?.[0]?.url || "https://images.unsplash.com/photo-1600596542815-27b88e360290?auto=format&fit=crop&w=800"}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  alt=""
-                  onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1600596542815-27b88e360290?auto=format&fit=crop&w=800" }}
-                />
-              </div>
-              <div className="flex-1 min-w-0 flex flex-col md:flex-row items-center justify-between w-full gap-4">
-                <div>
-                  <h2 className="text-xl font-black text-emerald-900 tracking-tight truncate">{report.address}</h2>
-                  <div className="text-xs text-slate-500 font-medium">Multi-Check Pro Analysis Report</div>
-                </div>
-                <div className="flex items-center gap-6 bg-slate-50 rounded-xl p-3 border border-slate-100">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Inhoud</span>
-                    <span className="text-lg font-black">{report.media_from_db?.length || 0} Foto's</span>
-                  </div>
-                  <div className="w-px h-8 bg-slate-200" />
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</span>
-                    <span className="text-lg font-black text-emerald-600">Compleet</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeChapterId === "13" ? (
-            <div className="space-y-6">
-              <MediaGallery media={report.media_from_db || []} />
-              {content && (
-                <div className="mt-8">
-                  <BentoGrid>
-                    <BentoCard className="col-span-1 md:col-span-3" title="AI Visie Analyse" icon={<Sparkles className="w-5 h-5 text-yellow-500" />}>
-                      <div className="prose prose-slate prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: content.interpretation || "" }} />
-                    </BentoCard>
-                  </BentoGrid>
-                </div>
-              )}
-            </div>
-          ) : content ? (
-            <div className="animate-in fade-in duration-700">
-              {activeChapterId === "0" ? (
-                <>
-                  <OrientationChapter
-                    content={content}
-                    chapters={sortedChapters}
-                    media={report.media_from_db || []}
-                    address={report.address}
-                    provenance={currentChapter?.provenance || content._provenance}
-                    onNavigate={(chapterId) => setActiveChapterId(chapterId)}
-                    coreSummary={report.core_summary}
-                  />
-                  {report.discovery && report.discovery.length > 0 && (
-                    <div className="max-w-5xl mx-auto px-4 md:px-8 pb-12">
-                      <DiscoveryBento attributes={report.discovery} />
+          {/* Governance View */}
+          {activeChapterId === 'governance' ? (
+            <GovernanceView />
+          ) : (
+            <>
+              {/* AI Provenance Status Bar (Global) - Hide when in Magazine View */}
+              {!activeChapterId && (
+                <div className="mb-6 bg-emerald-50 text-emerald-900 rounded-xl shadow-lg p-4 flex flex-wrap items-center justify-between gap-4 border border-emerald-200 mx-6">
+                  {/* ... (Existing provenance bar code) ... */}
+                  <div className="flex items-center gap-4">
+                    <div className={`p-2 rounded-lg ${currentChapter?.provenance ? 'bg-blue-600' : 'bg-slate-200'}`}>
+                      <Sparkles className={`w-4 h-4 ${currentChapter?.provenance ? 'text-white' : 'text-slate-500'}`} />
                     </div>
-                  )}
-                </>
-              ) : (() => {
-                // === RUNTIME INSPECTIE (COMPACT) ===
-                const chapterId = parseInt(activeChapterId);
-                const isMainChapter = chapterId >= 1 && chapterId <= 12;
-                const hasFourPlane = currentChapter?.plane_structure &&
-                  currentChapter?.plane_a &&
-                  currentChapter?.plane_b &&
-                  currentChapter?.plane_c &&
-                  currentChapter?.plane_d;
-
-                console.log(`[4PLANE] Chapter ${activeChapterId}: hasFourPlane=${hasFourPlane}, keys=${Object.keys(currentChapter || {}).join(',')}`);
-
-                // 4-PLANE CHAPTER VIEW - MANDATORY FOR CHAPTERS 1-12
-                if (hasFourPlane) {
-                  return (
-                    <FourPlaneChapter
-                      chapter={{
-                        chapter_id: chapterId,
-                        chapter_title: content?.title || currentChapter?.title || `Hoofdstuk ${activeChapterId}`,
-                        plane_a: currentChapter.plane_a as any,
-                        plane_b: currentChapter.plane_b as any,
-                        plane_c: currentChapter.plane_c as any,
-                        plane_d: currentChapter.plane_d as any,
-                      }}
-                      chapterIndex={chapterId}
-                      media={report.media_from_db || []}
-                    />
-                  );
-                }
-
-                // FAIL-LOUD: For chapters 1-12, ALWAYS show diagnostics if 4-plane is missing
-                if (isMainChapter) {
-                  const diagnostics = (currentChapter as any)?.diagnostics || {};
-                  return (
-                    <div className="max-w-4xl mx-auto p-8">
-                      <div className="bg-red-50 border-2 border-red-300 rounded-xl p-6 mb-6">
-                        <div className="flex items-center gap-3 mb-4">
-                          <AlertCircle className="w-6 h-6 text-red-600" />
-                          <h3 className="text-lg font-bold text-red-800">4-Plane Data Ontbreekt</h3>
-                        </div>
-                        <p className="text-red-700 mb-4">
-                          Hoofdstuk {activeChapterId} zou 4-plane data moeten bevatten, maar de guard faalt.
-                          Dit is een systeem/backend issue dat onderzocht moet worden.
-                        </p>
-                        <div className="grid grid-cols-2 gap-2 text-sm mb-4">
-                          <div className={`p-2 rounded ${currentChapter?.plane_structure ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                            plane_structure: {currentChapter?.plane_structure ? '✓' : '✗'}
-                          </div>
-                          <div className={`p-2 rounded ${currentChapter?.plane_a ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                            plane_a: {currentChapter?.plane_a ? '✓' : '✗'}
-                          </div>
-                          <div className={`p-2 rounded ${currentChapter?.plane_b ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                            plane_b: {currentChapter?.plane_b ? '✓' : '✗'}
-                          </div>
-                          <div className={`p-2 rounded ${currentChapter?.plane_c ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                            plane_c: {currentChapter?.plane_c ? '✓' : '✗'}
-                          </div>
-                          <div className={`p-2 rounded ${currentChapter?.plane_d ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                            plane_d: {currentChapter?.plane_d ? '✓' : '✗'}
-                          </div>
-                        </div>
-                        {diagnostics && Object.keys(diagnostics).length > 0 && (
-                          <div className="bg-white rounded p-3 border border-red-200 mb-4">
-                            <div className="text-xs font-bold text-slate-500 mb-2">Backend Diagnostics:</div>
-                            <pre className="text-xs text-slate-600 overflow-x-auto">{JSON.stringify(diagnostics, null, 2)}</pre>
-                          </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                        {currentChapter?.provenance ? 'AI Enrichment Status' : 'AI Offline / Cached'}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm">
+                          {currentChapter?.provenance ? 'AI-Geresumeerd' : 'Geen AI Data'}
+                        </span>
+                        {currentChapter?.provenance && (
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${currentChapter.provenance.confidence === 'high' ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
+                            {currentChapter.provenance.confidence} Confidence
+                          </span>
                         )}
                       </div>
-                      <details className="bg-slate-50 border border-slate-200 rounded-xl">
-                        <summary className="p-4 cursor-pointer font-medium text-slate-700 hover:bg-slate-100">
-                          📋 Raw Chapter JSON (klik om te zien)
-                        </summary>
-                        <div className="p-4 border-t border-slate-200">
-                          <pre className="text-xs text-slate-600 overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap">
-                            {JSON.stringify(currentChapter, null, 2)}
-                          </pre>
-                        </div>
-                      </details>
                     </div>
-                  );
-                }
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="flex flex-col items-end">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Provider & Model</span>
+                      <span className="text-xs font-medium text-blue-600">
+                        {currentChapter?.provenance?.provider || "Local"} / {currentChapter?.provenance?.model || "Mock/Cached"}
+                      </span>
+                    </div>
+                    <div className="w-px h-8 bg-emerald-200" />
+                    <div className="flex flex-col items-end">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Laatste Update</span>
+                      <span className="text-xs font-medium text-slate-600">
+                        {currentChapter?.provenance?.timestamp
+                          ? new Date(currentChapter.provenance.timestamp).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
+                          : "Onbekend"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-                // LEGACY FALLBACK - Only for non-4-plane content (chapter 13, etc)
-                return (
-                  <MagazineChapter
-                    content={content}
-                    chapterId={activeChapterId}
-                    media={report.media_from_db || []}
-                    provenance={currentChapter?.provenance || content._provenance}
-                  />
-                );
-              })()}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center p-20 text-slate-300">
-              <BookOpen className="w-16 h-16 mb-4 opacity-20" />
-              <p className="font-medium">Pagina wordt geladen of geen data beschikbaar.</p>
-            </div>
+              {/* Property Summary Header - Hide when in Magazine View */}
+              {!activeChapterId && (
+                <div className="mb-6 bg-white rounded-xl border border-slate-100 shadow-sm p-3 flex flex-col md:flex-row items-center gap-4 mx-6">
+                  <div className="relative shrink-0 w-full md:w-40 h-24 rounded-lg overflow-hidden ring-1 ring-slate-100 group">
+                    <img
+                      src={report.property_core?.media_urls?.[0] || report.media_from_db?.[0]?.url || "https://images.unsplash.com/photo-1600596542815-27b88e360290?auto=format&fit=crop&w=800"}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      alt=""
+                      onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1600596542815-27b88e360290?auto=format&fit=crop&w=800" }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0 flex flex-col md:flex-row items-center justify-between w-full gap-4">
+                    <div>
+                      <h2 className="text-xl font-black text-emerald-900 tracking-tight truncate">{report.address}</h2>
+                      <div className="text-xs text-slate-500 font-medium">Multi-Check Pro Analysis Report</div>
+                    </div>
+                    <div className="flex items-center gap-6 bg-slate-50 rounded-xl p-3 border border-slate-100">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Inhoud</span>
+                        <span className="text-lg font-black">{report.media_from_db?.length || 0} Foto's</span>
+                      </div>
+                      <div className="w-px h-8 bg-slate-200" />
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</span>
+                        <span className="text-lg font-black text-emerald-600">Compleet</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeChapterId === "13" ? (
+                <div className="space-y-6">
+                  <MediaGallery media={report.media_from_db || []} />
+                  {content && (
+                    <div className="mt-8">
+                      <BentoGrid>
+                        <BentoCard className="col-span-1 md:col-span-3" title="AI Visie Analyse" icon={<Sparkles className="w-5 h-5 text-yellow-500" />}>
+                          <div className="prose prose-slate prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: content.interpretation || "" }} />
+                        </BentoCard>
+                      </BentoGrid>
+                    </div>
+                  )}
+                </div>
+              ) : content ? (
+                <div className="animate-in fade-in duration-700">
+                  {activeChapterId === "0" ? (
+                    <>
+                      <OrientationChapter
+                        content={content}
+                        chapters={sortedChapters}
+                        media={report.media_from_db || []}
+                        address={report.address}
+                        provenance={currentChapter?.provenance || content._provenance}
+                        onNavigate={(chapterId) => setActiveChapterId(chapterId)}
+                        coreSummary={report.core_summary}
+                      />
+                      {report.discovery && report.discovery.length > 0 && (
+                        <div className="max-w-5xl mx-auto px-4 md:px-8 pb-12">
+                          <DiscoveryBento attributes={report.discovery} />
+                        </div>
+                      )}
+                    </>
+                  ) : (() => {
+                    // === RUNTIME INSPECTIE (COMPACT) ===
+                    const chapterId = parseInt(activeChapterId);
+                    const isMainChapter = chapterId >= 1 && chapterId <= 12;
+                    const hasFourPlane = currentChapter?.plane_structure &&
+                      currentChapter?.plane_a &&
+                      currentChapter?.plane_b &&
+                      currentChapter?.plane_c &&
+                      currentChapter?.plane_d;
+
+                    console.log(`[4PLANE] Chapter ${activeChapterId}: hasFourPlane=${hasFourPlane}, keys=${Object.keys(currentChapter || {}).join(',')}`);
+
+                    // 4-PLANE CHAPTER VIEW - MANDATORY FOR CHAPTERS 1-12
+                    if (hasFourPlane) {
+                      return (
+                        <FourPlaneChapter
+                          chapter={{
+                            chapter_id: chapterId,
+                            chapter_title: content?.title || currentChapter?.title || `Hoofdstuk ${activeChapterId}`,
+                            plane_a: currentChapter.plane_a as any,
+                            plane_b: currentChapter.plane_b as any,
+                            plane_c: currentChapter.plane_c as any,
+                            plane_d: currentChapter.plane_d as any,
+                          }}
+                          chapterIndex={chapterId}
+                          media={report.media_from_db || []}
+                        />
+                      );
+                    }
+
+                    // FAIL-LOUD: For chapters 1-12, ALWAYS show diagnostics if 4-plane is missing
+                    if (isMainChapter) {
+                      const diagnostics = (currentChapter as any)?.diagnostics || {};
+                      return (
+                        <div className="max-w-4xl mx-auto p-8">
+                          <div className="bg-red-50 border-2 border-red-300 rounded-xl p-6 mb-6">
+                            <div className="flex items-center gap-3 mb-4">
+                              <AlertCircle className="w-6 h-6 text-red-600" />
+                              <h3 className="text-lg font-bold text-red-800">4-Plane Data Ontbreekt</h3>
+                            </div>
+                            <p className="text-red-700 mb-4">
+                              Hoofdstuk {activeChapterId} zou 4-plane data moeten bevatten, maar de guard faalt.
+                              Dit is een systeem/backend issue dat onderzocht moet worden.
+                            </p>
+                            <div className="grid grid-cols-2 gap-2 text-sm mb-4">
+                              <div className={`p-2 rounded ${currentChapter?.plane_structure ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                plane_structure: {currentChapter?.plane_structure ? '✓' : '✗'}
+                              </div>
+                              <div className={`p-2 rounded ${currentChapter?.plane_a ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                plane_a: {currentChapter?.plane_a ? '✓' : '✗'}
+                              </div>
+                              <div className={`p-2 rounded ${currentChapter?.plane_b ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                plane_b: {currentChapter?.plane_b ? '✓' : '✗'}
+                              </div>
+                              <div className={`p-2 rounded ${currentChapter?.plane_c ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                plane_c: {currentChapter?.plane_c ? '✓' : '✗'}
+                              </div>
+                              <div className={`p-2 rounded ${currentChapter?.plane_d ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                plane_d: {currentChapter?.plane_d ? '✓' : '✗'}
+                              </div>
+                            </div>
+                            {diagnostics && Object.keys(diagnostics).length > 0 && (
+                              <div className="bg-white rounded p-3 border border-red-200 mb-4">
+                                <div className="text-xs font-bold text-slate-500 mb-2">Backend Diagnostics:</div>
+                                <pre className="text-xs text-slate-600 overflow-x-auto">{JSON.stringify(diagnostics, null, 2)}</pre>
+                              </div>
+                            )}
+                          </div>
+                          <details className="bg-slate-50 border border-slate-200 rounded-xl">
+                            <summary className="p-4 cursor-pointer font-medium text-slate-700 hover:bg-slate-100">
+                              📋 Raw Chapter JSON (klik om te zien)
+                            </summary>
+                            <div className="p-4 border-t border-slate-200">
+                              <pre className="text-xs text-slate-600 overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap">
+                                {JSON.stringify(currentChapter, null, 2)}
+                              </pre>
+                            </div>
+                          </details>
+                        </div>
+                      );
+                    }
+
+                    // LEGACY FALLBACK - Only for non-4-plane content (chapter 13, etc)
+                    return (
+                      <MagazineChapter
+                        content={content}
+                        chapterId={activeChapterId}
+                        media={report.media_from_db || []}
+                        provenance={currentChapter?.provenance || content._provenance}
+                      />
+                    );
+                  })()}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center p-20 text-slate-300">
+                  <BookOpen className="w-16 h-16 mb-4 opacity-20" />
+                  <p className="font-medium">Pagina wordt geladen of geen data beschikbaar.</p>
+                </div>
+              )}
+            </>
           )}
+
         </div>
       </main>
     </div>

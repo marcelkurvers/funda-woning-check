@@ -1,5 +1,11 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: offline_structural_mode=True
 import sys
 import os
+
+# Set test mode BEFORE imports
+os.environ["PIPELINE_TEST_MODE"] = "true"
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 import unittest
 from fastapi.testclient import TestClient
@@ -7,6 +13,29 @@ from main import app, init_db
 import json
 
 class TestApiEndpoints(unittest.TestCase):
+    
+    @classmethod
+    def setUpClass(cls):
+        # T4gB-FIX: Apply governance singleton pattern
+        from backend.domain.governance_state import GovernanceStateManager
+        GovernanceStateManager._instance = None
+        
+        from backend.domain.governance_state import get_governance_state
+        from backend.domain.config import GovernanceConfig, DeploymentEnvironment
+        cls.gov_state = get_governance_state()
+        cls.gov_state.apply_config(
+            GovernanceConfig(
+                environment=DeploymentEnvironment.TEST,
+                offline_structural_mode=True
+            ),
+            source="test_api_endpoints"
+        )
+
+    @classmethod
+    def tearDownClass(cls):
+        from backend.domain.governance_state import GovernanceStateManager
+        GovernanceStateManager._instance = None
+
     def setUp(self):
         # Use a fresh in-memory db or re-init the test db for each test
         init_db()

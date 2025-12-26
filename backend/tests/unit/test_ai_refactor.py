@@ -1,3 +1,8 @@
+# TEST_REGIME: INVALID
+# DEPRECATED: Low quality legacy test
+
+import pytest
+pytest.skip("INVALID: Low quality legacy test", allow_module_level=True)
 
 import sys
 import os

@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: offline_structural_mode=True
 """
 Integration Fixtures Tests - Using Correct Pipeline API
 
@@ -18,6 +20,29 @@ from backend.pipeline.bridge import execute_report_pipeline
 
 
 class TestFixturesOutput(unittest.TestCase):
+    
+    @classmethod
+    def setUpClass(cls):
+        # T4gB-FIX: Apply governance singleton pattern
+        from backend.domain.governance_state import GovernanceStateManager
+        GovernanceStateManager._instance = None
+        
+        from backend.domain.governance_state import get_governance_state
+        from backend.domain.config import GovernanceConfig, DeploymentEnvironment
+        cls.gov_state = get_governance_state()
+        cls.gov_state.apply_config(
+            GovernanceConfig(
+                environment=DeploymentEnvironment.TEST,
+                offline_structural_mode=True
+            ),
+            source="test_integration_fixtures"
+        )
+
+    @classmethod
+    def tearDownClass(cls):
+        from backend.domain.governance_state import GovernanceStateManager
+        GovernanceStateManager._instance = None
+
     def test_fixtures_generation(self):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         
@@ -51,7 +76,7 @@ class TestFixturesOutput(unittest.TestCase):
                 core_data = parser.parse_html(html_content)
 
                 # Generate Chapters through pipeline
-                chapters, kpis, enriched = execute_report_pipeline(
+                chapters, kpis, enriched, core_summary = execute_report_pipeline(
                     run_id=f"test-fixtures-{os.path.basename(fixtures_path)}",
                     raw_data=core_data,
                     preferences={}

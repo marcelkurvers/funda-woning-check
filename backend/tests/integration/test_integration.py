@@ -27,8 +27,14 @@ SAMPLE_HTML = """
 </html>
 """
 
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: offline_structural_mode=True
+
 class TestIntegration(unittest.TestCase):
     def setUp(self):
+        import os
+        os.environ["PIPELINE_TEST_MODE"] = "true"
+        
         init_db()
         # Prevent init_ai_provider from running in the background thread and resetting our configuration
         self.patcher = patch('main.init_ai_provider')
@@ -41,10 +47,30 @@ class TestIntegration(unittest.TestCase):
 
         # Force fallback
         IntelligenceEngine.set_provider(None)
+        
+        # T4f: Enable Offline Structural Mode
+        # MUST reset singleton FIRST to ensure it reads TEST environment
+        from backend.domain.governance_state import GovernanceStateManager
+        GovernanceStateManager._instance = None
+        
+        from backend.domain.governance_state import get_governance_state
+        from backend.domain.config import GovernanceConfig, DeploymentEnvironment
+        self.gov_state = get_governance_state()
+        self.original_config = self.gov_state.get_current_config()
+        self.gov_state.apply_config(
+            GovernanceConfig(
+                environment=DeploymentEnvironment.TEST,
+                offline_structural_mode=True
+            ),
+            source="test_integration"
+        )
 
     def tearDown(self):
         self.patcher.stop()
         self.patcher_scraper.stop()
+        # Reset singleton so the next test gets a fresh state
+        from backend.domain.governance_state import GovernanceStateManager
+        GovernanceStateManager._instance = None
 
     def test_full_flow_with_paste(self):
         # 1. Start Run

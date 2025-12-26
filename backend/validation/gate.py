@@ -19,6 +19,8 @@ import re
 import logging
 from backend.domain.ownership import OwnershipMap
 from backend.domain.chapter_variables import get_chapter_variables
+from backend.domain.guardrails import TruthPolicy, CURRENT_POLICY, PolicyLevel
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +49,8 @@ class ValidationGate:
     def validate_chapter_output(
         chapter_id: int, 
         output: Dict[str, Any], 
-        registry_context: Dict[str, Any]
+        registry_context: Dict[str, Any],
+        policy: Optional[TruthPolicy] = None
     ) -> List[str]:
         """
         Validates chapter output against Registry, Ownership, and 4-PLANE rules.
@@ -61,16 +64,20 @@ class ValidationGate:
             chapter_id: The chapter number (0-13)
             output: The chapter output dict to validate
             registry_context: The full registry as a dict (for cross-reference)
+            policy: The TruthPolicy to enforce (defaults to CURRENT_POLICY)
         
         Returns:
             List of error strings. Empty list = validation passed.
         """
+        if policy is None:
+            policy = CURRENT_POLICY
+            
         errors = []
         
         # =====================================================================
         # VALIDATION 0: 4-PLANE STRUCTURE (MANDATORY)
         # =====================================================================
-        errors.extend(ValidationGate._check_four_plane_structure(chapter_id, output))
+        errors.extend(ValidationGate._check_four_plane_structure(chapter_id, output, policy))
         
         # =====================================================================
         # VALIDATION 1: OWNERSHIP - Variables must be owned by this chapter
@@ -103,7 +110,7 @@ class ValidationGate:
         return errors
     
     @staticmethod
-    def _check_four_plane_structure(chapter_id: int, output: Dict[str, Any]) -> List[str]:
+    def _check_four_plane_structure(chapter_id: int, output: Dict[str, Any], policy: TruthPolicy) -> List[str]:
         """
         Check that chapter has valid 4-plane structure.
         
@@ -115,20 +122,23 @@ class ValidationGate:
         if not output.get("plane_structure"):
             # Not a 4-plane output - this is now an error for chapters 0-12
             if chapter_id <= 12:
-                errors.append(
-                    f"4-Plane Structure Missing: Chapter {chapter_id} does not have plane_structure=True. "
-                    f"All chapters (0-12) MUST use 4-plane format."
-                )
+                msg = f"4-Plane Structure Missing: Chapter {chapter_id} does not have plane_structure=True."
+                
+                if policy.enforce_four_plane_structure == PolicyLevel.STRICT:
+                    errors.append(f"{msg} All chapters (0-12) MUST use 4-plane format. (Policy: enforce_four_plane_structure)")
+                else:
+                    errors.append(msg)
             return errors
         
         # Check for each plane's existence
         for plane_name in ["plane_a", "plane_b", "plane_c", "plane_d"]:
             plane = output.get(plane_name)
             if not plane:
-                errors.append(
-                    f"Plane Missing: Chapter {chapter_id} is missing '{plane_name}'. "
-                    f"All 4 planes are MANDATORY."
-                )
+                msg = f"Plane Missing: Chapter {chapter_id} is missing '{plane_name}'."
+                if policy.fail_on_missing_planes == PolicyLevel.STRICT:
+                     errors.append(f"{msg} All 4 planes are MANDATORY. (Policy: fail_on_missing_planes)")
+                else:
+                     errors.append(msg)
         
         # Check Plane B word count
         plane_b = output.get("plane_b", {})

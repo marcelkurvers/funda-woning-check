@@ -9,16 +9,7 @@ load_dotenv()
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 _boot_logger = logging.getLogger("spine.boot")
-_boot_logger.info("[BOOT] GEMINI_API_KEY detected: %s", bool(os.getenv("GEMINI_API_KEY")))
 
-# Plane A2 image generation requires GEMINI_API_KEY
-# But we allow the app to start without it for development/testing
-if not (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")):
-    _boot_logger.warning(
-        "WARNING: GEMINI_API_KEY not configured. "
-        "Plane A2 image generation will be disabled. "
-        "Set GEMINI_API_KEY environment variable to enable."
-    )
 
 import json
 import sqlite3
@@ -316,11 +307,14 @@ from backend.api import ai_status as ai_status_router
 from backend.api import config_status as config_status_router
 from backend.api import run_status as run_status_router
 from backend.api import ai_runtime as ai_runtime_router  # NEW: Unified runtime status
+from backend.api import governance as governance_router # Governance & Policy
+
 app.include_router(config_router.router)
 app.include_router(ai_status_router.router)
 app.include_router(config_status_router.router)
 app.include_router(run_status_router.router)
 app.include_router(ai_runtime_router.router)  # NEW: /api/ai/runtime-status
+app.include_router(governance_router.router) # /api/governance
 
 # --- PIPELINE ---
 def simulate_pipeline(run_id):
@@ -732,23 +726,12 @@ def get_run_report(run_id: str):
     # (The report may have been generated before this contract was enforced)
     if not core_summary:
         logger.warning(f"Report {run_id}: CoreSummary missing - legacy report or pipeline error")
-        # Build fallback CoreSummary from property_core for backward compatibility
+        # FAIL-CLOSED: Do not attempt to reconstruct from raw data.
+        # Return explicitly empty/unknown summary.
         from backend.domain.core_summary import CoreSummaryBuilder
-        property_core = json.loads(row["property_core_json"]) if row["property_core_json"] else {}
-        try:
-            core_summary_obj = CoreSummaryBuilder.build_from_dict(property_core)
-            core_summary = core_summary_obj.model_dump()
-        except Exception as e:
-            logger.error(f"Failed to build fallback CoreSummary: {e}")
-            core_summary = {
-                "asking_price": {"value": "onbekend", "status": "unknown", "source": "fallback"},
-                "living_area": {"value": "onbekend", "status": "unknown", "source": "fallback"},
-                "location": {"value": "onbekend", "status": "unknown", "source": "fallback"},
-                "match_score": {"value": "onbekend", "status": "unknown", "source": "fallback"},
-                "completeness_score": 0.0,
-                "registry_entry_count": 0,
-                "provenance": {}
-            }
+        core_summary_obj = CoreSummaryBuilder.create_empty()
+        core_summary = core_summary_obj.model_dump()
+
 
     return {
         "runId": row["id"],
@@ -993,23 +976,21 @@ def list_providers():
 
 @app.get("/api/ai/models")
 def list_models(provider: Optional[str] = None):
-    """Returns a flat list of all recommended models across all providers or 
-    filters by provider if a query param is provided.
-    """
-    providers = ProviderFactory.list_providers()
-    target_provider = provider or settings.ai.provider
-    if target_provider in providers:
-        return {"models": providers[target_provider]["models"]}
+    """Returns a list of available models using AIAuthority as the source of truth."""
+    from backend.ai.ai_authority import get_ai_authority
     
-    # If provider unknown but its "all", return everything flat
+    # If no provider specified, use the configured one or 'all' if desired
+    # Ideally, we ask authority for "models for the current active provider"
+    # or "all models" if requested.
+    
+    target_provider = provider or settings.ai.provider
     if target_provider == "all":
-        all_models = []
-        for p in providers.values():
-            all_models.extend(p["models"])
-        return {"models": list(set(all_models))}
-        
-    # Fallback
-    return {"models": ["gpt-4o", "claude-3-5-sonnet-20240620", "gemini-1.5-flash", "llama3"]}
+        target_provider = None # Let authority handle 'all' or we iterate. 
+        # Actually AIAuthority.get_available_models(None) implies "all known" or "default"?
+        # Let's assume None = all valid models, or we iterate explicitly if needed.
+        # But to be safe and simple:
+    
+    return {"models": get_ai_authority().get_available_models(target_provider)}
 
 @app.get("/api/ai/status")
 def check_ai_status():
@@ -1024,6 +1005,17 @@ def check_ai_status():
 
 @app.get("/api/runs/{run_id}/pdf")
 async def get_run_pdf(run_id: str):
+    """
+    Generate PDF report with FULL Four-Plane parity.
+    
+    CONTRACT REQUIREMENTS:
+    - All planes (A, A2, B, C, D) MUST be rendered
+    - plane_structure guard MUST be checked
+    - core_summary MUST be included
+    - Plane A2 MUST be visible or explicitly OPERATIONALLY_LIMITED
+    - Plane D MUST show full persona analysis (no truncation)
+    - Plane C MUST show KPI uncertainty status
+    """
     if not HTML:
         logger.error("PDF: WeasyPrint not installed.")
         raise HTTPException(500, "PDF generation capability not installed (WeasyPrint missing)")
@@ -1033,12 +1025,34 @@ async def get_run_pdf(run_id: str):
     
     # Prepare data for template
     core = json.loads(row["property_core_json"]) if row["property_core_json"] else {}
-    # Backend DB stores chapters as JSON dict. template expects list of objects or dict values.
+    
+    # Load core_summary for Four-Plane parity (optional, may not exist in older DBs)
+    core_summary = None
+    try:
+        # Check if column exists in row by looking at keys
+        row_keys = row.keys() if hasattr(row, 'keys') else []
+        if "core_summary_json" in row_keys:
+            core_summary_raw = row["core_summary_json"]
+            if core_summary_raw:
+                core_summary = json.loads(core_summary_raw)
+    except (IndexError, KeyError, json.JSONDecodeError, TypeError) as e:
+        logger.debug(f"PDF: core_summary_json not available for run {run_id}: {e}")
+    
+    # Backend DB stores chapters as JSON dict. Template expects list of objects.
     # The template uses {% for ch in chapters %}, so we yield values.
     chapters_raw = json.loads(row["chapters_json"]) if row["chapters_json"] else {}
     # Sort by ID as string int
     sorted_keys = sorted(chapters_raw.keys(), key=lambda x: int(x))
     chapters = [chapters_raw[k] for k in sorted_keys]
+    
+    # FOUR-PLANE VALIDATION: Check plane_structure for chapters 1-12
+    for ch in chapters:
+        ch_id = int(ch.get("id", 0))
+        if 1 <= ch_id <= 12 and not ch.get("plane_structure"):
+            logger.warning(
+                f"PDF: Chapter {ch_id} missing plane_structure=True. "
+                f"PDF will render error page for this chapter."
+            )
     
     # Setup Jinja2
     template_dir = BACKEND_DIR / "templates"
@@ -1049,9 +1063,10 @@ async def get_run_pdf(run_id: str):
         logger.error(f"PDF Template error: {e}")
         raise HTTPException(500, f"Template error: {e}")
     
-    # Render HTML
+    # Render HTML with FULL Four-Plane data
     html_content = template.render(
         property_core=core,
+        core_summary=core_summary,  # NEW: CoreSummary for KPI status
         chapters=chapters,
         date=now(),
         run_id=run_id

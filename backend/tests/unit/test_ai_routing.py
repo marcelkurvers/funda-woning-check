@@ -110,7 +110,7 @@ class TestIntelligenceEngineProviderManagement(unittest.TestCase):
 
     def test_can_set_provider(self):
         """Verify engine accepts provider injection"""
-        provider = OllamaProvider()
+        provider = OllamaProvider(base_url="http://mock:11434")
         IntelligenceEngine.set_provider(provider)
         
         self.assertIsNotNone(IntelligenceEngine._provider)
@@ -118,7 +118,7 @@ class TestIntelligenceEngineProviderManagement(unittest.TestCase):
 
     def test_can_clear_provider(self):
         """Verify engine can clear provider (set to None)"""
-        provider = OllamaProvider()
+        provider = OllamaProvider(base_url="http://mock:11434")
         IntelligenceEngine.set_provider(provider)
         self.assertIsNotNone(IntelligenceEngine._provider)
         
@@ -127,123 +127,24 @@ class TestIntelligenceEngineProviderManagement(unittest.TestCase):
 
     def test_can_replace_provider(self):
         """Verify engine can replace existing provider"""
-        provider1 = OllamaProvider()
+        provider1 = OllamaProvider(base_url="http://mock:11434")
         IntelligenceEngine.set_provider(provider1)
         self.assertEqual(IntelligenceEngine._provider, provider1)
         
-        provider2 = OllamaProvider()
+        provider2 = OllamaProvider(base_url="http://mock:11434")
         IntelligenceEngine.set_provider(provider2)
         self.assertEqual(IntelligenceEngine._provider, provider2)
         self.assertNotEqual(IntelligenceEngine._provider, provider1)
 
     def test_provider_persists_across_calls(self):
         """Verify provider state persists across multiple calls"""
-        provider = OllamaProvider()
+        provider = OllamaProvider(base_url="http://mock:11434")
         IntelligenceEngine.set_provider(provider)
         
         # Multiple accesses should return same provider
         self.assertEqual(IntelligenceEngine._provider, provider)
         self.assertEqual(IntelligenceEngine._provider, provider)
         self.assertEqual(IntelligenceEngine._provider, provider)
-
-
-class TestFallbackBehavior(unittest.TestCase):
-    """Verify system provides fallback when no AI provider is available"""
-
-    def setUp(self):
-        """Reset provider state before each test"""
-        IntelligenceEngine.set_provider(None)
-
-    def tearDown(self):
-        """Clean up provider state after each test"""
-        IntelligenceEngine.set_provider(None)
-
-    def test_generates_fallback_when_no_provider_set(self):
-        """Verify system returns fallback data when no provider configured"""
-        # Explicitly set no provider
-        IntelligenceEngine.set_provider(None)
-        
-        ctx = {
-            "address": "Teststraat 1, Amsterdam",
-            "price": 500000,
-            "area": 120,
-            "year": 2010
-        }
-        
-        # Should not crash, should return fallback
-        result = IntelligenceEngine.generate_chapter_narrative(1, ctx)
-        
-        self.assertIsInstance(result, dict)
-        self.assertIn('title', result)
-        self.assertIn('intro', result)
-        self.assertIn('main_analysis', result)
-
-    def test_fallback_has_required_schema_fields(self):
-        """Verify fallback data conforms to expected schema"""
-        IntelligenceEngine.set_provider(None)
-        
-        ctx = {"address": "Test", "price": 500000, "area": 120}
-        result = IntelligenceEngine.generate_chapter_narrative(1, ctx)
-        
-        # Required fields for Bento Grid
-        required_fields = ['title', 'intro', 'main_analysis', 'interpretation', 
-                          'conclusion', 'strengths', 'advice']
-        
-        for field in required_fields:
-            self.assertIn(field, result, f"Missing required field: {field}")
-
-    def test_fallback_data_is_realistic(self):
-        """Verify fallback uses registry template, not generic placeholders"""
-        IntelligenceEngine.set_provider(None)
-        
-        ctx = {
-            "address": "Kalverstraat 1, Amsterdam",
-            "asking_price_eur": 750000,
-            "living_area_m2": 150,
-            "build_year": 1995
-        }
-        
-        result = IntelligenceEngine.generate_chapter_narrative(1, ctx)
-        
-        # Fallback should use registry template
-        provenance = result.get('_provenance', {})
-        self.assertIn('Registry', provenance.get('provider', ''),
-                     "Fallback should indicate registry template")
-        
-        # Should have content (not empty)
-        self.assertGreater(len(result.get('intro', '')), 0)
-        self.assertGreater(len(result.get('main_analysis', '')), 0)
-
-    def test_fallback_does_not_claim_ai_generation(self):
-        """Verify fallback data doesn't claim to be AI-generated"""
-        IntelligenceEngine.set_provider(None)
-        
-        ctx = {"address": "Test", "price": 500000}
-        result = IntelligenceEngine.generate_chapter_narrative(1, ctx)
-        
-        # Should not have AI disclaimer
-        full_text = str(result).lower()
-        self.assertNotIn("gegenereerd door", full_text)
-        self.assertNotIn("ai-gegenereerd", full_text)
-
-    def test_fallback_works_for_all_chapters(self):
-        """Verify fallback mechanism works for all chapter types"""
-        IntelligenceEngine.set_provider(None)
-        
-        ctx = {
-            "address": "Test",
-            "price": 500000,
-            "area": 120,
-            "year": 2000,
-            "label": "B"
-        }
-        
-        # Test chapters 0-5 (representative sample)
-        for chapter_id in range(6):
-            result = IntelligenceEngine.generate_chapter_narrative(chapter_id, ctx)
-            
-            self.assertIsInstance(result, dict, f"Chapter {chapter_id} should return dict")
-            self.assertIn('title', result, f"Chapter {chapter_id} should have title")
 
 
 class TestProviderStateTransitions(unittest.TestCase):
@@ -263,7 +164,7 @@ class TestProviderStateTransitions(unittest.TestCase):
         self.assertIsNone(IntelligenceEngine._provider)
         
         # Set provider
-        provider = OllamaProvider()
+        provider = OllamaProvider(base_url="http://mock:11434")
         IntelligenceEngine.set_provider(provider)
         
         # Verify transition
@@ -273,7 +174,7 @@ class TestProviderStateTransitions(unittest.TestCase):
     def test_transition_from_provider_to_no_provider(self):
         """Verify clean transition from provider to no provider"""
         # Start with provider
-        provider = OllamaProvider()
+        provider = OllamaProvider(base_url="http://mock:11434")
         IntelligenceEngine.set_provider(provider)
         self.assertIsNotNone(IntelligenceEngine._provider)
         
@@ -286,12 +187,12 @@ class TestProviderStateTransitions(unittest.TestCase):
     def test_transition_between_different_providers(self):
         """Verify clean transition between different provider types"""
         # Start with Ollama
-        provider1 = OllamaProvider()
+        provider1 = OllamaProvider(base_url="http://mock:11434")
         IntelligenceEngine.set_provider(provider1)
         self.assertEqual(IntelligenceEngine._provider.name, "ollama")
         
         # Switch to different provider instance
-        provider2 = OllamaProvider()
+        provider2 = OllamaProvider(base_url="http://mock:11434")
         IntelligenceEngine.set_provider(provider2)
         
         # Verify transition

@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: None (Pydantic model validation)
 """
 Tests for 4-Plane Cognitive Model enforcement.
 

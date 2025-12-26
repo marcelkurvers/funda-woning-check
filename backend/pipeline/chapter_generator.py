@@ -27,6 +27,7 @@ from typing import Dict, Any, Optional
 
 from backend.domain.pipeline_context import PipelineContext, PipelineViolation
 from backend.domain.ownership import OwnershipMap
+from backend.domain.guardrails import PolicyLevel
 from backend.domain.chapter_variables import get_chapter_variables, should_show_core_data
 from backend.domain.narrative_generator import (
     NarrativeGenerator, 
@@ -162,6 +163,10 @@ def generate_chapter_with_validation(ctx: PipelineContext, chapter_id: int) -> D
         # Emit diagnostic block for debugging
         _emit_four_plane_diagnostics_error(ctx, chapter_id, e)
         logger.error(f"Chapter {chapter_id}: BACKBONE ENFORCEMENT FAILED - {e}")
+        
+        if ctx.truth_policy.enforce_four_plane_structure == PolicyLevel.STRICT:
+             raise PipelineViolation(f"{e} (Policy: enforce_four_plane_structure)")
+        
         raise PipelineViolation(str(e))
 
 
@@ -231,12 +236,21 @@ def _generate_and_validate_narrative(
         return narrative_output
         
     except NarrativeWordCountError as e:
+        if ctx.truth_policy.fail_closed_narrative_generation == PolicyLevel.STRICT:
+             # This is already raising Violation, so we just add policy note
+             raise PipelineViolation(f"{e} (Policy: fail_closed_narrative_generation)")
         raise PipelineViolation(str(e))
+
     except NarrativeGenerationError as e:
+        if ctx.truth_policy.fail_closed_narrative_generation == PolicyLevel.STRICT:
+            raise PipelineViolation(f"Chapter {chapter_id} narrative generation failed: {e} (Policy: fail_closed_narrative_generation)")
         raise PipelineViolation(f"Chapter {chapter_id} narrative generation failed: {e}")
+
     except Exception as e:
         # Any other error is still a pipeline violation
         logger.error(f"Narrative generation failed for Chapter {chapter_id}: {e}")
+        if ctx.truth_policy.fail_closed_narrative_generation == PolicyLevel.STRICT:
+             raise PipelineViolation(f"Chapter {chapter_id} narrative generation error: {e} (Policy: fail_closed_narrative_generation)")
         raise PipelineViolation(f"Chapter {chapter_id} narrative generation error: {e}")
 
 

@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: offline_structural_mode=True
 """
 FAIL-CLOSED ENFORCEMENT TESTS
 
@@ -21,8 +23,8 @@ import pytest
 from typing import Dict, Any
 from unittest.mock import patch
 
-# Set test mode BEFORE imports
-os.environ["PIPELINE_TEST_MODE"] = "true"
+# Set test mode BEFORE imports - REFACTORED to local fixtures
+# os.environ["PIPELINE_TEST_MODE"] = "true"  <-- REMOVED GLOBAL SIDE EFFECT
 
 from backend.domain.registry import (
     CanonicalRegistry,
@@ -39,14 +41,42 @@ from backend.domain.pipeline_context import (
 )
 from backend.pipeline.spine import PipelineSpine, is_production_mode
 from backend.validation.gate import ValidationGate
+from backend.domain.governance_state import get_governance_state, DeploymentEnvironment
+from backend.domain.config import GovernanceConfig
 
 
 # =============================================================================
-# FIXTURE: Sample Data
+# FIXTURE: Sample Data & Governance
 # =============================================================================
 
 @pytest.fixture
+def enable_offline_mode():
+    """Enable offline structural mode for tests that need complete pipeline execution without AI."""
+    # Force TEST mode in env so we can apply config
+    old_env = os.environ.get("PIPELINE_TEST_MODE")
+    os.environ["PIPELINE_TEST_MODE"] = "true"
+    
+    state = get_governance_state()
+    config = GovernanceConfig(
+        environment=DeploymentEnvironment.TEST,
+        offline_structural_mode=True,
+        # We need allow_partial_generation too if we want to tolerate some missing pieces?
+        # Actually offline_structural_mode implies bypassing the narrator check.
+    )
+    state.apply_config(config, source="test_fixture")
+    
+    yield
+    
+    # Reset is handled by autouse fixture in conftest.py, 
+    # but we must restore ENV
+    if old_env:
+        os.environ["PIPELINE_TEST_MODE"] = old_env
+    else:
+        os.environ.pop("PIPELINE_TEST_MODE", None)
+
+@pytest.fixture
 def sample_raw_data() -> Dict[str, Any]:
+
     return {
         "asking_price_eur": 500000,
         "living_area_m2": 120,
@@ -56,7 +86,9 @@ def sample_raw_data() -> Dict[str, Any]:
         "address": "Teststraat 123",
         "city": "Amsterdam",
         "description": "Een prachtige woning.",
-        "features": ["tuin", "garage"]
+        "features": ["tuin", "garage"],
+        "property_type": "Eengezinswoning",
+        "woz_value": 450000
     }
 
 
@@ -203,15 +235,27 @@ class TestProductionModeBlocking:
     
     def test_production_mode_detection(self):
         """Test mode detection works correctly."""
-        # In test environment, PIPELINE_TEST_MODE should be "true"
-        assert os.environ.get("PIPELINE_TEST_MODE") == "true"
-        assert not is_production_mode()
+        # Setup specific env for detection test
+        old_env = os.environ.get("PIPELINE_TEST_MODE")
+        os.environ["PIPELINE_TEST_MODE"] = "true"
+        try:
+            # In test environment, PIPELINE_TEST_MODE should be "true"
+            assert os.environ.get("PIPELINE_TEST_MODE") == "true"
+            assert not is_production_mode()
+        except:
+            if old_env: os.environ["PIPELINE_TEST_MODE"] = old_env
+            else: os.environ.pop("PIPELINE_TEST_MODE", None)
+            raise
+        finally:
+            if old_env: os.environ["PIPELINE_TEST_MODE"] = old_env
+            else: os.environ.pop("PIPELINE_TEST_MODE", None)
     
-    def test_strict_render_blocks_invalid_chapters(self, sample_raw_data, sample_preferences):
+    def test_strict_render_blocks_invalid_chapters(self, sample_raw_data, sample_preferences, enable_offline_mode):
         """Strict mode MUST raise when validation fails."""
         spine = PipelineSpine("test-strict", sample_preferences)
         spine.ingest_raw_data(sample_raw_data)
         spine.enrich_and_populate_registry()
+        # Requires offline mode to generate without AI
         spine.generate_all_chapters()
         
         # Manually mark a chapter as failed
@@ -245,7 +289,7 @@ class TestProductionModeBlocking:
 class TestValidationGateMandatory:
     """Verify that ValidationGate is ALWAYS invoked."""
     
-    def test_all_chapters_validated(self, sample_raw_data, sample_preferences):
+    def test_all_chapters_validated(self, sample_raw_data, sample_preferences, enable_offline_mode):
         """Every chapter MUST have a validation result."""
         spine, output = PipelineSpine.execute_full_pipeline(
             run_id="test-validate-all",
@@ -381,7 +425,7 @@ class TestPipelinePhaseEnforcement:
 class TestCorrectExecutionPath:
     """Verify that the correct execution path produces valid output."""
     
-    def test_full_pipeline_executes_correctly(self, sample_raw_data, sample_preferences):
+    def test_full_pipeline_executes_correctly(self, sample_raw_data, sample_preferences, enable_offline_mode):
         """Full pipeline through execute_full_pipeline works."""
         spine, output = PipelineSpine.execute_full_pipeline(
             run_id="test-correct-1",
@@ -396,11 +440,11 @@ class TestCorrectExecutionPath:
         # Chapters 0-13 (14 chapters) in output (includes both validated chapters and chapter 0)
         assert len(output["chapters"]) == 14
     
-    def test_bridge_function_works(self, sample_raw_data, sample_preferences):
+    def test_bridge_function_works(self, sample_raw_data, sample_preferences, enable_offline_mode):
         """Pipeline bridge function works correctly."""
         from backend.pipeline.bridge import execute_report_pipeline
         
-        chapters, kpis, enriched_core = execute_report_pipeline(
+        chapters, kpis, enriched_core, core_summary = execute_report_pipeline(
             run_id="test-bridge-1",
             raw_data=sample_raw_data,
             preferences=sample_preferences
@@ -410,6 +454,7 @@ class TestCorrectExecutionPath:
         assert len(chapters) >= 13  # At least 13 (may include dashboard)
         assert "dashboard_cards" in kpis
         assert "asking_price_eur" in enriched_core
+        assert "completeness_score" in core_summary
 
 
 # =============================================================================

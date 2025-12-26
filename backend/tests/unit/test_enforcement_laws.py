@@ -1,3 +1,5 @@
+# TEST_REGIME: POLICY
+# REQUIRES: strict_policy=True
 """
 Enforcement Tests - LAW A, B, C, D, E Compliance
 
@@ -117,25 +119,22 @@ class TestLawA_NoSoftErrorsFromAI:
     IntelligenceEngine must either return candidate output OR raise exception.
     """
     
-    def test_intelligence_engine_does_not_call_validation_gate(self):
-        """IntelligenceEngine should NOT call ValidationGate internally."""
-        # Check that the ValidationGate import was removed from _generate_ai_narrative
-        from backend import intelligence
+    def test_narrative_generator_does_not_call_validation_gate(self):
+        """NarrativeGenerator should NOT call ValidationGate internally."""
+        from backend.domain.narrative_generator import NarrativeGenerator
         import inspect
         
-        source = inspect.getsource(intelligence.IntelligenceEngine._generate_ai_narrative)
+        source = inspect.getsource(NarrativeGenerator.generate)
         
-        # The string "ValidationGate.validate_chapter_output" should NOT appear
-        # We removed this in the LAW A fix
         assert "ValidationGate.validate_chapter_output" not in source, \
-            "LAW A VIOLATION: IntelligenceEngine still contains ValidationGate call"
+            "LAW A VIOLATION: NarrativeGenerator still contains ValidationGate call"
     
-    def test_intelligence_engine_does_not_return_error_content_dict(self):
-        """IntelligenceEngine should not return error-content dicts."""
-        from backend import intelligence
+    def test_narrative_generator_does_not_return_error_content_dict(self):
+        """NarrativeGenerator should not return error-content dicts."""
+        from backend.domain.narrative_generator import NarrativeGenerator
         import inspect
         
-        source = inspect.getsource(intelligence.IntelligenceEngine._generate_ai_narrative)
+        source = inspect.getsource(NarrativeGenerator.generate)
         
         # Should not have the error-content return pattern
         error_patterns = [
@@ -146,7 +145,7 @@ class TestLawA_NoSoftErrorsFromAI:
         
         for pattern in error_patterns:
             assert pattern not in source, \
-                f"LAW A VIOLATION: IntelligenceEngine still returns error-content: {pattern}"
+                f"LAW A VIOLATION: NarrativeGenerator still returns error-content: {pattern}"
     
     def test_validation_only_at_spine_level(self):
         """Verify ValidationGate is only called from spine, not intelligence."""

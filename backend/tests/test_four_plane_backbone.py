@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: offline_structural_mode=True
 """
 4-PLANE BACKBONE ENFORCEMENT TESTS
 
