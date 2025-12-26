@@ -16,15 +16,16 @@ class OpenAIProvider(AIProvider):
     """
 
     def __init__(self, api_key: Optional[str] = None, timeout: int = 180, model: Optional[str] = None):
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        # API key MUST be provided by AIAuthority - no fallback to os.getenv
+        self.api_key = api_key
         if not self.api_key:
-            raise ValueError("OPENAI_API_KEY must be set for OpenAI provider")
+            raise ValueError("OPENAI_API_KEY must be provided (via AIAuthority)")
         
         # Use shared persistent client
         self.client = AsyncOpenAI(api_key=self.api_key, timeout=timeout)
         self._name = "openai"
         self.timeout = timeout
-        self.default_model = model or os.getenv("AI_MODEL", "gpt-4o")
+        self.default_model = model or "gpt-4o"
         logger.info(f"OpenAIProvider initialized with model: {self.default_model}")
 
     @property

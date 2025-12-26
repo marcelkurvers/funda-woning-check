@@ -16,9 +16,10 @@ class GeminiProvider(AIProvider):
     """
 
     def __init__(self, api_key: Optional[str] = None, timeout: int = 180, model: Optional[str] = None):
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        # API key MUST be provided by AIAuthority - no fallback to os.getenv
+        self.api_key = api_key
         if not self.api_key:
-            raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY must be set for Gemini provider")
+            raise ValueError("GEMINI_API_KEY must be provided (via AIAuthority)")
         
         # Initialize the unified Google GenAI client
         self.client = genai.Client(api_key=self.api_key)
@@ -26,7 +27,7 @@ class GeminiProvider(AIProvider):
         self._name = "gemini"
         
         # Default model as per requirements - Unify on Gemini 2.0 Flash Exp (Nano Banana)
-        self.default_model = model or os.getenv("AI_MODEL", "gemini-2.0-flash-exp")
+        self.default_model = model or "gemini-2.0-flash-exp"
         logger.info(f"GeminiProvider initialized with model: {self.default_model}")
 
     @property

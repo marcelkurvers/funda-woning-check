@@ -15,14 +15,15 @@ class OllamaProvider(AIProvider):
     """
 
     def __init__(self, base_url: Optional[str] = None, timeout: int = 180, model: Optional[str] = None):
+        # Base URL should be provided by AIAuthority, but we keep a sensible fallback
+        # since Ollama doesn't require API keys
         if not base_url:
-            base_url = os.environ.get("OLLAMA_BASE_URL")
-        if not base_url:
+            import os
             base_url = "http://ollama:11434" if os.path.exists("/.dockerenv") else "http://localhost:11434"
 
         self.base_url = base_url.rstrip('/')
         self.timeout = timeout
-        self.default_model = model or os.environ.get("AI_MODEL", os.environ.get("OLLAMA_MODEL", "mistral"))
+        self.default_model = model or "llama3"  # Default model without os.environ lookup
         
         self.generate_endpoint = f"{self.base_url}/api/generate"
         self._async_client: Optional[httpx.AsyncClient] = None
@@ -65,6 +66,7 @@ class OllamaProvider(AIProvider):
             "prompt": prompt,
             "system": system,
             "stream": False,
+            "keep_alive": 0,  # CRITICAL: Unload model after request to prevent zombie processes
             "options": {
                 "temperature": temperature,
                 "num_predict": max_tokens

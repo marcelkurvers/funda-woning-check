@@ -16,14 +16,15 @@ class AnthropicProvider(AIProvider):
     """
 
     def __init__(self, api_key: Optional[str] = None, timeout: int = 180, model: Optional[str] = None):
-        self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+        # API key MUST be provided by AIAuthority - no fallback to os.getenv
+        self.api_key = api_key
         if not self.api_key:
-            raise ValueError("ANTHROPIC_API_KEY must be set for Anthropic provider")
+            raise ValueError("ANTHROPIC_API_KEY must be provided (via AIAuthority)")
         
         self.client = AsyncAnthropic(api_key=self.api_key, timeout=timeout)
         self._name = "anthropic"
         self.timeout = timeout
-        self.default_model = model or os.getenv("AI_MODEL", "claude-3-5-sonnet-20240620")
+        self.default_model = model or "claude-3-5-sonnet-20241022"
         logger.info(f"AnthropicProvider initialized with model: {self.default_model}")
 
     @property

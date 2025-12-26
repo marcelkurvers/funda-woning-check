@@ -3,7 +3,7 @@ import {
     Settings, Server, Cpu, Key, Shield, Clock, Activity,
     CheckCircle2, XCircle, AlertCircle, RefreshCw, Loader2,
     Wifi, WifiOff, ChevronDown, ChevronRight, Eye, EyeOff,
-    Zap, Database, Play, ArrowLeft, Save
+    Zap, Database, Play, ArrowLeft, Save, Trash2
 } from 'lucide-react';
 
 // Types
@@ -64,15 +64,55 @@ interface ProviderTestResult {
     response_preview?: string;
 }
 
+// NEW: AI Runtime Status from AIAuthority (single source of truth)
+interface AIRuntimeStatus {
+    active_provider: string;
+    active_model: string;
+    status: string;
+    category: string;
+    user_message: string;
+    resume_hint: string | null;
+    providers: Record<string, {
+        name: string;
+        label: string;
+        configured: boolean;
+        operational: boolean;
+        status: string;
+        category: string;
+        reason: string | null;
+        models: string[];
+    }>;
+    fallbacks_tried: string[];
+    reasons: string[];
+    provider_hierarchy: string[];
+    ollama_guard?: {
+        processes_found: number;
+        details: string;
+    };
+}
+
+interface OllamaCleanupResult {
+    success: boolean;
+    action: string;
+    details: {
+        processes_found: number;
+        processes_killed: number;
+        errors: string[];
+    };
+}
+
 // Settings Page Component
 export function SettingsPage() {
     const [config, setConfig] = useState<ConfigStatus | null>(null);
+    const [runtimeStatus, setRuntimeStatus] = useState<AIRuntimeStatus | null>(null);
     const [modes, setModes] = useState<ModeInfo[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [testing, setTesting] = useState(false);
     const [testResult, setTestResult] = useState<ProviderTestResult | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [cleaningOllama, setCleaningOllama] = useState(false);
+    const [ollamaCleanResult, setOllamaCleanResult] = useState<OllamaCleanupResult | null>(null);
     const [showFingerprints, setShowFingerprints] = useState(false);
     const [expandedSections, setExpandedSections] = useState<string[]>(['provider', 'mode']);
 
@@ -85,9 +125,10 @@ export function SettingsPage() {
     const fetchConfig = useCallback(async () => {
         setLoading(true);
         try {
-            const [statusRes, modesRes] = await Promise.all([
+            const [statusRes, modesRes, runtimeRes] = await Promise.all([
                 fetch(`/api/config-status/status?show_fingerprint=${showFingerprints}`),
-                fetch('/api/config-status/modes')
+                fetch('/api/config-status/modes'),
+                fetch('/api/ai/runtime-status')  // NEW: Unified AI runtime status
             ]);
 
             if (!statusRes.ok) throw new Error('Failed to fetch configuration');
@@ -98,6 +139,12 @@ export function SettingsPage() {
 
             setConfig(statusData);
             setModes(modesData.modes);
+
+            // Fetch AI runtime status (best effort, don't fail on error)
+            if (runtimeRes.ok) {
+                const runtimeData: AIRuntimeStatus = await runtimeRes.json();
+                setRuntimeStatus(runtimeData);
+            }
 
             // Initialize form state
             setSelectedProvider(statusData.provider);
@@ -180,6 +227,23 @@ export function SettingsPage() {
                 ? prev.filter(s => s !== section)
                 : [...prev, section]
         );
+    };
+
+    // NEW: Ollama cleanup handler
+    const handleOllamaCleanup = async () => {
+        setCleaningOllama(true);
+        setOllamaCleanResult(null);
+        try {
+            const res = await fetch('/api/ai/ollama/cleanup', { method: 'POST' });
+            if (res.ok) {
+                const result = await res.json();
+                setOllamaCleanResult(result);
+            }
+        } catch (err) {
+            console.error('Ollama cleanup failed:', err);
+        } finally {
+            setCleaningOllama(false);
+        }
     };
 
     const hasChanges =
@@ -645,6 +709,165 @@ export function SettingsPage() {
                         </div>
                     )}
                 </section>
+
+                {/* AI Runtime Status (from AIAuthority - Single Source of Truth) */}
+                {runtimeStatus && (
+                    <section className="bg-slate-800/50 rounded-2xl border border-slate-700 overflow-hidden">
+                        <button
+                            onClick={() => toggleSection('runtime')}
+                            className="w-full p-6 flex items-center justify-between hover:bg-slate-800/50 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-cyan-600/20 rounded-lg">
+                                    <Activity className="w-5 h-5 text-cyan-400" />
+                                </div>
+                                <div className="text-left">
+                                    <h2 className="font-bold text-lg">AI Runtime Status</h2>
+                                    <p className="text-sm text-slate-500">{runtimeStatus.user_message}</p>
+                                </div>
+                            </div>
+                            {expandedSections.includes('runtime') ? (
+                                <ChevronDown className="w-5 h-5 text-slate-400" />
+                            ) : (
+                                <ChevronRight className="w-5 h-5 text-slate-400" />
+                            )}
+                        </button>
+
+                        {expandedSections.includes('runtime') && (
+                            <div className="px-6 pb-6 space-y-6">
+                                {/* Active Provider/Model */}
+                                <div className="p-4 bg-cyan-900/20 border border-cyan-800 rounded-xl">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="text-sm font-medium text-cyan-400">Actieve Configuratie</span>
+                                        <span className={`text-xs px-2 py-1 rounded-full ${runtimeStatus.category === 'implementation_valid'
+                                                ? 'bg-emerald-900/50 text-emerald-400'
+                                                : runtimeStatus.category === 'operationally_limited'
+                                                    ? 'bg-amber-900/50 text-amber-400'
+                                                    : 'bg-red-900/50 text-red-400'
+                                            }`}>
+                                            {runtimeStatus.category === 'implementation_valid' && '✓ Operationeel'}
+                                            {runtimeStatus.category === 'operationally_limited' && '⚠ Beperkt'}
+                                            {runtimeStatus.category === 'implementation_invalid' && '✗ Configuratie vereist'}
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <span className="text-xs text-slate-500">Provider</span>
+                                            <p className="text-lg font-bold">{runtimeStatus.providers[runtimeStatus.active_provider]?.label || runtimeStatus.active_provider}</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-xs text-slate-500">Model</span>
+                                            <p className="text-lg font-bold">{runtimeStatus.active_model}</p>
+                                        </div>
+                                    </div>
+                                    {runtimeStatus.resume_hint && (
+                                        <p className="text-xs text-amber-400 mt-2">{runtimeStatus.resume_hint}</p>
+                                    )}
+                                </div>
+
+                                {/* Provider Hierarchy */}
+                                <div className="space-y-2">
+                                    <h3 className="text-sm font-medium text-slate-400">Provider Hiërarchie (Fallback Volgorde)</h3>
+                                    <div className="flex gap-2 flex-wrap">
+                                        {runtimeStatus.provider_hierarchy.map((name, idx) => {
+                                            const prov = runtimeStatus.providers[name];
+                                            const isActive = name === runtimeStatus.active_provider;
+                                            const isFailed = runtimeStatus.fallbacks_tried.includes(name);
+                                            return (
+                                                <div
+                                                    key={name}
+                                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${isActive
+                                                            ? 'bg-emerald-900/30 border-emerald-700'
+                                                            : isFailed
+                                                                ? 'bg-red-900/20 border-red-800'
+                                                                : 'bg-slate-800 border-slate-700'
+                                                        }`}
+                                                >
+                                                    <span className="text-xs text-slate-500">{idx + 1}</span>
+                                                    <span className={`font-medium ${isActive ? 'text-emerald-400' : isFailed ? 'text-red-400' : 'text-slate-400'}`}>
+                                                        {prov?.label || name}
+                                                    </span>
+                                                    {isActive && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+                                                    {isFailed && <XCircle className="w-4 h-4 text-red-400" />}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Per-Provider Status */}
+                                <div className="space-y-2">
+                                    <h3 className="text-sm font-medium text-slate-400">Provider Status</h3>
+                                    <div className="space-y-2">
+                                        {Object.values(runtimeStatus.providers).map(prov => (
+                                            <div
+                                                key={prov.name}
+                                                className={`p-3 rounded-xl border flex items-center justify-between ${prov.operational
+                                                        ? 'bg-emerald-900/20 border-emerald-800'
+                                                        : prov.configured
+                                                            ? 'bg-amber-900/20 border-amber-800'
+                                                            : 'bg-slate-800 border-slate-700'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    {prov.operational ? (
+                                                        <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                                                    ) : prov.configured ? (
+                                                        <AlertCircle className="w-5 h-5 text-amber-400" />
+                                                    ) : (
+                                                        <XCircle className="w-5 h-5 text-slate-500" />
+                                                    )}
+                                                    <div>
+                                                        <span className="font-medium">{prov.label}</span>
+                                                        {prov.reason && (
+                                                            <span className="text-xs text-slate-500 ml-2">{prov.reason}</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-xs">
+                                                    <span className={`px-2 py-0.5 rounded ${prov.configured ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-700 text-slate-500'}`}>
+                                                        {prov.configured ? 'Geconfigureerd' : 'Niet geconfigureerd'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Ollama Cleanup */}
+                                <div className="p-4 bg-slate-800 rounded-xl border border-slate-700">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div>
+                                            <h3 className="font-medium">Ollama Proces Cleanup</h3>
+                                            <p className="text-xs text-slate-500">Ruim lingerende Ollama processen op</p>
+                                        </div>
+                                        <button
+                                            onClick={handleOllamaCleanup}
+                                            disabled={cleaningOllama}
+                                            className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors disabled:opacity-50"
+                                        >
+                                            {cleaningOllama ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <Trash2 className="w-4 h-4" />
+                                            )}
+                                            <span>Cleanup</span>
+                                        </button>
+                                    </div>
+                                    {ollamaCleanResult && (
+                                        <div className={`p-3 rounded-lg ${ollamaCleanResult.success ? 'bg-emerald-900/30' : 'bg-red-900/30'}`}>
+                                            <p className="text-sm font-medium">{ollamaCleanResult.action}</p>
+                                            <p className="text-xs text-slate-400 mt-1">
+                                                Processen gevonden: {ollamaCleanResult.details.processes_found},
+                                                Opgeruimd: {ollamaCleanResult.details.processes_killed}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </section>
+                )}
 
                 {/* Config Timestamp */}
                 <div className="text-center text-xs text-slate-600">

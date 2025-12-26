@@ -34,26 +34,21 @@ class MarketPosition(BaseChapter):
             {"id": "days", "label": "Looptijd", "value": "Start", "icon": "time", "color": "green", "explanation": "Net op de markt"},
             {"id": "comp", "label": "Concurrentie", "value": "Gemiddeld", "icon": "people", "color": "orange", "explanation": "Verwachting"}
         ]
-        # New metrics (additive)
-        price_val = IntelligenceEngine._parse_int(ctx.get('prijs') or ctx.get('asking_price_eur'))
-        price_m2 = round(price_val / (IntelligenceEngine._parse_int(ctx.get('oppervlakte','0')) or 1))
-        market_avg_m2 = ctx.get('avg_m2_price', 4800)
-        label = ctx.get('label','?')
-        reno_cost = 45000 if "F" in label or "G" in label else 25000 if "D" in label or "E" in label else 0
-        construction_year = IntelligenceEngine._parse_int(ctx.get('bouwjaar') or ctx.get('build_year'))
-        construction_alert = "Aandacht nodig" if construction_year < 1990 else "Relatief jong"
-        if market_avg_m2:
-            price_dev_pct = round(((price_m2 - market_avg_m2) / market_avg_m2) * 100)
-            metrics.append({"id":"price_deviation","label":"Prijsafwijking %","value":f"{price_dev_pct:+,}%" if price_dev_pct != 0 else "0%","icon":"trend-up" if price_dev_pct>0 else "trend-down" if price_dev_pct<0 else "neutral","trend":"up" if price_dev_pct>0 else "down" if price_dev_pct<0 else "neutral","trend_text":f"{price_dev_pct:+}% vs markt"})
-        future_score = 80 if label in ["A","A+","A++","B"] else 60 if label in ["C","D"] else 40
-        metrics.append({"id":"energy_future","label":"Energie Toekomstscore","value":f"{future_score}","icon":"leaf","color":"green" if future_score>=70 else "orange" if future_score>=50 else "red","trend":"neutral"})
-        maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
-        maintenance = "Hoog" if reno_cost>30000 else "Middelmatig" if reno_cost>0 else "Laag"
-        metrics.append({"id":"maintenance_intensity","label":"Onderhoud","value":maintenance,"icon":"hammer","trend":"neutral", "color": "red" if reno_cost > 30000 else "green"})
-        family = "Geschikt voor gezin" if (IntelligenceEngine._parse_int(ctx.get('oppervlakte','0')) or 0) >= 120 else "Minder geschikt voor groot gezin"
-        metrics.append({"id":"family_suitability","label":"Gezinsgeschiktheid","value":family,"icon":"people","trend":"neutral"})
-        lt_quality = "Hoog" if "jong" in construction_alert.lower() else "Middelmatig" if "aandacht" in construction_alert.lower() else "Laag"
-        metrics.append({"id":"long_term_quality","label":"Lange-termijn kwaliteit","value":lt_quality,"icon":"shield","trend":"neutral"})
+        # Chapter 11 UNIQUE metrics — Market Position & Negotiation specific
+        # NOTE: These metrics must NOT overlap with other chapters per Four-Plane contract
+        
+        # Marktdynamiek indicator (unique to Ch11)
+        metrics.append({"id": "ch11_market_dynamics", "label": "Marktdynamiek", "value": "Actief", "icon": "pulse", "color": "blue", "explanation": "Brainport-regio"})
+        
+        # Onderhandelingsruimte schatting (unique to Ch11)
+        negotiation_room = round(price_val * 0.05) if price_val else 0
+        metrics.append({"id": "ch11_negotiation_room_est", "label": "Onderhandeling", "value": f"~€{negotiation_room:,}".replace(',','.') if negotiation_room else "Te bepalen", "icon": "chatbubbles", "color": "green", "explanation": "Indicatief 5%"})
+        
+        # Concurrentie inschatting (unique to Ch11)
+        metrics.append({"id": "ch11_competition", "label": "Concurrentie", "value": "Gemiddeld", "icon": "people", "color": "orange", "explanation": "Vergelijkbare objecten beschikbaar"})
+        
+        # Timing advies (unique to Ch11)
+        metrics.append({"id": "ch11_timing_advice", "label": "Timing", "value": "Nu Bieden", "icon": "time", "color": "green", "explanation": "Markt stabiel"})
         
         pct_width_this = min(100, (price_m2 / 6000) * 100)
         pct_width_avg = min(100, (avg_m2 / 6000) * 100)

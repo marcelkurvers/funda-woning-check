@@ -124,10 +124,11 @@ async def get_ai_status():
                 is_online, latency_ms = await _check_gemini_health(settings.ai.gemini_api_key)
                 status = "online" if is_online else "error"
             else:
-                # Fallback: check raw env var if settings didn't pick it up
-                import os
-                if os.getenv("GEMINI_API_KEY"):
-                     status = "online" # Assume online if present, since checking logic above depends on settings
+                # Fallback: check via AIAuthority (single source of truth)
+                from backend.ai.ai_authority import get_ai_authority
+                gemini_key = get_ai_authority().get_api_key("gemini")
+                if gemini_key:
+                     status = "online"  # Assume online if present
                 else:
                     status = "unconfigured"
                     error_message = "API key not set"

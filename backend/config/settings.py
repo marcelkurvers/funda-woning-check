@@ -8,6 +8,7 @@ See docs/CONFIGURATION.md for complete documentation.
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
+from pydantic import Field, AliasChoices
 from typing import Optional, Dict, Any, Type, Tuple
 from pathlib import Path
 import json
@@ -87,6 +88,9 @@ class AISettings(BaseSettings):
     
     New fields for explicit configuration UX:
     - mode: Operating mode (fast/full/debug/offline)
+    
+    API Keys accept BOTH standard names (OPENAI_API_KEY) and prefixed (AI_OPENAI_API_KEY).
+    This is for compatibility with docker-compose and AIAuthority.
     """
 
     provider: str = "ollama"  # ollama, openai, anthropic, gemini
@@ -97,15 +101,27 @@ class AISettings(BaseSettings):
     temperature: float = 0.7  # Generation temperature
     max_tokens: int = 4096  # Max response tokens
 
-    # API keys (optional, can come from env vars)
-    openai_api_key: Optional[str] = None
-    anthropic_api_key: Optional[str] = None
-    gemini_api_key: Optional[str] = None
+    # API keys - use Field with validation_alias to accept both prefixed and non-prefixed
+    openai_api_key: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("AI_OPENAI_API_KEY", "OPENAI_API_KEY", "openai_api_key")
+    )
+    anthropic_api_key: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("AI_ANTHROPIC_API_KEY", "ANTHROPIC_API_KEY", "anthropic_api_key")
+    )
+    gemini_api_key: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("AI_GEMINI_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY", "gemini_api_key")
+    )
 
     # Ollama-specific
     ollama_base_url: Optional[str] = None  # Auto-detected if not set
 
-    model_config = SettingsConfigDict(env_prefix="AI_")
+    model_config = SettingsConfigDict(
+        env_prefix="AI_",
+        extra="ignore",  # Ignore extra env vars to prevent validation errors
+    )
 
 
 class MarketSettings(BaseSettings):
@@ -265,6 +281,7 @@ class AppSettings(BaseSettings):
         env_file_encoding="utf-8",
         env_nested_delimiter="__",  # Allows AI__TIMEOUT env var syntax
         case_sensitive=False,
+        extra="ignore",  # Ignore extra env vars (OPENAI_API_KEY etc. handled by AISettings)
     )
 
     @classmethod

@@ -212,37 +212,27 @@ def run_to_overview(row) -> Dict[str, Any]:
         "updated_at": row["updated_at"],
     }
 
-# --- AI INITIALIZATION ---
+# --- AI INITIALIZATION (via AIAuthority) ---
 def init_ai_provider():
-    """Initialize AI Provider based on current settings."""
-    global settings
-    settings = get_settings() # Refresh settings from DB if needed
+    """
+    Initialize AI Provider using AIAuthority as single source of truth.
     
-    provider_name = settings.ai.provider
+    AIAuthority handles:
+    - Reading API keys (only place allowed to do so)
+    - Applying provider hierarchy (OpenAI -> Gemini -> Claude -> Ollama)
+    - Determining operational status
+    """
+    from backend.ai.ai_authority import get_ai_authority
+    
     try:
-        logger.info(f"Setting up AI Provider: {provider_name}")
+        authority = get_ai_authority()
+        provider = authority.create_text_provider()
         
-        # Prepare configuration from settings
-        kwargs = {
-            "timeout": settings.ai.timeout,
-            "model": settings.ai.model
-        }
-        
-        if provider_name == 'openai':
-            kwargs["api_key"] = settings.ai.openai_api_key
-        elif provider_name == 'anthropic':
-            kwargs["api_key"] = settings.ai.anthropic_api_key
-        elif provider_name == 'gemini':
-            kwargs["api_key"] = settings.ai.gemini_api_key
-        elif provider_name == 'ollama':
-            kwargs["base_url"] = settings.ai.ollama_base_url
-            
-        provider = ProviderFactory.create_provider(provider_name, **kwargs)
         IntelligenceEngine.set_provider(provider)
-        logger.info(f"✓ AI Provider initialized: {provider_name}")
+        logger.info(f"✓ AI Provider initialized via AIAuthority: {provider.name}")
         return True
     except Exception as e:
-        logger.error(f"✗ Failed to initialize AI Provider ({provider_name}): {e}")
+        logger.error(f"✗ Failed to initialize AI Provider via AIAuthority: {e}")
         return False
 
 # --- MODELS ---
@@ -325,10 +315,12 @@ from backend.api import config as config_router
 from backend.api import ai_status as ai_status_router
 from backend.api import config_status as config_status_router
 from backend.api import run_status as run_status_router
+from backend.api import ai_runtime as ai_runtime_router  # NEW: Unified runtime status
 app.include_router(config_router.router)
 app.include_router(ai_status_router.router)
 app.include_router(config_status_router.router)
 app.include_router(run_status_router.router)
+app.include_router(ai_runtime_router.router)  # NEW: /api/ai/runtime-status
 
 # --- PIPELINE ---
 def simulate_pipeline(run_id):

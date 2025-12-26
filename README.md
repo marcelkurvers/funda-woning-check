@@ -1,4 +1,4 @@
-# AI Woning Rapport v9.4.0
+# AI Woning Rapport v9.5.0
 
 [![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue?logo=docker)](https://ghcr.io/marcelkurvers/funda-app)
 [![Build Status](https://github.com/marcelkurvers/funda-app/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/marcelkurvers/funda-app/actions/workflows/docker-publish.yml)
@@ -12,17 +12,18 @@ The **AI Woning Rapport** is designed to provide potential homebuyers with deep,
 
 ### Key Features
 
-- **🧠 4-Plane Cognitive Architecture (v9.4)**: Every chapter displays content in exactly 4 isolated cognitive planes:
+- **🧠 4-Plane Cognitive Architecture (v9.5)**: Every chapter displays content in exactly 4 isolated cognitive planes:
   - **Plane A1 (Deterministic Visual)**: 6 charts per chapter - pattern recognition from registry data
   - **Plane A2 (Synthesized Visual)**: 4 AI-generated concepts per chapter - infographics, diagrams, timelines
   - **Plane B (Narrative)**: 300+ words of interpretive prose - meaning & judgment
   - **Plane C (Facts)**: 12-20 KPIs per chapter - verifiable truth with uncertainty markers
   - **Plane D (Preference)**: Marcel vs Petra scoring with 5 positives, 5 concerns, tensions & overlaps
 - **🔒 Fail-Closed Backbone**: Strict structural enforcement - if ANY plane is missing or invalid, the chapter is rejected. No fallbacks, no graceful degradation.
-- **📊 Complete Chapter Maximalization (v9.4)**: All 12 chapters (3-12) now fully implemented with:
+- **✅ KPI Uniqueness Contract (v9.5)**: Every KPI is unique per chapter. No KPI overlap allowed between pages. Each chapter has prefixed IDs (e.g., `ch8_`, `ch9_`, `ch10_`) ensuring complete isolation.
+- **📊 Complete Chapter Maximalization (v9.5)**: All 12 chapters (3-12) now fully implemented with:
   - 6 deterministic charts per chapter (60+ total)
   - 4 synthesized concepts per chapter (40+ total)
-  - 14-20 KPIs per chapter (180+ total)
+  - 14-20 KPIs per chapter (180+ total, all uniquely prefixed)
   - Full Marcel & Petra driver analysis with tensions and overlaps
 - **📏 Plane Isolation**: Content may NOT cross planes. KPIs only in Plane C, narratives only in Plane B, preferences only in Plane D.
 - **🏆 Decision-Grade Dashboard V3**: A first-class executive decision memo (500-800 words) that synthesizes decision drivers, risks, and recommended next steps immediately upon load.

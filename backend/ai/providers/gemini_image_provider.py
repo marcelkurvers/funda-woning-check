@@ -76,14 +76,15 @@ class GeminiImageProvider(ImageGenerationProvider):
         Initialize Gemini image provider.
         
         Args:
-            api_key: Gemini API key (falls back to env)
+            api_key: Gemini API key (MUST be provided by AIAuthority)
             model: Model to use for generation
             save_to_disk: Whether to save images to disk (vs base64 only)
         """
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        # API key MUST be provided by AIAuthority - no fallback to os.getenv
+        self.api_key = api_key
         
         # Determine model config
-        config_model = model or os.getenv("AI_IMAGE_MODEL", self.DEFAULT_MODEL)
+        config_model = model or self.DEFAULT_MODEL
         
         # Enforce image capability (Step 1)
         if config_model not in self.IMAGE_CAPABLE_MODELS:

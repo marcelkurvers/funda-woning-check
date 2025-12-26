@@ -1,1 +1,1 @@
-__version__ = "9.4.0"  # Complete 4-Plane Maximalization: Chapters 3-12 fully implemented
+__version__ = "9.5.0"  # KPI Uniqueness Contract: Duplicate metrics remediated in chapters 8, 9, 11

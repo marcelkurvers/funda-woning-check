@@ -1,25 +1,19 @@
 // Extension Settings - Full Configuration Parity
-// Syncs with backend config endpoints for provider/model/mode selection
+// Syncs with backend /api/ai/runtime-status for provider/model selection
+// NO HARDCODED PROVIDER/MODEL LISTS - everything comes from backend
 
 const DEFAULT_API_URL = 'http://localhost:8000';
 
-// Model lists per provider
-const PROVIDER_MODELS = {
-    ollama: ['llama3', 'llama3.1', 'mistral', 'phi3', 'qwen2'],
-    openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'o1-preview'],
-    anthropic: ['claude-3-5-sonnet-20241022', 'claude-3-opus-20240229', 'claude-3-haiku-20240307'],
-    gemini: ['gemini-2.0-flash-exp', 'gemini-1.5-pro', 'gemini-1.5-flash']
-};
-
-// State
+// State - providers will be populated from backend
 let currentSettings = {
     apiUrl: DEFAULT_API_URL,
-    provider: 'ollama',
-    model: 'llama3',
+    provider: 'openai',  // Default per hierarchy
+    model: 'gpt-4o-mini',
     mode: 'full'
 };
 
 let serverConfig = null;
+let runtimeStatus = null;  // NEW: Runtime status from AIAuthority
 
 // DOM Elements
 document.addEventListener('DOMContentLoaded', async () => {
@@ -45,19 +39,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const saved = await chrome.storage.sync.get(['apiUrl', 'provider', 'model', 'mode']);
     currentSettings = {
         apiUrl: saved.apiUrl || DEFAULT_API_URL,
-        provider: saved.provider || 'ollama',
-        model: saved.model || 'llama3',
+        provider: saved.provider || 'openai',  // Default to OpenAI per hierarchy
+        model: saved.model || 'gpt-4o-mini',
         mode: saved.mode || 'full'
     };
 
     // Set form values
     apiUrlInput.value = currentSettings.apiUrl;
-    providerSelect.value = currentSettings.provider;
-    updateModelDropdown(currentSettings.provider, currentSettings.model);
-    updateModeSelection(currentSettings.mode);
 
-    // Try to fetch server config
-    await fetchServerConfig();
+    // Fetch runtime status from backend (single source of truth)
+    await fetchRuntimeStatus();
 
     // Hide loading, show content
     loadingEl.classList.remove('active');
@@ -69,8 +60,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     providerSelect.addEventListener('change', (e) => {
         const provider = e.target.value;
         currentSettings.provider = provider;
-        updateModelDropdown(provider);
-        updateKeyStatusList();
+        updateModelDropdownFromRuntime(provider);
         updateTrafficLights();
     });
 
@@ -93,7 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const url = apiUrlInput.value.trim().replace(/\/$/, '');
         if (url !== currentSettings.apiUrl) {
             currentSettings.apiUrl = url;
-            await fetchServerConfig();
+            await fetchRuntimeStatus();
         }
     });
 
@@ -119,7 +109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             mode: currentSettings.mode
         });
 
-        // Optionally push settings to server
+        // Push settings to server
         try {
             await pushSettingsToServer(url);
             showStatus('success', '✓ Instellingen opgeslagen en gesynchroniseerd!');
@@ -133,41 +123,81 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnReset.addEventListener('click', async () => {
         currentSettings = {
             apiUrl: DEFAULT_API_URL,
-            provider: 'ollama',
-            model: 'llama3',
+            provider: 'openai',  // Default per hierarchy
+            model: 'gpt-4o-mini',
             mode: 'full'
         };
 
         apiUrlInput.value = DEFAULT_API_URL;
-        providerSelect.value = 'ollama';
-        updateModelDropdown('ollama', 'llama3');
+        await fetchRuntimeStatus();
         updateModeSelection('full');
 
         await chrome.storage.sync.set(currentSettings);
-        await fetchServerConfig();
 
         showStatus('success', '✓ Gereset naar standaardinstellingen');
     });
 
     // === Helper Functions ===
 
-    function updateModelDropdown(provider, selectedModel = null) {
-        const models = PROVIDER_MODELS[provider] || [];
+    function updateProviderDropdownFromRuntime() {
+        if (!runtimeStatus || !runtimeStatus.providers) {
+            return;
+        }
+
+        providerSelect.innerHTML = '';
+
+        // Use provider_hierarchy from backend for ordering
+        const hierarchy = runtimeStatus.provider_hierarchy || ['openai', 'gemini', 'anthropic', 'ollama'];
+
+        for (const providerName of hierarchy) {
+            const provider = runtimeStatus.providers[providerName];
+            if (!provider) continue;
+
+            const option = document.createElement('option');
+            option.value = provider.name;
+            option.textContent = `${provider.label}${provider.configured ? '' : ' (niet geconfigureerd)'}`;
+            option.disabled = !provider.configured && provider.name !== 'ollama';
+
+            if (provider.name === currentSettings.provider) {
+                option.selected = true;
+            }
+            providerSelect.appendChild(option);
+        }
+
+        // If current provider is not available, switch to active provider from runtime
+        if (runtimeStatus.active_provider && currentSettings.provider !== runtimeStatus.active_provider) {
+            const currentProviderState = runtimeStatus.providers[currentSettings.provider];
+            if (!currentProviderState || !currentProviderState.configured) {
+                currentSettings.provider = runtimeStatus.active_provider;
+                providerSelect.value = runtimeStatus.active_provider;
+            }
+        }
+    }
+
+    function updateModelDropdownFromRuntime(provider) {
+        if (!runtimeStatus || !runtimeStatus.providers) {
+            return;
+        }
+
+        const providerState = runtimeStatus.providers[provider];
+        if (!providerState) return;
+
+        const models = providerState.models || [];
         modelSelect.innerHTML = '';
 
         models.forEach(model => {
             const option = document.createElement('option');
             option.value = model;
             option.textContent = model;
-            if (model === selectedModel) {
+            if (model === currentSettings.model || model === runtimeStatus.active_model) {
                 option.selected = true;
             }
             modelSelect.appendChild(option);
         });
 
         // Set current model
-        if (!selectedModel && models.length > 0) {
-            currentSettings.model = models[0];
+        if (models.length > 0 && !models.includes(currentSettings.model)) {
+            currentSettings.model = runtimeStatus.active_model || models[0];
         }
     }
 
@@ -178,34 +208,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function updateTrafficLights() {
-        const provider = currentSettings.provider;
-
-        // Update provider status
-        if (!serverConfig) {
+        if (!runtimeStatus || !runtimeStatus.providers) {
             setTrafficLight(providerStatusEl, 'gray', 'Onbekend');
             setTrafficLight(modelStatusEl, 'gray', 'Onbekend');
             return;
         }
 
-        const providerInfo = serverConfig.providers?.[provider];
+        const provider = currentSettings.provider;
+        const providerState = runtimeStatus.providers[provider];
 
-        if (!providerInfo) {
+        if (!providerState) {
             setTrafficLight(providerStatusEl, 'gray', 'Onbekend');
-        } else if (providerInfo.available || provider === 'ollama') {
-            setTrafficLight(providerStatusEl, 'green', 'Beschikbaar');
-        } else if (providerInfo.key_present) {
-            setTrafficLight(providerStatusEl, 'yellow', 'Key aanwezig');
-        } else {
-            setTrafficLight(providerStatusEl, 'red', 'Key ontbreekt');
+            setTrafficLight(modelStatusEl, 'gray', 'Onbekend');
+            return;
         }
 
-        // Update model status based on provider availability
-        if (!providerInfo) {
-            setTrafficLight(modelStatusEl, 'gray', 'Onbekend');
-        } else if (providerInfo.available || provider === 'ollama') {
+        // Provider status based on operational state
+        if (providerState.operational) {
+            setTrafficLight(providerStatusEl, 'green', 'Operationeel');
+        } else if (providerState.configured) {
+            // Configured but not operational
+            if (providerState.status === 'quota_exceeded') {
+                setTrafficLight(providerStatusEl, 'yellow', 'Quota bereikt');
+            } else if (providerState.status === 'offline') {
+                setTrafficLight(providerStatusEl, 'yellow', 'Offline');
+            } else {
+                setTrafficLight(providerStatusEl, 'yellow', providerState.reason || 'Beperkt');
+            }
+        } else {
+            setTrafficLight(providerStatusEl, 'red', 'Niet geconfigureerd');
+        }
+
+        // Model status follows provider
+        if (providerState.operational) {
             setTrafficLight(modelStatusEl, 'green', 'Klaar');
-        } else if (providerInfo.key_present) {
-            setTrafficLight(modelStatusEl, 'yellow', 'Niet getest');
+        } else if (providerState.configured) {
+            setTrafficLight(modelStatusEl, 'yellow', 'Beperkt');
         } else {
             setTrafficLight(modelStatusEl, 'red', 'Niet beschikbaar');
         }
@@ -217,43 +255,49 @@ document.addEventListener('DOMContentLoaded', async () => {
         element.title = tooltip;
     }
 
-    async function fetchServerConfig() {
+    async function fetchRuntimeStatus() {
         const url = currentSettings.apiUrl;
 
         try {
-            // Check health - use the dedicated config-status endpoint
-            const healthRes = await fetch(`${url}/api/config-status/health`, {
+            // Use the NEW unified runtime-status endpoint
+            const statusRes = await fetch(`${url}/api/ai/runtime-status`, {
                 method: 'GET',
                 signal: AbortSignal.timeout(5000)
             });
 
-            if (healthRes.ok) {
+            if (statusRes.ok) {
                 serverDot.className = 'status-dot online';
                 serverStatusText.textContent = 'Verbonden';
 
-                // Fetch full config status
-                const statusRes = await fetch(`${url}/api/config-status/status`);
-                if (statusRes.ok) {
-                    serverConfig = await statusRes.json();
-                    updateKeyStatusList();
-                    updateTrafficLights();
+                runtimeStatus = await statusRes.json();
+
+                // Update UI from runtime status
+                updateProviderDropdownFromRuntime();
+                updateModelDropdownFromRuntime(currentSettings.provider);
+                updateKeyStatusList();
+                updateTrafficLights();
+                updateModeSelection(currentSettings.mode);
+
+                // Show active provider info
+                if (runtimeStatus.user_message) {
+                    console.log('[Extension] AI Status:', runtimeStatus.user_message);
                 }
             } else {
                 serverDot.className = 'status-dot offline';
                 serverStatusText.textContent = 'Server error';
-                updateTrafficLights();
+                runtimeStatus = null;
             }
         } catch (e) {
             serverDot.className = 'status-dot offline';
             serverStatusText.textContent = 'Niet bereikbaar';
-            serverConfig = null;
+            runtimeStatus = null;
             updateKeyStatusList();
             updateTrafficLights();
         }
     }
 
     function updateKeyStatusList() {
-        if (!serverConfig || !serverConfig.key_status) {
+        if (!runtimeStatus || !runtimeStatus.providers) {
             keyStatusList.innerHTML = `
                 <div class="key-status">
                     <span class="provider">Status niet beschikbaar</span>
@@ -263,19 +307,39 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        const providers = ['openai', 'anthropic', 'gemini'];
-        keyStatusList.innerHTML = providers.map(provider => {
-            const status = serverConfig.key_status[provider] || { present: false };
-            return `
+        // Show providers in hierarchy order
+        const hierarchy = runtimeStatus.provider_hierarchy || ['openai', 'gemini', 'anthropic', 'ollama'];
+
+        keyStatusList.innerHTML = hierarchy
+            .filter(name => name !== 'ollama')  // Skip Ollama (no key needed)
+            .map(providerName => {
+                const provider = runtimeStatus.providers[providerName];
+                if (!provider) return '';
+
+                const statusClass = provider.configured ? 'present' : 'missing';
+                const statusText = provider.configured
+                    ? (provider.operational ? '✓ Operationeel' : `⚠ ${provider.reason || 'Beperkt'}`)
+                    : '✗ Ontbreekt';
+
+                return `
+                    <div class="key-status">
+                        <span class="provider">${provider.label}</span>
+                        <span class="status ${statusClass}">${statusText}</span>
+                    </div>
+                `;
+            }).join('');
+
+        // Add Ollama status if configured
+        const ollamaState = runtimeStatus.providers?.ollama;
+        if (ollamaState) {
+            const ollamaStatus = ollamaState.operational ? '✓ Beschikbaar' : '✗ Offline';
+            keyStatusList.innerHTML += `
                 <div class="key-status">
-                    <span class="provider">${provider.charAt(0).toUpperCase() + provider.slice(1)}</span>
-                    <span class="status ${status.present ? 'present' : 'missing'}">
-                        ${status.present ? '✓ Geconfigureerd' : '✗ Ontbreekt'}
-                        ${status.present && status.source ? ` (${status.source})` : ''}
-                    </span>
+                    <span class="provider">${ollamaState.label}</span>
+                    <span class="status ${ollamaState.operational ? 'present' : 'missing'}">${ollamaStatus}</span>
                 </div>
             `;
-        }).join('');
+        }
     }
 
     async function pushSettingsToServer(url) {
@@ -291,15 +355,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         if (!res.ok) throw new Error('Server sync failed');
+
+        // Invalidate cache and refresh
+        try {
+            await fetch(`${url}/api/ai/invalidate-cache`, { method: 'POST' });
+            await fetchRuntimeStatus();
+        } catch (e) {
+            console.warn('Cache invalidation failed:', e);
+        }
+
         return await res.json();
     }
 
     function showStatus(type, message) {
         statusEl.className = type;
         statusEl.textContent = message;
+        statusEl.style.display = 'block';
         setTimeout(() => {
             statusEl.className = '';
             statusEl.style.display = 'none';
         }, 5000);
     }
 });
+

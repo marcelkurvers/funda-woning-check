@@ -1,14 +1,13 @@
 """
-IMAGE PROVIDER FACTORY
+IMAGE PROVIDER FACTORY - Thin wrapper around AIAuthority
 
 Factory for creating image generation provider instances.
-Manages provider selection and configuration validation.
+DELEGATES to AIAuthority for all key management and provider creation.
 
 FAIL-LOUD: Returns NoImageProvider if no valid provider configured,
 never returns None or raises silently.
 """
 
-import os
 import logging
 from typing import Optional
 
@@ -16,7 +15,6 @@ from backend.ai.image_provider_interface import (
     ImageGenerationProvider,
     NoImageProvider,
 )
-from backend.ai.providers.gemini_image_provider import GeminiImageProvider
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +26,8 @@ _image_provider_instance: Optional[ImageGenerationProvider] = None
 def get_image_provider(force_new: bool = False) -> ImageGenerationProvider:
     """
     Get or create the image generation provider.
+    
+    DELEGATES TO AIAuthority - does not read API keys directly.
     
     FAIL-LOUD:
     - If GEMINI_API_KEY is set → returns GeminiImageProvider
@@ -45,15 +45,16 @@ def get_image_provider(force_new: bool = False) -> ImageGenerationProvider:
     if _image_provider_instance is not None and not force_new:
         return _image_provider_instance
     
-    # Check for Gemini API key
-    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    # Use AIAuthority as single source of truth
+    from backend.ai.ai_authority import get_ai_authority
+    authority = get_ai_authority()
     
-    if gemini_key:
-        logger.info("Image provider: Gemini configured")
-        _image_provider_instance = GeminiImageProvider(api_key=gemini_key)
+    _image_provider_instance = authority.create_image_provider()
+    
+    if _image_provider_instance.is_configured():
+        logger.info(f"Image provider: {_image_provider_instance.provider_name} configured")
     else:
         logger.warning("Image provider: No API key found, using NoImageProvider")
-        _image_provider_instance = NoImageProvider()
     
     return _image_provider_instance
 
@@ -78,13 +79,16 @@ def get_image_provider_status() -> dict:
     """
     provider = get_image_provider()
     
+    # Get key status from AIAuthority
+    from backend.ai.ai_authority import get_ai_authority
+    authority = get_ai_authority()
+    gemini_key = authority.get_api_key("gemini")
+    
     return {
         "provider_name": provider.provider_name,
         "model_name": provider.model_name,
         "is_configured": provider.is_configured(),
-        "api_key_present": bool(
-            os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-        ),
+        "api_key_present": bool(gemini_key),
     }
 
 
