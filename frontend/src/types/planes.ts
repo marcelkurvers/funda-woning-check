@@ -49,6 +49,41 @@ export interface PlaneAVisualModel {
 }
 
 // =============================================================================
+// 🟦 PLANE A2 — SYNTHESIZED VISUAL INTELLIGENCE PLANE
+// =============================================================================
+
+export interface HeroInfographic {
+    title: string;
+    visual_type: 'infographic' | 'diagram' | 'comparison_visual' | 'timeline';
+    prompt: string;
+    data_used: string[];
+    insight_summary: string;
+    uncertainties: string[];
+    image_uri?: string;
+    image_base64?: string;
+    generation_status: 'pending' | 'generated' | 'failed' | 'skipped';
+    generation_error?: string;
+}
+
+export interface VisualConcept {
+    title: string;
+    visual_type: string;
+    data_used: string[];
+    insight_explained: string;
+    uncertainty_notes?: string;
+}
+
+export interface PlaneA2SynthVisualModel {
+    plane: 'A2';
+    plane_name: 'synth_visual_intelligence';
+    hero_infographic?: HeroInfographic;
+    concepts: VisualConcept[];
+    data_source_ids: string[];
+    not_applicable: boolean;
+    not_applicable_reason?: string;
+}
+
+// =============================================================================
 // 🟩 PLANE B — NARRATIVE REASONING PLANE
 // =============================================================================
 
@@ -125,6 +160,28 @@ export interface PlaneDPreferenceModel {
 }
 
 // =============================================================================
+// CHAPTER DIAGNOSTICS (FAIL-LOUD)
+// =============================================================================
+
+export interface ChapterDiagnostics {
+    chapter_id: number;
+    pipeline_step: string;
+    plane_status: {
+        A: 'ok' | 'empty' | 'missing' | 'not_applicable';
+        B: 'ok' | 'insufficient' | 'missing' | 'not_applicable';
+        C: 'ok' | 'missing' | 'not_applicable';
+        D: 'ok' | 'missing' | 'not_applicable';
+    };
+    missing_required_fields: string[];
+    errors: Array<{
+        code: string;
+        message: string;
+        evidence?: string;
+    }>;
+    validation_passed: boolean;
+}
+
+// =============================================================================
 // CHAPTER PLANE COMPOSITION
 // =============================================================================
 
@@ -132,9 +189,12 @@ export interface ChapterPlaneComposition {
     chapter_id: number;
     chapter_title: string;
     plane_a: PlaneAVisualModel;
+    plane_a2?: PlaneA2SynthVisualModel;  // Synthesized visuals (optional but encouraged)
     plane_b: PlaneBNarrativeModel;
     plane_c: PlaneCFactModel;
     plane_d: PlaneDPreferenceModel;
+    // FAIL-LOUD: Diagnostics for debugging rendering issues
+    diagnostics?: ChapterDiagnostics;
 }
 
 // =============================================================================

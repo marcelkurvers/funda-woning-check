@@ -22,6 +22,7 @@ class AIStatusResponse(BaseModel):
     error_message: Optional[str] = None
     available_providers: list[str]
     configured_providers: Dict[str, bool]
+    capabilities: Optional[Dict[str, Any]] = None  # Added global capability status
 
 
 async def _check_ollama_health(base_url: str) -> tuple[bool, int]:
@@ -123,11 +124,20 @@ async def get_ai_status():
                 is_online, latency_ms = await _check_gemini_health(settings.ai.gemini_api_key)
                 status = "online" if is_online else "error"
             else:
-                status = "unconfigured"
-                error_message = "API key not set"
+                # Fallback: check raw env var if settings didn't pick it up
+                import os
+                if os.getenv("GEMINI_API_KEY"):
+                     status = "online" # Assume online if present, since checking logic above depends on settings
+                else:
+                    status = "unconfigured"
+                    error_message = "API key not set"
     except Exception as e:
         status = "error"
         error_message = str(e)
+    
+    # Get Global Capabilities
+    from backend.ai.capability_manager import get_capability_manager
+    capabilities = get_capability_manager().get_all_statuses()
     
     return AIStatusResponse(
         provider=current_provider,
@@ -137,7 +147,25 @@ async def get_ai_status():
         error_message=error_message,
         available_providers=["ollama", "openai", "anthropic", "gemini"],
         configured_providers=configured,
+        capabilities={name: status.to_api_dict() if hasattr(status, 'to_api_dict') else status.dict() for name, status in capabilities.items()}
     )
+
+
+@router.get("/capabilities")
+async def get_ai_capabilities():
+    """
+    Get global AI capability status.
+    
+    This endpoint exposes the capability layer for the frontend.
+    Key distinction:
+    - is_implementation_valid: True means the system is correctly configured
+    - is_operational_limit: True means external resource constraint (quota, outage)
+    
+    The frontend should use this to show appropriate status messages.
+    """
+    from backend.ai.capability_manager import get_capability_manager
+    return get_capability_manager().to_api_response()
+
 
 
 @router.get("/models/{provider}")

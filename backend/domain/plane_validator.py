@@ -25,6 +25,7 @@ import logging
 
 from backend.domain.plane_models import (
     PlaneAVisualModel,
+    PlaneA2SynthVisualModel,
     PlaneBNarrativeModel, 
     PlaneCFactModel,
     PlaneDPreferenceModel,
@@ -373,10 +374,24 @@ def create_validated_chapter(
     plane_b: PlaneBNarrativeModel,
     plane_c: PlaneCFactModel,
     plane_d: PlaneDPreferenceModel,
+    plane_a2: Optional[PlaneA2SynthVisualModel] = None,
     registry_ids: Optional[List[str]] = None
 ) -> ChapterPlaneComposition:
     """
     Create a chapter with full validation.
+    
+    Args:
+        chapter_id: Chapter number (0-12)
+        chapter_title: Title of the chapter
+        plane_a: Visual Intelligence plane (A1 - deterministic charts)
+        plane_b: Narrative Reasoning plane
+        plane_c: Factual Anchor plane
+        plane_d: Human Preference plane
+        plane_a2: Synthesized Visual Intelligence plane (A2 - AI-generated infographics)
+        registry_ids: Optional list of valid registry IDs for validation
+    
+    Returns:
+        ChapterPlaneComposition with all planes validated
     
     Raises:
         PlaneViolationError: If any plane constraints are violated
@@ -385,6 +400,7 @@ def create_validated_chapter(
         chapter_id=chapter_id,
         chapter_title=chapter_title,
         plane_a=plane_a,
+        plane_a2=plane_a2,
         plane_b=plane_b,
         plane_c=plane_c,
         plane_d=plane_d
@@ -394,3 +410,4 @@ def create_validated_chapter(
     validator.enforce_or_reject(chapter, registry_ids)
     
     return chapter
+

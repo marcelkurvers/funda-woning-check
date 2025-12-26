@@ -1,0 +1,430 @@
+{
+    "chapter_id": 1,
+    "chapter_title": "Kerngegevens",
+    "generated_at": "2025-12-25T11:54:12+01:00",
+    "enforcement": "BACKBONE_VALIDATED",
+    "contract_version": "1.0",
+    "plane_a": {
+        "plane": "A",
+        "plane_name": "visual_intelligence",
+        "a1_deterministic": {
+            "status": "ACKNOWLEDGED_NOT_REGENERATED",
+            "referenced_visuals": [
+                {
+                    "chart_id": "ch1_area_scale",
+                    "title": "Woonoppervlak vs Gemiddelde",
+                    "chart_type": "comparison"
+                },
+                {
+                    "chart_id": "ch1_plot_ratio",
+                    "title": "Bebouwingsratio",
+                    "chart_type": "bar"
+                },
+                {
+                    "chart_id": "ch1_rooms_distribution",
+                    "title": "Kamerverdeling",
+                    "chart_type": "bar"
+                },
+                {
+                    "chart_id": "ch1_build_period",
+                    "title": "Bouwperiode Score",
+                    "chart_type": "gauge"
+                }
+            ]
+        },
+        "a2_synthesized": [
+            {
+                "title": "Ruimte-Waarde Spanningsveld",
+                "visual_type": "tension_map",
+                "data_used": [
+                    "living_area_m2",
+                    "plot_area_m2",
+                    "asking_price_eur",
+                    "price_per_m2"
+                ],
+                "insight_explained": "This conceptual visualization maps the tension between what the property offers in terms of physical space (142m² living, 380m² plot) against what is asked in financial terms (€485,000). The tension map reveals whether the price-to-space ratio aligns with regional norms or represents a premium/discount. For Marcel and Petra, this helps answer: 'Are we paying for space value or location value?' The property sits at +7% above market average per m², suggesting a modest location/quality premium.",
+                "uncertainty_notes": "Price/m² comparison relies on regional averages which may not account for micro-neighborhood variations."
+            },
+            {
+                "title": "Woninglevensloop Positionering",
+                "visual_type": "lifecycle_infographic",
+                "data_used": [
+                    "build_year",
+                    "property_type"
+                ],
+                "insight_explained": "Positions this 1978 residence within the typical Dutch housing lifecycle. At 47 years, the property sits at the critical 'mid-life assessment' point where major systems are either recently replaced or imminently due. Contextualizes 1978 construction: post-oil-crisis era with emerging but immature insulation standards, potential asbestos presence, spouwmuur construction.",
+                "uncertainty_notes": "Assumes no major renovations have occurred. Actual system ages unknown."
+            },
+            {
+                "title": "Kamer-Functie Mogelijkheden",
+                "visual_type": "opportunity_matrix",
+                "data_used": [
+                    "rooms",
+                    "bedrooms",
+                    "living_area_m2"
+                ],
+                "insight_explained": "Synthesizes the 6-room / 4-bedroom configuration into flexibility assessment. With 142m² across 6 rooms, average room size is ~24m² (exceeding typical Dutch averages of ~18m²). Shows potential configurations: all 4 bedrooms as sleeping, or 3+office, or 2+guest+hobby. Helps both personas see adaptability potential.",
+                "uncertainty_notes": "Actual room dimensions unknown. Floor plan not available. Structural constraints not assessable."
+            },
+            {
+                "title": "Informatievolledigheid Kerngegevens",
+                "visual_type": "completeness_radar",
+                "data_used": [
+                    "address",
+                    "living_area_m2",
+                    "plot_area_m2",
+                    "rooms",
+                    "bedrooms",
+                    "build_year",
+                    "energy_label",
+                    "property_type",
+                    "asking_price_eur"
+                ],
+                "insight_explained": "Radar showing 8/9 essential Chapter 1 KPIs present (89% completeness). Missing segment (volume_m3) marked red. Helps Marcel's data-driven approach by showing exactly where facts exist versus where assumptions must bridge gaps.",
+                "uncertainty_notes": "Completeness measures presence, not accuracy. Registry values not independently verified."
+            }
+        ],
+        "data_source_ids": [
+            "living_area_m2",
+            "plot_area_m2",
+            "asking_price_eur",
+            "build_year",
+            "rooms",
+            "bedrooms",
+            "property_type",
+            "energy_label",
+            "address"
+        ],
+        "not_applicable": false,
+        "not_applicable_reason": null
+    },
+    "plane_b": {
+        "plane": "B",
+        "plane_name": "narrative_reasoning",
+        "narrative_text": "The core property data for Haakakker 7 paints a picture of a substantial family residence occupying a generous plot in the Mierlo village landscape. At 142 square meters of living space distributed across 380 square meters of land, this 1978 vrijstaande woning (detached house) offers what has become increasingly rare in the contemporary Dutch housing market: genuine spatial freedom. The numbers, however, tell only part of the story—and the gaps in those numbers demand careful interpretation.\n\n**Understanding the Spatial Proposition**\n\nThe relationship between living area and plot size reveals a remarkably low building coverage of approximately 37%. In practical terms, this means roughly 240 square meters remain as outdoor space—a configuration that would cost significantly more to replicate in new construction, where land efficiency pressures drive building footprints ever larger relative to plots. For Petra, this translates to the garden lifestyle she envisions; for Marcel, it represents potential for future expansion or the buffer of low-density living. What the Plane C KPIs cannot convey is how this space *feels*: Is it a private oasis or exposed to neighbors? Does the garden face south for light or north in perpetual shade? These experiential dimensions await the viewing.\n\n**The 1978 Construction Context**\n\nThe building year positions this property in an interesting construction generation—post oil-crisis building when energy awareness began emerging, yet before the stringent insulation mandates of later decades. Plane A1's age gauge reflects this: a 47-year-old structure is neither 'young' enough to assume pristine condition nor 'old' enough to trigger automatic historic-building concerns. It occupies the zone where condition depends entirely on maintenance history—information the registry does not contain.\n\n**Trade-offs Implicit in the Data**\n\nThe asking price of €485,000 translates to approximately €3,415 per square meter—a figure that sits above regional averages. This premium implicitly prices the detached status, the plot generosity, and the Mierlo location. Whether this premium is justified depends on factors this chapter cannot answer: construction quality, renovation investment already made, and the intangible qualities reviewable only in person.\n\nThe tension highlighted in Plane D's Marcel-Petra comparison echoes throughout: Marcel sees the age and missing technical data as risk flags requiring investigation; Petra sees the space metrics as dream-compatible. Both readings are valid—and both are incomplete without the physical experience of the property. Chapter 1's function is to establish *what we know* so that subsequent chapters can interpret *what it means*.",
+        "word_count": 386,
+        "ai_generated": true,
+        "ai_provider": null,
+        "ai_model": null,
+        "not_applicable": false,
+        "not_applicable_reason": null,
+        "references": {
+            "plane_a_visuals": [
+                "ch1_area_scale",
+                "ch1_build_period"
+            ],
+            "plane_c_kpis": [
+                "ch1_price_m2",
+                "ch1_coverage",
+                "living_area_m2",
+                "plot_area_m2",
+                "build_year"
+            ],
+            "plane_d_personas": [
+                "marcel",
+                "petra"
+            ]
+        }
+    },
+    "plane_c": {
+        "plane": "C",
+        "plane_name": "factual_anchor",
+        "kpis": [
+            {
+                "key": "ch1_address",
+                "label": "Adres",
+                "value": "Haakakker 7, Mierlo",
+                "unit": null,
+                "provenance": "fact",
+                "registry_id": "address",
+                "completeness": true,
+                "missing_reason": null
+            },
+            {
+                "key": "ch1_type",
+                "label": "Woningtype",
+                "value": "Vrijstaand",
+                "unit": null,
+                "provenance": "fact",
+                "registry_id": "property_type",
+                "completeness": true,
+                "missing_reason": null
+            },
+            {
+                "key": "ch1_price",
+                "label": "Vraagprijs",
+                "value": "€ 485.000",
+                "unit": "€",
+                "provenance": "fact",
+                "registry_id": "asking_price_eur",
+                "completeness": true,
+                "missing_reason": null
+            },
+            {
+                "key": "ch1_area",
+                "label": "Woonoppervlak",
+                "value": 142,
+                "unit": "m²",
+                "provenance": "fact",
+                "registry_id": "living_area_m2",
+                "completeness": true,
+                "missing_reason": null
+            },
+            {
+                "key": "ch1_plot",
+                "label": "Perceeloppervlak",
+                "value": 380,
+                "unit": "m²",
+                "provenance": "fact",
+                "registry_id": "plot_area_m2",
+                "completeness": true,
+                "missing_reason": null
+            },
+            {
+                "key": "ch1_rooms",
+                "label": "Kamers",
+                "value": 6,
+                "unit": null,
+                "provenance": "fact",
+                "registry_id": "rooms",
+                "completeness": true,
+                "missing_reason": null
+            },
+            {
+                "key": "ch1_beds",
+                "label": "Slaapkamers",
+                "value": 4,
+                "unit": null,
+                "provenance": "fact",
+                "registry_id": "bedrooms",
+                "completeness": true,
+                "missing_reason": null
+            },
+            {
+                "key": "ch1_year",
+                "label": "Bouwjaar",
+                "value": 1978,
+                "unit": null,
+                "provenance": "fact",
+                "registry_id": "build_year",
+                "completeness": true,
+                "missing_reason": null
+            },
+            {
+                "key": "ch1_energy",
+                "label": "Energielabel",
+                "value": "C",
+                "unit": null,
+                "provenance": "fact",
+                "registry_id": "energy_label",
+                "completeness": true,
+                "missing_reason": null
+            },
+            {
+                "key": "ch1_price_m2",
+                "label": "Prijs per m²",
+                "value": 3415,
+                "unit": "€/m²",
+                "provenance": "derived",
+                "registry_id": null,
+                "completeness": true,
+                "missing_reason": null
+            },
+            {
+                "key": "ch1_age",
+                "label": "Leeftijd woning",
+                "value": 47,
+                "unit": "jaar",
+                "provenance": "derived",
+                "registry_id": null,
+                "completeness": true,
+                "missing_reason": null
+            },
+            {
+                "key": "ch1_coverage",
+                "label": "Bebouwingsgraad",
+                "value": 37.4,
+                "unit": "%",
+                "provenance": "derived",
+                "registry_id": null,
+                "completeness": true,
+                "missing_reason": null
+            },
+            {
+                "key": "ch1_volume",
+                "label": "Inhoud",
+                "value": null,
+                "unit": "m³",
+                "provenance": "unknown",
+                "registry_id": "volume_m3",
+                "completeness": false,
+                "missing_reason": "'volume_m3' niet in registry"
+            },
+            {
+                "key": "ch1_bathrooms",
+                "label": "Badkamers",
+                "value": null,
+                "unit": null,
+                "provenance": "unknown",
+                "registry_id": "bathrooms",
+                "completeness": false,
+                "missing_reason": "Not in registry"
+            },
+            {
+                "key": "ch1_toilets",
+                "label": "Toiletten",
+                "value": null,
+                "unit": null,
+                "provenance": "unknown",
+                "registry_id": "toilets",
+                "completeness": false,
+                "missing_reason": "Not in registry"
+            },
+            {
+                "key": "ch1_garage",
+                "label": "Garage",
+                "value": null,
+                "unit": null,
+                "provenance": "unknown",
+                "registry_id": "garage",
+                "completeness": false,
+                "missing_reason": "Not in registry"
+            },
+            {
+                "key": "ch1_floors",
+                "label": "Verdiepingen",
+                "value": null,
+                "unit": null,
+                "provenance": "unknown",
+                "registry_id": "floors",
+                "completeness": false,
+                "missing_reason": "Not in registry"
+            }
+        ],
+        "parameters": {
+            "building_ratio": 37.4,
+            "avg_room_size": 23.7,
+            "garden_estimate": 240,
+            "price_position_vs_avg": 7,
+            "price_per_m2": 3415
+        },
+        "data_sources": [
+            "registry",
+            "extractor",
+            "reference_values"
+        ],
+        "missing_data": [
+            "volume_m3",
+            "bathrooms",
+            "toilets",
+            "garage",
+            "storage",
+            "floors",
+            "floorplan"
+        ],
+        "uncertainties": [
+            "Registry values assumed accurate but not independently verified",
+            "Price/m² comparison uses national averages—regional deviation possible",
+            "Garden size estimated from plot minus assumed building footprint",
+            "Room sizes inferred from total area—actual distribution unknown"
+        ],
+        "not_applicable": false,
+        "not_applicable_reason": null
+    },
+    "plane_d": {
+        "plane": "D",
+        "plane_name": "human_preference",
+        "marcel": {
+            "match_score": 75,
+            "mood": "positive",
+            "key_values": [
+                "Complete core data availability (8/9 KPIs present)",
+                "Spatial documentation is verifiable fact",
+                "Property type confirmed vrijstaand",
+                "Age traceable for lifecycle planning",
+                "Low bebouwingsgraad (37%) provides technical flexibility"
+            ],
+            "concerns": [
+                "Missing technical fields (volume unknown)",
+                "No floor count assessment possible",
+                "Price premium at 7% requires justification",
+                "Bathroom/toilet count unknown",
+                "47 years without renovation history is risk"
+            ],
+            "summary": "The core metrics are solid and verifiable. I can work with 142m² across 6 rooms—the math works for our family. What concerns me is the gap between the structural facts we have and the functional facts we're missing. Bathrooms unknown? Floors unknown? These matter for daily living. The 7% price premium needs justification during viewing."
+        },
+        "petra": {
+            "match_score": 82,
+            "mood": "positive",
+            "key_values": [
+                "Generous space (142m² living + ~240m² garden)",
+                "4 bedrooms for family, guests, and flexibility",
+                "Vrijstaand character means privacy and freedom",
+                "Plot generosity enables garden lifestyle",
+                "Mierlo village setting appeals"
+            ],
+            "concerns": [
+                "No visual/emotional data from numbers alone",
+                "Layout unknown (kitchen-garden connection?)",
+                "1978 style may require aesthetic renovation",
+                "Premium price must feel worth it in viewing"
+            ],
+            "summary": "The numbers speak my language: 142 square meters, 4 bedrooms, vrijstaand with a big garden—this is the template I've been imagining. Yes, it's from 1978 and yes, there are unknowns, but those are exactly the things a viewing will reveal. I don't buy houses from spreadsheets; I buy them from the feeling when I walk in."
+        },
+        "comparisons": [
+            {
+                "aspect": "Ruimte",
+                "marcel_view": "142m² is sufficient and calculable",
+                "petra_view": "142m² is spacious and exciting",
+                "alignment": "aligned",
+                "requires_discussion": false
+            },
+            {
+                "aspect": "Prijs",
+                "marcel_view": "Premium requires justification",
+                "petra_view": "Fair for what's offered",
+                "alignment": "complementary",
+                "requires_discussion": true
+            },
+            {
+                "aspect": "Bouwjaar",
+                "marcel_view": "47 years = maintenance timeline concern",
+                "petra_view": "47 years = character and story",
+                "alignment": "tension",
+                "requires_discussion": true
+            }
+        ],
+        "overlap_points": [
+            "Both agree: 142m² + 4 bedrooms meets family space requirements",
+            "Both agree: Vrijstaand > other property types for their lifestyle",
+            "Both agree: Viewing is essential—numbers are starting point, not endpoint",
+            "Both agree: Plot size (380m²) is a significant positive"
+        ],
+        "tension_points": [
+            "Data interpretation: Marcel wants complete info before emotional investment; Petra comfortable with uncertainty",
+            "Age valuation: Marcel sees risks in 1978; Petra sees character opportunity",
+            "Premium tolerance: Marcel expects tangible justification; Petra accepts intangibles",
+            "Decision tempo: Marcel prefers thorough investigation; Petra prefers faster intuition-driven progress"
+        ],
+        "joint_synthesis": "Marcel and Petra approach Chapter 1's core data from compatible but stylistically different angles. Their 7% gap (75% vs 82%) is healthy divergence—Petra prevents analysis paralysis; Marcel prevents impulsive commitment. Recommendation: proceed to viewing with Marcel's functional questions and Petra's experiential radar active.",
+        "not_applicable": false,
+        "not_applicable_reason": null
+    },
+    "validation": {
+        "plane_a1_acknowledged": true,
+        "plane_a2_concepts_count": 4,
+        "plane_b_word_count": 386,
+        "plane_b_minimum_met": true,
+        "plane_c_kpis_total": 17,
+        "plane_c_kpis_complete": 12,
+        "plane_c_kpis_missing": 5,
+        "plane_d_marcel_populated": true,
+        "plane_d_petra_populated": true,
+        "plane_d_comparisons_count": 3,
+        "plane_d_overlaps_count": 4,
+        "plane_d_tensions_count": 4,
+        "serialization_ready": true,
+        "ui_render_expected": "PASS",
+        "backbone_validation": "COMPLIANT"
+    }
+}

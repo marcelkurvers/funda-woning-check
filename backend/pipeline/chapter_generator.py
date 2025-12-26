@@ -150,12 +150,17 @@ def generate_chapter_with_validation(ctx: PipelineContext, chapter_id: int) -> D
         if output.get("plane_b") and output["plane_b"].get("narrative_text"):
             output["main_analysis"] = output["plane_b"]["narrative_text"]
         
+        # === FAIL-LOUD DIAGNOSTICS (MANDATORY) ===
+        _emit_four_plane_diagnostics(ctx, chapter_id, output, legacy_narrative.get("_provenance", {}))
+        
         logger.info(f"Chapter {chapter_id}: 4-plane generation successful")
         
         return output
         
     except BackboneEnforcementError as e:
         # Backbone validation failed - this is FATAL
+        # Emit diagnostic block for debugging
+        _emit_four_plane_diagnostics_error(ctx, chapter_id, e)
         logger.error(f"Chapter {chapter_id}: BACKBONE ENFORCEMENT FAILED - {e}")
         raise PipelineViolation(str(e))
 
@@ -367,3 +372,76 @@ def _create_error_output(chapter_id: int, error_message: str) -> Dict[str, Any]:
         "_generation_error": True,
         "_error_message": error_message
     }
+
+
+# =============================================================================
+# FAIL-LOUD DIAGNOSTICS (MANDATORY)
+# =============================================================================
+
+def _emit_four_plane_diagnostics(
+    ctx: PipelineContext, 
+    chapter_id: int, 
+    output: Dict[str, Any],
+    provenance: Dict[str, Any]
+) -> None:
+    """
+    Emit a copy/paste diagnostic block to logs.
+    
+    This is MANDATORY for fail-loud behavior - allows user to copy/paste
+    diagnostics when debugging 4-plane rendering issues.
+    """
+    diagnostics = output.get("diagnostics", {})
+    plane_status = diagnostics.get("plane_status", {})
+    
+    # Determine if any planes are problematic
+    missing_planes = [p for p, s in plane_status.items() if s in ("missing", "empty", "insufficient")]
+    
+    log_block = f"""
+=== 4PLANE DIAGNOSTICS (COPY/PASTE) ===
+run_id={ctx.run_id}
+chapter_id={chapter_id}
+mode={ctx.preferences.get('mode', 'unknown')}
+provider={provenance.get('provider', 'unknown')}
+model={provenance.get('model', 'unknown')}
+plane_status=A:{plane_status.get('A', '?')},B:{plane_status.get('B', '?')},C:{plane_status.get('C', '?')},D:{plane_status.get('D', '?')}
+missing_planes={','.join(missing_planes) if missing_planes else 'none'}
+missing_fields={','.join(diagnostics.get('missing_required_fields', [])) or 'none'}
+validation_passed={diagnostics.get('validation_passed', 'unknown')}
+exception=none
+=======================================
+"""
+    
+    # Log based on result
+    if missing_planes:
+        logger.warning(log_block)
+    else:
+        logger.info(f"Chapter {chapter_id}: 4-plane diagnostics OK - plane_status={plane_status}")
+
+
+def _emit_four_plane_diagnostics_error(
+    ctx: PipelineContext, 
+    chapter_id: int, 
+    error: Exception
+) -> None:
+    """
+    Emit a copy/paste diagnostic block to logs when 4-plane generation fails.
+    
+    This is MANDATORY for fail-loud behavior.
+    """
+    log_block = f"""
+=== 4PLANE DIAGNOSTICS (COPY/PASTE) ===
+run_id={ctx.run_id}
+chapter_id={chapter_id}
+mode={ctx.preferences.get('mode', 'unknown')}
+provider=error
+model=error
+plane_status=FAILED
+missing_planes=ALL
+missing_fields=ALL
+validation_passed=False
+exception={type(error).__name__}
+stack_hint={str(error)[:200]}
+=======================================
+"""
+    logger.error(log_block)
+

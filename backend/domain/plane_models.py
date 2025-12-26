@@ -82,7 +82,8 @@ class ChartConfig(BaseModel):
     """Configuration for a chart/visualization."""
     chart_type: Literal[
         "radar", "bar", "line", "heatmap", "area", 
-        "comparison", "delta", "sparkline", "gauge"
+        "comparison", "delta", "sparkline", "gauge",
+        "score", "distribution", "trend"
     ]
     title: str
     data: List[VisualDataPoint]
@@ -144,6 +145,100 @@ class PlaneAVisualModel(BaseModel):
                     f"Titles must be brief labels, not explanations."
                 )
         return v
+
+
+# =============================================================================
+# 🟦 PLANE A2 — SYNTHESIZED VISUAL INTELLIGENCE (EXTENSION)
+# =============================================================================
+
+class HeroInfographic(BaseModel):
+    """
+    Hero infographic for a chapter - the primary synthesized visual.
+    Can optionally include a generated image.
+    """
+    title: str = Field(..., max_length=100)
+    visual_type: Literal["infographic", "diagram", "comparison_visual", "timeline"] = "infographic"
+    prompt: str = Field(..., description="The prompt used to generate this infographic")
+    data_used: List[str] = Field(
+        default_factory=list,
+        description="Registry field IDs used to generate this infographic"
+    )
+    insight_summary: str = Field(
+        default="",
+        max_length=300,
+        description="Brief insight this infographic conveys (not narrative)"
+    )
+    uncertainties: List[str] = Field(
+        default_factory=list,
+        description="Data limitations or assumptions"
+    )
+    # Image content - either URI or base64
+    image_uri: Optional[str] = Field(
+        None,
+        description="URI to generated image file (preferred)"
+    )
+    image_base64: Optional[str] = Field(
+        None,
+        description="Base64 encoded image data (fallback)"
+    )
+    generation_status: Literal["pending", "generated", "failed", "skipped"] = "pending"
+    generation_error: Optional[str] = None
+
+
+class VisualConcept(BaseModel):
+    """A conceptual visual that could be rendered."""
+    title: str = Field(..., max_length=100)
+    visual_type: str
+    data_used: List[str] = Field(default_factory=list)
+    insight_explained: str = Field(..., max_length=500)
+    uncertainty_notes: Optional[str] = None
+
+
+class PlaneA2SynthVisualModel(BaseModel):
+    """
+    🟦 PLANE A2 — SYNTHESIZED VISUAL INTELLIGENCE
+    
+    Purpose: AI-assisted visual synthesis and infographics
+    Answers: "What patterns can we visualize from the data?"
+    
+    ALLOWED:
+    - AI-generated infographics based on registry data
+    - Visual concepts derived from property analysis
+    - Synthesized comparison visuals
+    
+    FORBIDDEN:
+    - Invented data (must trace to registry)
+    - Narrative explanations (go to Plane B)
+    - KPI values without visual context
+    
+    DATA RULE:
+    - All visuals MUST reference registry data via data_used
+    - Image generation is OPTIONAL (graceful degradation)
+    """
+    plane: Literal["A2"] = "A2"
+    plane_name: Literal["synth_visual_intelligence"] = "synth_visual_intelligence"
+    
+    # The hero infographic (primary visual for the chapter)
+    hero_infographic: Optional[HeroInfographic] = Field(
+        None,
+        description="Primary generated infographic for this chapter"
+    )
+    
+    # Additional visual concepts (2-4 per chapter)
+    concepts: List[VisualConcept] = Field(
+        default_factory=list,
+        description="Visual concepts that could be rendered"
+    )
+    
+    # Registry sources
+    data_source_ids: List[str] = Field(
+        default_factory=list,
+        description="All registry IDs used across A2 visuals"
+    )
+    
+    # Explicit marker for not-applicable state
+    not_applicable: bool = False
+    not_applicable_reason: Optional[str] = None
 
 
 # =============================================================================
@@ -242,7 +337,7 @@ class FactualKPI(BaseModel):
     label: str
     value: Any
     unit: Optional[str] = None
-    provenance: Literal["fact", "inferred", "unknown"] = "fact"
+    provenance: Literal["fact", "derived", "inferred", "unknown"] = "fact"
     registry_id: Optional[str] = None
     completeness: bool = True
     missing_reason: Optional[str] = None
@@ -413,6 +508,8 @@ class ChapterPlaneComposition(BaseModel):
     
     Every chapter (0-12) MUST explicitly populate all four planes
     or explicitly mark a plane as not_applicable.
+    
+    Plane A2 (synthesized visuals) is OPTIONAL but recommended for chapters 1-12.
     """
     chapter_id: int = Field(..., ge=0, le=12)
     chapter_title: str
@@ -420,7 +517,11 @@ class ChapterPlaneComposition(BaseModel):
     # THE FOUR PLANES - ALL REQUIRED
     plane_a: PlaneAVisualModel = Field(
         ...,
-        description="🟦 Visual Intelligence Plane (LEFT)"
+        description="🟦 Visual Intelligence Plane A1 - Deterministic Charts (LEFT)"
+    )
+    plane_a2: Optional[PlaneA2SynthVisualModel] = Field(
+        None,
+        description="🟦 Visual Intelligence Plane A2 - Synthesized Visuals (LEFT)"
     )
     plane_b: PlaneBNarrativeModel = Field(
         ...,

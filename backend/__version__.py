@@ -1,1 +1,1 @@
-__version__ = "9.2.0"  # Explicit Configuration UX
+__version__ = "9.4.0"  # Complete 4-Plane Maximalization: Chapters 3-12 fully implemented

@@ -1,8 +1,26 @@
 # backend/main.py - Triggering fresh Docker Build
 from __future__ import annotations
 
-import json
+# === SPINE BOOT: Load environment FIRST ===
 import os
+from dotenv import load_dotenv
+load_dotenv()
+
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+_boot_logger = logging.getLogger("spine.boot")
+_boot_logger.info("[BOOT] GEMINI_API_KEY detected: %s", bool(os.getenv("GEMINI_API_KEY")))
+
+# Plane A2 image generation requires GEMINI_API_KEY
+# But we allow the app to start without it for development/testing
+if not (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")):
+    _boot_logger.warning(
+        "WARNING: GEMINI_API_KEY not configured. "
+        "Plane A2 image generation will be disabled. "
+        "Set GEMINI_API_KEY environment variable to enable."
+    )
+
+import json
 import sqlite3
 import time
 import uuid
@@ -474,7 +492,7 @@ def simulate_pipeline(run_id):
         
         # Execute through the spine - THIS IS THE CRITICAL PATH
         from backend.pipeline.bridge import execute_report_pipeline
-        chapters, kpis, enriched_core = execute_report_pipeline(
+        chapters, kpis, enriched_core, core_summary = execute_report_pipeline(
             run_id=run_id,
             raw_data=core,
             preferences=prefs
@@ -482,6 +500,11 @@ def simulate_pipeline(run_id):
         
         # Update core with enriched data for database storage
         core = enriched_core
+        
+        # === BACKBONE CONTRACT: Store CoreSummary ===
+        # CoreSummary is now part of enriched_core for backward compatibility
+        # But we also add it explicitly to kpis for API access
+        kpis["core_summary"] = core_summary
         
         steps["compute_kpis"] = "done"
         track_step(run_id, "plane_generation", "done")
@@ -708,14 +731,43 @@ def get_run_report(run_id: str):
     media = [dict(r) for r in cur.fetchall()]
     con.close()
 
+    # === BACKBONE CONTRACT: Extract CoreSummary ===
+    # CoreSummary is MANDATORY - if missing, the report is invalid
+    kpis_data = json.loads(row["kpis_json"]) if row["kpis_json"] else {}
+    core_summary = kpis_data.get("core_summary")
+    
+    # FAIL-CLOSED: If CoreSummary is missing, log error but return empty structure
+    # (The report may have been generated before this contract was enforced)
+    if not core_summary:
+        logger.warning(f"Report {run_id}: CoreSummary missing - legacy report or pipeline error")
+        # Build fallback CoreSummary from property_core for backward compatibility
+        from backend.domain.core_summary import CoreSummaryBuilder
+        property_core = json.loads(row["property_core_json"]) if row["property_core_json"] else {}
+        try:
+            core_summary_obj = CoreSummaryBuilder.build_from_dict(property_core)
+            core_summary = core_summary_obj.model_dump()
+        except Exception as e:
+            logger.error(f"Failed to build fallback CoreSummary: {e}")
+            core_summary = {
+                "asking_price": {"value": "onbekend", "status": "unknown", "source": "fallback"},
+                "living_area": {"value": "onbekend", "status": "unknown", "source": "fallback"},
+                "location": {"value": "onbekend", "status": "unknown", "source": "fallback"},
+                "match_score": {"value": "onbekend", "status": "unknown", "source": "fallback"},
+                "completeness_score": 0.0,
+                "registry_entry_count": 0,
+                "provenance": {}
+            }
+
     return {
         "runId": row["id"],
         "address": (json.loads(row["property_core_json"]) if row["property_core_json"] else {}).get("address", "Onbekend"),
         "property_core": json.loads(row["property_core_json"]) if row["property_core_json"] else {},
         "chapters": json.loads(row["chapters_json"]) if row["chapters_json"] else {},
-        "kpis": json.loads(row["kpis_json"]) if row["kpis_json"] else {},
+        "kpis": kpis_data,
         "discovery": discovery,
-        "media_from_db": media
+        "media_from_db": media,
+        # === BACKBONE CONTRACT: CoreSummary is MANDATORY top-level field ===
+        "core_summary": core_summary
     }
 
 def normalize_funda_url(url: str) -> str:
@@ -970,7 +1022,13 @@ def list_models(provider: Optional[str] = None):
 @app.get("/api/ai/status")
 def check_ai_status():
     success = init_ai_provider()
-    return {"healthy": success, "provider": settings.ai.provider}
+    from backend.ai.capability_manager import get_capability_manager
+    capabilities = get_capability_manager().get_all_statuses()
+    return {
+        "healthy": success, 
+        "provider": settings.ai.provider,
+        "capabilities": capabilities
+    }
 
 @app.get("/api/runs/{run_id}/pdf")
 async def get_run_pdf(run_id: str):

@@ -4,6 +4,7 @@ import {
     CheckCircle2, XCircle, MapPin, Home, TrendingUp,
     BookOpen, ChevronRight, Sparkles
 } from 'lucide-react';
+import type { CoreSummary } from '../types';
 
 interface OrientationChapterProps {
     content: any;
@@ -12,6 +13,8 @@ interface OrientationChapterProps {
     address: string;
     provenance?: any;
     onNavigate: (chapterId: string) => void;
+    // === BACKBONE CONTRACT: CoreSummary is MANDATORY ===
+    coreSummary: CoreSummary;
 }
 
 /**
@@ -33,7 +36,8 @@ export const OrientationChapter: React.FC<OrientationChapterProps> = ({
     media,
     address,
     provenance,
-    onNavigate
+    onNavigate,
+    coreSummary  // === BACKBONE CONTRACT: Read dashboard KPIs from here ONLY ===
 }) => {
     const heroImage = media[0]?.url || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600";
 
@@ -203,6 +207,7 @@ export const OrientationChapter: React.FC<OrientationChapterProps> = ({
                 </section>
 
                 {/* === QUICK METRICS (Compact, not dominant) === */}
+                {/* === BACKBONE CONTRACT: Read from CoreSummary ONLY === */}
                 <section className="mb-16">
                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em] mb-6">
                         Kerngegevens op een rij
@@ -210,17 +215,42 @@ export const OrientationChapter: React.FC<OrientationChapterProps> = ({
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {[
-                            { label: 'Vraagprijs', value: content?.variables?.asking_price?.value || '—', icon: TrendingUp },
-                            { label: 'Woonoppervlak', value: content?.variables?.woonoppervlakte?.value || '—', icon: Home },
-                            { label: 'Locatie', value: address?.split(',')[1]?.trim() || '—', icon: MapPin },
-                            { label: 'Match Score', value: content?.marcel_match_score ? `${Math.round((content.marcel_match_score + (content.petra_match_score || 0)) / 2)}%` : '—', icon: Sparkles },
+                            {
+                                label: 'Vraagprijs',
+                                value: coreSummary.asking_price.value,
+                                status: coreSummary.asking_price.status,
+                                icon: TrendingUp
+                            },
+                            {
+                                label: 'Woonoppervlak',
+                                value: coreSummary.living_area.value,
+                                status: coreSummary.living_area.status,
+                                icon: Home
+                            },
+                            {
+                                label: 'Locatie',
+                                value: coreSummary.location.value,
+                                status: coreSummary.location.status,
+                                icon: MapPin
+                            },
+                            {
+                                label: 'Match Score',
+                                value: coreSummary.match_score.value,
+                                status: coreSummary.match_score.status,
+                                icon: Sparkles
+                            },
                         ].map((metric, idx) => (
                             <div key={idx} className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                                 <div className="flex items-center gap-2 mb-2 text-slate-400">
                                     <metric.icon className="w-4 h-4" />
                                     <span className="text-[10px] font-bold uppercase tracking-wider">{metric.label}</span>
                                 </div>
-                                <p className="text-lg font-bold text-slate-800">{metric.value}</p>
+                                <p className={`text-lg font-bold ${metric.status === 'unknown' ? 'text-slate-400 italic' : 'text-slate-800'}`}>
+                                    {metric.value}
+                                </p>
+                                {metric.status === 'unknown' && (
+                                    <span className="text-[9px] text-slate-400 uppercase tracking-wider">Niet beschikbaar</span>
+                                )}
                             </div>
                         ))}
                     </div>

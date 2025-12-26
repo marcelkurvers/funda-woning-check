@@ -1,12 +1,15 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
     BarChart3, BookOpen, Database, Users,
     AlertTriangle, CheckCircle2, XCircle, Info,
-    TrendingUp, TrendingDown, Minus
+    TrendingUp, TrendingDown, Minus, Image, Sparkles, Clock
 } from 'lucide-react';
 import type {
     ChapterPlaneComposition,
     PlaneAVisualModel,
+    PlaneA2SynthVisualModel,
+    HeroInfographic,
+    VisualConcept,
     PlaneBNarrativeModel,
     PlaneCFactModel,
     PlaneDPreferenceModel,
@@ -98,6 +101,19 @@ export const FourPlaneChapter: React.FC<FourPlaneChapterProps> = ({
                     <div className="plane-content p-4 min-h-[400px]">
                         <PlaneAContent plane={chapter.plane_a} />
                     </div>
+
+                    {/* 🟦 PLANE A2 — SYNTHESIZED VISUALS (Below A1 in same column) */}
+                    {chapter.plane_a2 && (
+                        <div className="plane-a2 border-t-2 border-blue-100">
+                            <div className="plane-header bg-indigo-50 px-4 py-3 border-b border-indigo-100 flex items-center gap-2">
+                                <Sparkles className="w-5 h-5 text-indigo-600" />
+                                <span className="font-bold text-indigo-900 text-sm">Plane A2 — Infographics</span>
+                            </div>
+                            <div className="plane-content p-4 min-h-[200px]">
+                                <PlaneA2Content plane={chapter.plane_a2} />
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* CENTER COLUMN - Planes B & C stacked (6 cols) */}
@@ -153,6 +169,134 @@ export const FourPlaneChapter: React.FC<FourPlaneChapterProps> = ({
                     </div>
                 </div>
             </div>
+
+            {/* === DIAGNOSTICS PANEL (FAIL-LOUD) === */}
+            <DiagnosticsPanel chapter={chapter} />
+        </div>
+    );
+};
+
+// =============================================================================
+// DIAGNOSTICS PANEL (FAIL-LOUD)
+// =============================================================================
+
+const DiagnosticsPanel: React.FC<{ chapter: ChapterPlaneComposition }> = ({ chapter }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const diagnostics = (chapter as any).diagnostics;
+
+    // Show collapsed by default unless there are issues
+    const hasIssues = diagnostics && (!diagnostics.validation_passed || diagnostics.errors?.length > 0);
+
+    if (!diagnostics) {
+        return null; // No diagnostics data available
+    }
+
+    const planeStatus = diagnostics.plane_status || {};
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'ok': return 'bg-emerald-500';
+            case 'empty': return 'bg-amber-500';
+            case 'insufficient': return 'bg-amber-500';
+            case 'missing': return 'bg-red-500';
+            case 'not_applicable': return 'bg-slate-400';
+            default: return 'bg-slate-300';
+        }
+    };
+
+    const copyDiagnostics = () => {
+        const text = `=== 4PLANE DIAGNOSTICS (COPY/PASTE) ===
+chapter_id=${diagnostics.chapter_id}
+pipeline_step=${diagnostics.pipeline_step}
+plane_status=A:${planeStatus.A},B:${planeStatus.B},C:${planeStatus.C},D:${planeStatus.D}
+missing_fields=${diagnostics.missing_required_fields?.join(',') || 'none'}
+validation_passed=${diagnostics.validation_passed}
+errors=${JSON.stringify(diagnostics.errors || [])}
+=======================================`;
+        navigator.clipboard.writeText(text);
+    };
+
+    return (
+        <div className={`mx-4 mb-4 rounded-lg border-2 overflow-hidden ${hasIssues ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-slate-50'}`}>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className={`w-full px-4 py-2 flex items-center justify-between text-left ${hasIssues ? 'bg-red-100 hover:bg-red-200' : 'bg-slate-100 hover:bg-slate-200'} transition-colors`}
+            >
+                <div className="flex items-center gap-3">
+                    <Info className={`w-4 h-4 ${hasIssues ? 'text-red-600' : 'text-slate-500'}`} />
+                    <span className={`text-sm font-bold ${hasIssues ? 'text-red-700' : 'text-slate-600'}`}>
+                        Diagnostics {hasIssues ? '⚠️ Issues Detected' : '✓ OK'}
+                    </span>
+                    {/* Status Pills */}
+                    <div className="flex gap-1">
+                        {['A', 'B', 'C', 'D'].map(plane => (
+                            <span
+                                key={plane}
+                                className={`w-4 h-4 rounded text-[10px] font-bold ${getStatusColor(planeStatus[plane])} text-white flex items-center justify-center`}
+                                title={`Plane ${plane}: ${planeStatus[plane]}`}
+                            >
+                                {plane}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+                <span className="text-xs text-slate-400">{isOpen ? '▲ collapse' : '▼ expand'}</span>
+            </button>
+
+            {isOpen && (
+                <div className="p-4 space-y-4">
+                    {/* Plane Status Grid */}
+                    <div className="grid grid-cols-4 gap-2">
+                        {['A', 'B', 'C', 'D'].map(plane => (
+                            <div key={plane} className="bg-white rounded-lg p-2 border border-slate-200">
+                                <div className="text-[10px] font-bold text-slate-500 uppercase">Plane {plane}</div>
+                                <div className={`text-xs font-medium ${planeStatus[plane] === 'ok' ? 'text-emerald-600' :
+                                    planeStatus[plane] === 'empty' || planeStatus[plane] === 'insufficient' ? 'text-amber-600' :
+                                        planeStatus[plane] === 'missing' ? 'text-red-600' : 'text-slate-400'
+                                    }`}>
+                                    {planeStatus[plane] || 'unknown'}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Missing Fields */}
+                    {diagnostics.missing_required_fields?.length > 0 && (
+                        <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
+                            <div className="text-[10px] font-bold text-amber-700 uppercase mb-1">Missing Required Fields</div>
+                            <ul className="text-xs text-amber-800 space-y-1">
+                                {diagnostics.missing_required_fields.map((field: string, idx: number) => (
+                                    <li key={idx} className="flex items-center gap-2">
+                                        <AlertTriangle className="w-3 h-3" />
+                                        {field}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {/* Errors */}
+                    {diagnostics.errors?.length > 0 && (
+                        <div className="bg-red-50 rounded-lg p-3 border border-red-200">
+                            <div className="text-[10px] font-bold text-red-700 uppercase mb-1">Validation Errors</div>
+                            <ul className="text-xs text-red-800 space-y-1">
+                                {diagnostics.errors.map((err: any, idx: number) => (
+                                    <li key={idx}>
+                                        <span className="font-medium">[{err.code}]</span> {err.message}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {/* Copy Button */}
+                    <button
+                        onClick={copyDiagnostics}
+                        className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded border border-slate-200 transition-colors flex items-center gap-2"
+                    >
+                        📋 Copy Diagnostics to Clipboard
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
@@ -356,6 +500,233 @@ const GaugeChart: React.FC<{ value: number; max: number; label: string }> = ({ v
         </div>
     );
 };
+
+// =============================================================================
+// 🟦 PLANE A2 CONTENT - Synthesized Visual Intelligence
+// =============================================================================
+
+/**
+ * PlaneA2Content - Displays synthesized visual content with CAPABILITY-AWARE messaging.
+ * 
+ * IMPORTANT: When an operational limit (quota) prevents image generation:
+ * - Show a reassuring message that the system is correctly configured
+ * - Explain this is a temporary external constraint
+ * - Never display as an implementation failure
+ */
+const PlaneA2Content: React.FC<{ plane: PlaneA2SynthVisualModel }> = ({ plane }) => {
+    // Detect if this is a quota limit vs configuration issue
+    const isQuotaLimit = plane.not_applicable_reason?.toLowerCase().includes('quota') ||
+        plane.not_applicable_reason?.toLowerCase().includes('temporarily unavailable');
+
+    const isConfigIssue = plane.not_applicable_reason?.toLowerCase().includes('api key') ||
+        plane.not_applicable_reason?.toLowerCase().includes('not configured') ||
+        plane.not_applicable_reason?.toLowerCase().includes('geconfigureerd');
+
+    if (plane.not_applicable && isQuotaLimit) {
+        // QUOTA LIMIT - Show reassuring message
+        return (
+            <div className="space-y-4">
+                {/* Quota Limit Notice - Reassuring */}
+                <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-4 border border-amber-200">
+                    <div className="flex items-start gap-3">
+                        <div className="bg-amber-100 p-2 rounded-lg">
+                            <Clock className="w-5 h-5 text-amber-600" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                                <h5 className="text-sm font-bold text-amber-800">
+                                    Temporarily Unavailable
+                                </h5>
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">
+                                    ✓ System Correctly Configured
+                                </span>
+                            </div>
+                            <p className="text-xs text-amber-700 mb-2">
+                                {plane.not_applicable_reason ||
+                                    'Image generation is temporarily unavailable due to quota limits.'}
+                            </p>
+                            <div className="bg-white/60 rounded-lg p-2 mt-2">
+                                <p className="text-[11px] text-slate-600">
+                                    <strong>This is NOT an implementation error.</strong> The AI image generation
+                                    service has reached its quota limit. The system will resume automatically
+                                    when the quota resets.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Visual Concepts (ALWAYS shown, regardless of image gen status) */}
+                {plane.concepts && plane.concepts.length > 0 && (
+                    <div className="space-y-2">
+                        <h4 className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-2">
+                            <Sparkles className="w-3 h-3" />
+                            Concepten (Image generation pending)
+                        </h4>
+                        {plane.concepts.map((concept, idx) => (
+                            <ConceptCard key={idx} concept={concept} />
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    if (plane.not_applicable && isConfigIssue) {
+        // CONFIGURATION ISSUE - Show settings prompt
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-slate-400 py-8">
+                <div className="bg-slate-100 p-3 rounded-full mb-3">
+                    <Image className="w-8 h-8 opacity-50" />
+                </div>
+                <p className="text-sm text-center mb-2">
+                    {plane.not_applicable_reason || 'Image generation not configured'}
+                </p>
+                <p className="text-xs text-slate-400 text-center">
+                    Configure a GEMINI_API_KEY to enable infographic generation.
+                </p>
+            </div>
+        );
+    }
+
+    if (plane.not_applicable) {
+        // GENERIC NOT APPLICABLE
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-slate-400 py-8">
+                <Image className="w-8 h-8 mb-2 opacity-50" />
+                <p className="text-sm text-center">{plane.not_applicable_reason || 'Geen infographics beschikbaar'}</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            {/* Hero Infographic */}
+            {plane.hero_infographic && (
+                <HeroInfographicRenderer infographic={plane.hero_infographic} />
+            )}
+
+            {/* Visual Concepts */}
+            {plane.concepts.length > 0 && (
+                <div className="space-y-2">
+                    <h4 className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
+                        Visualisatie Concepten
+                    </h4>
+                    {plane.concepts.map((concept, idx) => (
+                        <ConceptCard key={idx} concept={concept} />
+                    ))}
+                </div>
+            )}
+
+            {/* Data Source Attribution */}
+            {plane.data_source_ids.length > 0 && (
+                <div className="pt-3 border-t border-indigo-50">
+                    <p className="text-[10px] text-indigo-400 uppercase tracking-wider">
+                        Databronnen: {plane.data_source_ids.join(', ')}
+                    </p>
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+// Hero Infographic Renderer
+const HeroInfographicRenderer: React.FC<{ infographic: HeroInfographic }> = ({ infographic }) => {
+    const hasImage = infographic.image_uri || infographic.image_base64;
+    const isGenerated = infographic.generation_status === 'generated';
+    const hasFailed = infographic.generation_status === 'failed';
+
+    return (
+        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100">
+            <h5 className="text-sm font-bold text-indigo-800 mb-2">{infographic.title}</h5>
+
+            {/* Image Display */}
+            {hasImage && isGenerated ? (
+                <div className="mb-3">
+                    <img
+                        src={infographic.image_uri || `data:image/png;base64,${infographic.image_base64}`}
+                        alt={infographic.title}
+                        className="w-full rounded-lg shadow-sm"
+                    />
+                </div>
+            ) : hasFailed ? (
+                <div className="bg-red-50 rounded-lg p-3 mb-3 border border-red-200">
+                    <div className="flex items-center gap-2 text-red-600">
+                        <AlertTriangle className="w-4 h-4" />
+                        <span className="text-xs font-medium">Image generatie mislukt</span>
+                    </div>
+                    {infographic.generation_error && (
+                        <p className="text-xs text-red-500 mt-1">{infographic.generation_error}</p>
+                    )}
+                </div>
+            ) : (
+                <div className="bg-indigo-100 rounded-lg p-4 mb-3 flex items-center justify-center">
+                    <div className="text-center">
+                        <Sparkles className="w-8 h-8 text-indigo-400 mx-auto mb-2" />
+                        <p className="text-xs text-indigo-600">
+                            Status: {infographic.generation_status}
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Insight Summary */}
+            {infographic.insight_summary && (
+                <p className="text-xs text-slate-600 mb-2">{infographic.insight_summary}</p>
+            )}
+
+            {/* Data Used Pills */}
+            {infographic.data_used.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                    {infographic.data_used.map((field, idx) => (
+                        <span
+                            key={idx}
+                            className="text-[10px] px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full"
+                        >
+                            {field}
+                        </span>
+                    ))}
+                </div>
+            )}
+
+            {/* Uncertainties */}
+            {infographic.uncertainties.length > 0 && (
+                <div className="text-[10px] text-amber-600 italic">
+                    ⚠️ {infographic.uncertainties.join(', ')}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// Visual Concept Card
+const ConceptCard: React.FC<{ concept: VisualConcept }> = ({ concept }) => (
+    <div className="bg-white rounded-lg p-3 border border-indigo-100 shadow-sm">
+        <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-bold text-indigo-700">{concept.title}</span>
+            <span className="text-[10px] px-2 py-0.5 bg-indigo-50 text-indigo-500 rounded-full">
+                {concept.visual_type}
+            </span>
+        </div>
+        <p className="text-xs text-slate-600">{concept.insight_explained}</p>
+        {concept.data_used.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+                {concept.data_used.slice(0, 3).map((field, idx) => (
+                    <span
+                        key={idx}
+                        className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded"
+                    >
+                        {field}
+                    </span>
+                ))}
+            </div>
+        )}
+        {concept.uncertainty_notes && (
+            <p className="text-[10px] text-amber-500 mt-1 italic">{concept.uncertainty_notes}</p>
+        )}
+    </div>
+);
 
 // =============================================================================
 // 🟩 PLANE B CONTENT - Narrative Reasoning

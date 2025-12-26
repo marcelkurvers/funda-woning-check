@@ -25,8 +25,8 @@ class GeminiProvider(AIProvider):
         self.timeout = timeout
         self._name = "gemini"
         
-        # Default model as per requirements
-        self.default_model = model or os.getenv("AI_MODEL", "gemini-1.5-flash")
+        # Default model as per requirements - Unify on Gemini 2.0 Flash Exp (Nano Banana)
+        self.default_model = model or os.getenv("AI_MODEL", "gemini-2.0-flash-exp")
         logger.info(f"GeminiProvider initialized with model: {self.default_model}")
 
     @property
@@ -52,9 +52,11 @@ class GeminiProvider(AIProvider):
         # Map user-friendly names to actual model IDs if necessary
         # Note: mapping might be needed if "gemini-3-fast" is an alias
         model_map = {
-            "gemini-3-fast": "gemini-2.0-flash", # Assuming mapping to 2.0 or current latest
-            "gemini-3-pro": "gemini-2.0-pro",
-            "gemini-3-thinking": "gemini-2.0-flash-thinking-exp",
+            "gemini-3-fast": "gemini-2.0-flash-exp", 
+            "gemini-3-pro": "gemini-2.0-flash-exp", # UNIFIED: Plane B and A2 must use SAME model (Nano Banana)
+            "gemini-3-thinking": "gemini-2.0-flash-thinking-exp", # Kept separate if specifically requested
+            "nano-banana": "gemini-2.0-flash-exp",
+            "nano-banana-pro": "gemini-2.0-flash-exp",
         }
         actual_model = model_map.get(selected_model, selected_model)
 

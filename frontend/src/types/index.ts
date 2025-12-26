@@ -1,4 +1,44 @@
 /**
+ * BACKBONE CONTRACT: CoreSummary
+ * 
+ * This is the MANDATORY top-level object in every report.
+ * It contains core property data that is ALWAYS available,
+ * independent of AI, chapters, or planes.
+ * 
+ * The UI MUST read dashboard KPIs from this object ONLY.
+ */
+
+export type DataStatus = 'present' | 'unknown' | 'n/a';
+
+export interface CoreField {
+    value: string;              // Human-readable formatted value
+    raw_value?: any;            // Raw value for programmatic use
+    status: DataStatus;         // Data availability status
+    source: string;             // Registry key or source identifier
+    unit?: string;              // Unit for display (e.g., m², €)
+}
+
+export interface CoreSummary {
+    // === REQUIRED FIELDS (always present) ===
+    asking_price: CoreField;
+    living_area: CoreField;
+    location: CoreField;
+    match_score: CoreField;
+
+    // === OPTIONAL FIELDS (present if available) ===
+    property_type?: CoreField;
+    build_year?: CoreField;
+    energy_label?: CoreField;
+    plot_area?: CoreField;
+    bedrooms?: CoreField;
+
+    // === METADATA ===
+    completeness_score: number;     // 0.0-1.0
+    registry_entry_count: number;
+    provenance: Record<string, string>;
+}
+
+/**
  * Mandatory narrative contract for each chapter.
  * 
  * Every chapter (0-12) MUST produce a narrative of at least 300 words.
@@ -122,6 +162,8 @@ export interface ReportData {
     property_core?: PropertyCore;
     discovery?: DiscoveryAttribute[];
     media_from_db?: MediaItem[];
+    // === BACKBONE CONTRACT: CoreSummary is MANDATORY ===
+    core_summary: CoreSummary;
 }
 
 // Re-export 4-Plane Cognitive Model types

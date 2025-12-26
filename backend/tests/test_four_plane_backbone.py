@@ -339,5 +339,93 @@ class TestUIRendering:
         assert not composition.plane_a.not_applicable or composition.plane_a.not_applicable_reason is not None
 
 
+class TestFrontendContract:
+    """Tests for frontend TypeScript interface compatibility."""
+    
+    def test_convert_includes_plane_names(self):
+        """All planes must include plane_name field for frontend rendering."""
+        ctx = create_pipeline_context("test-run-013")
+        ctx.set_raw_data({"funda_url": "https://test.funda.nl"})
+        ctx.complete_enrichment()
+        ctx.lock_registry()
+        
+        valid_narrative = " ".join(["Dit is een uitgebreide analyse."] * 100)
+        
+        composition = generate_four_plane_chapter(
+            ctx=ctx,
+            chapter_id=5,
+            ai_narrative=valid_narrative,
+            chapter_data={}
+        )
+        
+        output = convert_plane_composition_to_dict(composition)
+        
+        # CRITICAL: Frontend expects plane_name in all planes
+        assert output["plane_a"]["plane_name"] == "visual_intelligence"
+        assert output["plane_b"]["plane_name"] == "narrative_reasoning"
+        assert output["plane_c"]["plane_name"] == "factual_anchor"
+        assert output["plane_d"]["plane_name"] == "human_preference"
+    
+    def test_convert_includes_plane_c_data_sources(self):
+        """Plane C must include parameters and data_sources for frontend."""
+        ctx = create_pipeline_context("test-run-014")
+        ctx.set_raw_data({"funda_url": "https://test.funda.nl"})
+        ctx.complete_enrichment()
+        ctx.lock_registry()
+        
+        valid_narrative = " ".join(["Dit is een uitgebreide analyse."] * 100)
+        
+        composition = generate_four_plane_chapter(
+            ctx=ctx,
+            chapter_id=7,
+            ai_narrative=valid_narrative,
+            chapter_data={}
+        )
+        
+        output = convert_plane_composition_to_dict(composition)
+        
+        # CRITICAL: Frontend expects these fields
+        assert "parameters" in output["plane_c"]
+        assert isinstance(output["plane_c"]["parameters"], dict)
+        assert "data_sources" in output["plane_c"]
+        assert isinstance(output["plane_c"]["data_sources"], list)
+    
+    def test_convert_includes_diagnostics(self):
+        """Converted output must include diagnostics block for fail-loud behavior."""
+        ctx = create_pipeline_context("test-run-015")
+        ctx.set_raw_data({"funda_url": "https://test.funda.nl"})
+        ctx.complete_enrichment()
+        ctx.lock_registry()
+        
+        valid_narrative = " ".join(["Dit is een uitgebreide analyse."] * 100)
+        
+        composition = generate_four_plane_chapter(
+            ctx=ctx,
+            chapter_id=8,
+            ai_narrative=valid_narrative,
+            chapter_data={}
+        )
+        
+        output = convert_plane_composition_to_dict(composition)
+        
+        # MANDATORY: Diagnostics must be present
+        assert "diagnostics" in output
+        diagnostics = output["diagnostics"]
+        
+        # Required diagnostics fields
+        assert "chapter_id" in diagnostics
+        assert "plane_status" in diagnostics
+        assert "validation_passed" in diagnostics
+        assert "missing_required_fields" in diagnostics
+        assert "errors" in diagnostics
+        
+        # Plane status must be present for all planes
+        ps = diagnostics["plane_status"]
+        assert "A" in ps
+        assert "B" in ps
+        assert "C" in ps
+        assert "D" in ps
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

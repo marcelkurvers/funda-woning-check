@@ -12,6 +12,7 @@ import { SettingsModal } from './components/common/SettingsModal';
 import { DiscoveryBento } from './components/common/DiscoveryBento';
 import { MediaGallery } from './components/common/MediaGallery';
 import { AIStatusIndicator } from './components/common/AIStatusIndicator';
+import { GlobalCapabilityBanner } from './components/common/GlobalCapabilityBanner';
 
 
 import type { ReportData } from './types';
@@ -67,6 +68,14 @@ function App() {
         if (!reportRes.ok) throw new Error('Rapport ophalen mislukt');
         const reportData = await reportRes.json();
 
+        // === BACKBONE CONTRACT: Validate CoreSummary ===
+        if (!reportData.core_summary) {
+          console.error('FATAL: CoreSummary missing from report', reportData);
+          setError('Rapport is ongeldig: kerngegevens ontbreken. Dit is een systeemfout.');
+          setLoading(false);
+          return;
+        }
+
         setReport({
           runId: runId,
           address: reportData.property_core?.address || reportData.address || "Onbekend Adres",
@@ -74,7 +83,9 @@ function App() {
           property_core: reportData.property_core,
           discovery: reportData.discovery || [],
           media_from_db: reportData.media_from_db || [],
-          consistency: reportData.consistency
+          consistency: reportData.consistency,
+          // === BACKBONE CONTRACT: CoreSummary is MANDATORY ===
+          core_summary: reportData.core_summary
         });
         setActiveChapterId("0");
         setLoading(false);
@@ -247,6 +258,9 @@ function App() {
           </div>
         </header>
 
+        {/* Global AI Capability Banner - Shows when there are operational limits */}
+        <GlobalCapabilityBanner onOpenSettings={() => window.location.href = '/static/preferences.html'} />
+
         <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} debugMode={debugMode} setDebugMode={setDebugMode} />
 
         <div className={`flex-1 overflow-y-auto custom-scrollbar ${activeChapterId ? 'p-0' : 'p-0 md:p-6'}`}>
@@ -348,6 +362,7 @@ function App() {
                     address={report.address}
                     provenance={currentChapter?.provenance || content._provenance}
                     onNavigate={(chapterId) => setActiveChapterId(chapterId)}
+                    coreSummary={report.core_summary}
                   />
                   {report.discovery && report.discovery.length > 0 && (
                     <div className="max-w-5xl mx-auto px-4 md:px-8 pb-12">
@@ -355,29 +370,98 @@ function App() {
                     </div>
                   )}
                 </>
-              ) : currentChapter?.plane_structure && currentChapter.plane_a && currentChapter.plane_b && currentChapter.plane_c && currentChapter.plane_d ? (
-                /* 4-PLANE CHAPTER VIEW - MANDATORY FOR CHAPTERS 1-12 */
-                <FourPlaneChapter
-                  chapter={{
-                    chapter_id: parseInt(activeChapterId),
-                    chapter_title: content?.title || currentChapter?.title || `Hoofdstuk ${activeChapterId}`,
-                    plane_a: currentChapter.plane_a as any,
-                    plane_b: currentChapter.plane_b as any,
-                    plane_c: currentChapter.plane_c as any,
-                    plane_d: currentChapter.plane_d as any,
-                  }}
-                  chapterIndex={parseInt(activeChapterId)}
-                  media={report.media_from_db || []}
-                />
-              ) : (
-                /* LEGACY FALLBACK - Only for non-4-plane content */
-                <MagazineChapter
-                  content={content}
-                  chapterId={activeChapterId}
-                  media={report.media_from_db || []}
-                  provenance={currentChapter?.provenance || content._provenance}
-                />
-              )}
+              ) : (() => {
+                // === RUNTIME INSPECTIE (COMPACT) ===
+                const chapterId = parseInt(activeChapterId);
+                const isMainChapter = chapterId >= 1 && chapterId <= 12;
+                const hasFourPlane = currentChapter?.plane_structure &&
+                  currentChapter?.plane_a &&
+                  currentChapter?.plane_b &&
+                  currentChapter?.plane_c &&
+                  currentChapter?.plane_d;
+
+                console.log(`[4PLANE] Chapter ${activeChapterId}: hasFourPlane=${hasFourPlane}, keys=${Object.keys(currentChapter || {}).join(',')}`);
+
+                // 4-PLANE CHAPTER VIEW - MANDATORY FOR CHAPTERS 1-12
+                if (hasFourPlane) {
+                  return (
+                    <FourPlaneChapter
+                      chapter={{
+                        chapter_id: chapterId,
+                        chapter_title: content?.title || currentChapter?.title || `Hoofdstuk ${activeChapterId}`,
+                        plane_a: currentChapter.plane_a as any,
+                        plane_b: currentChapter.plane_b as any,
+                        plane_c: currentChapter.plane_c as any,
+                        plane_d: currentChapter.plane_d as any,
+                      }}
+                      chapterIndex={chapterId}
+                      media={report.media_from_db || []}
+                    />
+                  );
+                }
+
+                // FAIL-LOUD: For chapters 1-12, ALWAYS show diagnostics if 4-plane is missing
+                if (isMainChapter) {
+                  const diagnostics = (currentChapter as any)?.diagnostics || {};
+                  return (
+                    <div className="max-w-4xl mx-auto p-8">
+                      <div className="bg-red-50 border-2 border-red-300 rounded-xl p-6 mb-6">
+                        <div className="flex items-center gap-3 mb-4">
+                          <AlertCircle className="w-6 h-6 text-red-600" />
+                          <h3 className="text-lg font-bold text-red-800">4-Plane Data Ontbreekt</h3>
+                        </div>
+                        <p className="text-red-700 mb-4">
+                          Hoofdstuk {activeChapterId} zou 4-plane data moeten bevatten, maar de guard faalt.
+                          Dit is een systeem/backend issue dat onderzocht moet worden.
+                        </p>
+                        <div className="grid grid-cols-2 gap-2 text-sm mb-4">
+                          <div className={`p-2 rounded ${currentChapter?.plane_structure ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            plane_structure: {currentChapter?.plane_structure ? '✓' : '✗'}
+                          </div>
+                          <div className={`p-2 rounded ${currentChapter?.plane_a ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            plane_a: {currentChapter?.plane_a ? '✓' : '✗'}
+                          </div>
+                          <div className={`p-2 rounded ${currentChapter?.plane_b ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            plane_b: {currentChapter?.plane_b ? '✓' : '✗'}
+                          </div>
+                          <div className={`p-2 rounded ${currentChapter?.plane_c ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            plane_c: {currentChapter?.plane_c ? '✓' : '✗'}
+                          </div>
+                          <div className={`p-2 rounded ${currentChapter?.plane_d ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            plane_d: {currentChapter?.plane_d ? '✓' : '✗'}
+                          </div>
+                        </div>
+                        {diagnostics && Object.keys(diagnostics).length > 0 && (
+                          <div className="bg-white rounded p-3 border border-red-200 mb-4">
+                            <div className="text-xs font-bold text-slate-500 mb-2">Backend Diagnostics:</div>
+                            <pre className="text-xs text-slate-600 overflow-x-auto">{JSON.stringify(diagnostics, null, 2)}</pre>
+                          </div>
+                        )}
+                      </div>
+                      <details className="bg-slate-50 border border-slate-200 rounded-xl">
+                        <summary className="p-4 cursor-pointer font-medium text-slate-700 hover:bg-slate-100">
+                          📋 Raw Chapter JSON (klik om te zien)
+                        </summary>
+                        <div className="p-4 border-t border-slate-200">
+                          <pre className="text-xs text-slate-600 overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap">
+                            {JSON.stringify(currentChapter, null, 2)}
+                          </pre>
+                        </div>
+                      </details>
+                    </div>
+                  );
+                }
+
+                // LEGACY FALLBACK - Only for non-4-plane content (chapter 13, etc)
+                return (
+                  <MagazineChapter
+                    content={content}
+                    chapterId={activeChapterId}
+                    media={report.media_from_db || []}
+                    provenance={currentChapter?.provenance || content._provenance}
+                  />
+                );
+              })()}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center p-20 text-slate-300">

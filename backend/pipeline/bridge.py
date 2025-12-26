@@ -28,7 +28,7 @@ def execute_report_pipeline(
     run_id: str,
     raw_data: Dict[str, Any],
     preferences: Optional[Dict[str, Any]] = None
-) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
     """
     Execute the full report pipeline through the spine.
     
@@ -46,11 +46,12 @@ def execute_report_pipeline(
         preferences: Marcel & Petra preferences
     
     Returns:
-        Tuple of (chapters_dict, kpis_dict, enriched_core_dict)
+        Tuple of (chapters_dict, kpis_dict, enriched_core_dict, core_summary_dict)
         
         chapters_dict: Dict mapping chapter ID strings to validated chapter output
-        kpis_dict: Dict containing dashboard KPI cards
+        kpis_dict: Dict containing dashboard KPI cards + validation_passed flag
         enriched_core: Enriched registry dict for database storage
+        core_summary: MANDATORY backbone contract (CoreSummary as dict)
         
     Raises:
         PipelineViolation: If validation fails (production mode)
@@ -97,12 +98,20 @@ def execute_report_pipeline(
     # Get enriched core for database storage
     enriched_core = spine.ctx.get_registry_dict()
     
+    # === MANDATORY: Get CoreSummary from output ===
+    # CoreSummary is the backbone contract - MUST be present
+    core_summary = output.get("core_summary", {})
+    if not core_summary:
+        logger.error(f"Pipeline Bridge: FATAL - CoreSummary missing from output")
+        raise PipelineViolation("CoreSummary is MANDATORY but was not found in pipeline output")
+    
     logger.info(
         f"Pipeline Bridge: Complete. {len(chapters)} chapters, "
-        f"validation_passed={output.get('validation_passed')}"
+        f"validation_passed={output.get('validation_passed')}, "
+        f"core_summary_completeness={core_summary.get('completeness_score', 'N/A')}"
     )
     
-    return chapters, kpis, enriched_core
+    return chapters, kpis, enriched_core, core_summary
 
 
 def _convert_dashboard_to_chapter(dashboard: Dict[str, Any], ctx: Any) -> Dict[str, Any]:

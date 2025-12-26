@@ -1,10 +1,10 @@
-# AI Woning Rapport v9.0.0
+# AI Woning Rapport v9.4.0
 
 [![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue?logo=docker)](https://ghcr.io/marcelkurvers/funda-app)
 [![Build Status](https://github.com/marcelkurvers/funda-app/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/marcelkurvers/funda-app/actions/workflows/docker-publish.yml)
 [![License](https://img.shields.io/badge/license-Private-red)](LICENSE)
 
-A powerful, data-driven real estate analysis tool that transforms Funda listings into comprehensive, personalized property reports. **Now featuring the 4-Plane Fail-Closed Cognitive Architecture.**
+A powerful, data-driven real estate analysis tool that transforms Funda listings into comprehensive, personalized property reports. **Now featuring the complete 4-Plane Fail-Closed Cognitive Architecture with all 12 chapters fully maximalized.**
 
 ## 🚀 Overview
 
@@ -12,14 +12,20 @@ The **AI Woning Rapport** is designed to provide potential homebuyers with deep,
 
 ### Key Features
 
-- **� 4-Plane Cognitive Architecture (v9.0)**: Every chapter displays content in exactly 4 isolated cognitive planes:
-  - **Plane A (Visual)**: Charts, graphs, infographics - pattern recognition
+- **🧠 4-Plane Cognitive Architecture (v9.4)**: Every chapter displays content in exactly 4 isolated cognitive planes:
+  - **Plane A1 (Deterministic Visual)**: 6 charts per chapter - pattern recognition from registry data
+  - **Plane A2 (Synthesized Visual)**: 4 AI-generated concepts per chapter - infographics, diagrams, timelines
   - **Plane B (Narrative)**: 300+ words of interpretive prose - meaning & judgment
-  - **Plane C (Facts)**: KPIs, data points, registry facts - verifiable truth
-  - **Plane D (Preference)**: Marcel vs Petra comparison - personal relevance
+  - **Plane C (Facts)**: 12-20 KPIs per chapter - verifiable truth with uncertainty markers
+  - **Plane D (Preference)**: Marcel vs Petra scoring with 5 positives, 5 concerns, tensions & overlaps
 - **🔒 Fail-Closed Backbone**: Strict structural enforcement - if ANY plane is missing or invalid, the chapter is rejected. No fallbacks, no graceful degradation.
+- **📊 Complete Chapter Maximalization (v9.4)**: All 12 chapters (3-12) now fully implemented with:
+  - 6 deterministic charts per chapter (60+ total)
+  - 4 synthesized concepts per chapter (40+ total)
+  - 14-20 KPIs per chapter (180+ total)
+  - Full Marcel & Petra driver analysis with tensions and overlaps
 - **📏 Plane Isolation**: Content may NOT cross planes. KPIs only in Plane C, narratives only in Plane B, preferences only in Plane D.
-- **�🏆 Decision-Grade Dashboard V3**: A first-class executive decision memo (500-800 words) that synthesis decision drivers, risks, and recommended next steps immediately upon load.
+- **🏆 Decision-Grade Dashboard V3**: A first-class executive decision memo (500-800 words) that synthesizes decision drivers, risks, and recommended next steps immediately upon load.
 - **Narrative-First Enforcement (Laws 1-4)**: Strict architectural enforcement ensuring every chapter (0-12) has a minimum 300-word narrative and the dashboard has a 500-word narrative.
 - **🔒 Pipeline Spine Architecture**: Structural enforcement of all quality guarantees. Single canonical registry, mandatory validation gates, and locked immutable truth.
 - **AI Trust & Transparency Architecture**: Every insight is labeled as **Fact** (from data) or **Inferred** (AI analysis), complete with **AI Provenance** (model/provider tracking) and **Proof of Reasoning**.

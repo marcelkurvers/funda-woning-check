@@ -23,6 +23,7 @@ from backend.domain.registry import (
     RegistryConflict,
     RegistryLocked
 )
+from backend.domain.core_summary import CoreSummary, CoreSummaryBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,11 @@ class PipelineContext:
     # Preferences (user-defined, not from registry)
     preferences: Dict[str, Any] = field(default_factory=dict)
     
+    # === MANDATORY BACKBONE CONTRACT ===
+    # CoreSummary is built AFTER enrichment, BEFORE chapter generation
+    # It is NEVER derived from AI or chapters - only from registry
+    _core_summary: Optional[CoreSummary] = field(default=None, repr=False)
+    
     def set_raw_data(self, data: Dict[str, Any]) -> None:
         """Set raw data. Can only be called before enrichment."""
         if self._enrichment_complete:
@@ -126,7 +132,35 @@ class PipelineContext:
         
         self.registry.lock()
         self._registry_locked = True
-        logger.info(f"Pipeline [{self.run_id}]: Registry LOCKED. {len(self.registry.get_all())} canonical entries.")
+        
+        # === BUILD CORE SUMMARY (MANDATORY) ===
+        # CoreSummary is built IMMEDIATELY after lock, BEFORE any AI/chapter work
+        # This ensures it contains ONLY registry data, never AI interpretations
+        self._core_summary = CoreSummaryBuilder.build_from_registry(self.registry)
+        logger.info(
+            f"Pipeline [{self.run_id}]: Registry LOCKED. {len(self.registry.get_all())} canonical entries. "
+            f"CoreSummary built with completeness={self._core_summary.completeness_score}"
+        )
+    
+    def get_core_summary(self) -> CoreSummary:
+        """
+        Get the CoreSummary backbone contract.
+        
+        INVARIANT: CoreSummary is ALWAYS available after registry is locked.
+        If registry is not locked, this raises PipelineViolation.
+        
+        Returns:
+            CoreSummary: The mandatory backbone contract
+            
+        Raises:
+            PipelineViolation: If called before registry is locked
+        """
+        if not self._registry_locked:
+            raise PipelineViolation("CoreSummary not available - registry not locked yet")
+        if self._core_summary is None:
+            # This should never happen if lock_registry was called correctly
+            raise PipelineViolation("FATAL: CoreSummary is None after lock. This is a bug.")
+        return self._core_summary
     
     def begin_chapter_generation(self) -> None:
         """Mark the start of chapter generation. Registry must be locked."""

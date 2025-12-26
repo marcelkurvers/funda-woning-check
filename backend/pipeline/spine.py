@@ -346,6 +346,10 @@ class PipelineSpine:
                         "chapter_data": {}
                     }
         
+        # === MANDATORY: Get CoreSummary ===
+        # CoreSummary is the BACKBONE CONTRACT - MUST be present in every output
+        core_summary = self.ctx.get_core_summary()
+        
         output = {
             "run_id": self.ctx.run_id,
             "created_at": self.ctx.created_at.isoformat(),
@@ -353,7 +357,9 @@ class PipelineSpine:
             "validation_passed": self.ctx.all_chapters_valid(),
             "chapters": {str(k): v for k, v in chapters.items()},
             "dashboard": self.ctx.get_dashboard(),
-            "incomplete_data": self.ctx.get_incomplete_entries()
+            "incomplete_data": self.ctx.get_incomplete_entries(),
+            # === BACKBONE CONTRACT: CoreSummary is MANDATORY ===
+            "core_summary": core_summary.model_dump()
         }
         
         # LAW E: Mark test mode outputs for isolation
