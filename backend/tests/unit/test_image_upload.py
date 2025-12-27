@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: None (upload logic tests)
 """
 Tests for image upload functionality
 """
@@ -94,10 +96,11 @@ class TestImageUpload:
         files = {'file': ('large.png', large_image, 'image/png')}
         response = client.post("/api/upload/image", files=files)
 
-        # Should reject large files
-        if response.status_code == 400:
-            assert "too large" in response.json()["detail"].lower()
-        # Note: Might pass if image compression makes it <10MB
+        # Should reject large files with 400 status
+        assert response.status_code == 400, \
+            f"Expected 400 for oversized image, got {response.status_code}"
+        assert "too large" in response.json()["detail"].lower(), \
+            f"Expected 'too large' in error message, got: {response.json()['detail']}"
 
     def test_uploaded_file_is_accessible(self, client, sample_image):
         """Test that uploaded files are accessible via static mount"""

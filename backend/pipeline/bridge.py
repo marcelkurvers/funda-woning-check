@@ -27,7 +27,8 @@ logger = logging.getLogger(__name__)
 def execute_report_pipeline(
     run_id: str,
     raw_data: Dict[str, Any],
-    preferences: Optional[Dict[str, Any]] = None
+    preferences: Optional[Dict[str, Any]] = None,
+    progress_callback: Optional[Any] = None  # Typed as Any to avoid circular imports with Callable
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
     """
     Execute the full report pipeline through the spine.
@@ -68,7 +69,8 @@ def execute_report_pipeline(
             run_id=run_id,
             raw_data=raw_data,
             preferences=preferences,
-            strict_validation=strict
+            strict_validation=strict,
+            progress_callback=progress_callback
         )
     except PipelineViolation as e:
         logger.error(f"Pipeline Bridge: FATAL - Validation failure - {e}")

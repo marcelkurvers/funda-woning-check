@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: None (parser edge case tests)
 # Additional parser edge case tests
 import pytest
 from parser import Parser

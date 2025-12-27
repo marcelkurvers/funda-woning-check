@@ -93,10 +93,10 @@ class AISettings(BaseSettings):
     This is for compatibility with docker-compose and AIAuthority.
     """
 
-    provider: str = "ollama"  # ollama, openai, anthropic, gemini
-    model: str = "llama3"  # Model name (provider-specific)
+    provider: str = "openai"  # Default to OpenAI for production stability
+    model: str = "gpt-4o-mini"  # Default robust model
     mode: str = "full"  # Operating mode: fast, full, debug, offline
-    timeout: int = 30  # Request timeout in seconds
+    timeout: int = 180  # Increased timeout for robustness
     fallback_enabled: bool = True  # Fall back to hardcoded content if AI fails
     temperature: float = 0.7  # Generation temperature
     max_tokens: int = 4096  # Max response tokens
@@ -274,7 +274,11 @@ class AppSettings(BaseSettings):
     chapters: ChapterSettings = ChapterSettings()
 
     # Database configuration
-    database_url: str = str(Path(__file__).resolve().parent.parent.parent / "data" / "local_app.db")
+    # IMPORTANT: Must match the logic in SQLiteSettingsSource to ensure persistence/reload work correctly
+    database_url: str = Field(
+        default=str(Path(__file__).resolve().parent.parent.parent / "data" / "local_app.db"),
+        validation_alias=AliasChoices("APP_DB", "DATABASE_URL", "database_url")
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",

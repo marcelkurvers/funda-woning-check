@@ -118,10 +118,12 @@ STRICT RULES (VIOLATIONS = FAILURE)
 ❌ No tables
 ❌ No generic statements — be SPECIFIC to the context
 ❌ No assumptions not supported by provided data
+❌ No Marcel/Petra scores, percentages, or points (e.g., "Marcel: 75%", "Petra's score is 8")
+   → Scoring data belongs in Plane D (Preference Analytics), NOT in the narrative
 
 ✅ Write one continuous flowing narrative
 ✅ Use analytical, editorial tone
-✅ Reference Marcel and Petra by name throughout
+✅ Reference Marcel and Petra by name — describe their PERSPECTIVES and CONCERNS, not their scores
 ✅ Explain implications, not just observations
 
 OUTPUT FORMAT (STRICT)
@@ -330,6 +332,8 @@ TASK:
 Write a continuous narrative of at least 300 words explaining what these variables 
 and KPIs mean for Marcel & Petra's decision-making. Focus on relationships, 
 tensions, and implications - not on restating numbers.
+IMPORTANT: Describe Marcel and Petra's PERSPECTIVES and CONCERNS, but do NOT 
+include their scores, percentages, or points in the narrative text.
 """
         return prompt
 
@@ -372,13 +376,33 @@ persona alignment, and next steps.
         
         from backend.ai.bridge import safe_execute_async
         
+        # Models that reliably support JSON mode
+        JSON_CAPABLE_MODELS = {
+            'openai': 'gpt-4o-mini',
+            'gemini': 'gemini-2.0-flash-exp',
+            'anthropic': 'claude-3-5-sonnet-20241022',
+            'ollama': 'llama3'
+        }
+        
         async def _async_generate():
-            model = context.get('_preferences', {}).get('ai_model')
-            if not model:
-                from backend.ai.ai_authority import get_ai_authority
-                # Resolve safe default via authority
-                p_name = getattr(ai_provider, 'name', 'openai')
-                model = get_ai_authority().get_default_model(p_name)
+            # Get the provider name
+            p_name = getattr(ai_provider, 'name', 'openai')
+            
+            # IMPORTANT: Always use a JSON-capable model for narrative generation
+            # User preference for legacy models (gpt-4, gpt-3.5-turbo) doesn't work
+            # for structured JSON output
+            user_model = context.get('_preferences', {}).get('ai_model', '')
+            
+            # Check if user's preferred model supports JSON mode
+            json_capable_patterns = ['gpt-4o', 'gpt-4-turbo', 'gpt-4-1106', 'gemini', 'claude', 'llama']
+            model_supports_json = any(pattern in user_model for pattern in json_capable_patterns) if user_model else False
+            
+            if model_supports_json:
+                model = user_model
+            else:
+                # Force a JSON-capable model
+                model = JSON_CAPABLE_MODELS.get(p_name, 'gpt-4o-mini')
+                logger.info(f"NarrativeGenerator: Overriding model to {model} (user's {user_model} doesn't support JSON)")
                 
             response = await ai_provider.generate(
                 user_prompt,
@@ -393,7 +417,7 @@ persona alignment, and next steps.
         if not response_text:
             raise NarrativeGenerationError("AI returned empty response")
         
-        # Parse JSON response
+        # Parse JSON response with robust error handling
         try:
             # Clean markdown code blocks if present
             clean_text = response_text.strip()
@@ -401,6 +425,10 @@ persona alignment, and next steps.
                 clean_text = clean_text.split("```json")[1].split("```")[0]
             elif clean_text.startswith("```"):
                 clean_text = clean_text.split("```")[1].split("```")[0]
+            
+            # Remove control characters that can break JSON parsing
+            import re
+            clean_text = re.sub(r'[\x00-\x1f\x7f-\x9f]', ' ', clean_text.strip())
             
             result = json.loads(clean_text)
             

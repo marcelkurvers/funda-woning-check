@@ -54,6 +54,8 @@ class TestApiEndpoints(unittest.TestCase):
         resp = self.client.get("/api/runs/non-existent-id/report")
         self.assertEqual(resp.status_code, 404)
 
+    # TODO(T4gE): Determine if this test should be STRUCTURAL with mocking or AI regime
+    # EVIDENCE: T4gC execution shows this test triggers full pipeline → AI narrative generation → fail
     def test_start_run_updates_status(self):
         """Test that starting a run updates its status (simulated pipeline)"""
         # Create

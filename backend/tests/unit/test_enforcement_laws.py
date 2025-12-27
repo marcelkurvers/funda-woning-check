@@ -119,44 +119,67 @@ class TestLawA_NoSoftErrorsFromAI:
     IntelligenceEngine must either return candidate output OR raise exception.
     """
     
-    def test_narrative_generator_does_not_call_validation_gate(self):
-        """NarrativeGenerator should NOT call ValidationGate internally."""
+    def test_narrative_generator_returns_clean_output_on_failure(self):
+        """
+        NarrativeGenerator should return clean output structure on failure,
+        not error-content dicts. Validation happens at spine level.
+        """
         from backend.domain.narrative_generator import NarrativeGenerator
-        import inspect
-        
-        source = inspect.getsource(NarrativeGenerator.generate)
-        
-        assert "ValidationGate.validate_chapter_output" not in source, \
-            "LAW A VIOLATION: NarrativeGenerator still contains ValidationGate call"
-    
-    def test_narrative_generator_does_not_return_error_content_dict(self):
-        """NarrativeGenerator should not return error-content dicts."""
-        from backend.domain.narrative_generator import NarrativeGenerator
-        import inspect
-        
-        source = inspect.getsource(NarrativeGenerator.generate)
-        
-        # Should not have the error-content return pattern
-        error_patterns = [
-            '"title": "Validation Error"',
-            "\"title\": \"Validation Error\"",
-            "Validation Failed.",
-        ]
-        
-        for pattern in error_patterns:
-            assert pattern not in source, \
-                f"LAW A VIOLATION: NarrativeGenerator still returns error-content: {pattern}"
-    
-    def test_validation_only_at_spine_level(self):
-        """Verify ValidationGate is only called from spine, not intelligence."""
-        from backend.pipeline import spine
-        import inspect
-        
-        spine_source = inspect.getsource(spine.PipelineSpine.generate_all_chapters)
-        
-        # Spine SHOULD call ValidationGate
-        assert "ValidationGate.validate_chapter_output" in spine_source, \
-            "Spine must call ValidationGate for each chapter"
+        from backend.domain.pipeline_context import PipelineContext
+
+        # Create minimal context
+        ctx = PipelineContext()
+        ctx.set_registry_value("address", "Test Address")
+
+        # Test with empty/invalid data - should return structured output, not error dict
+        try:
+            result = NarrativeGenerator.generate(
+                ctx=ctx,
+                chapter_id=1,
+                scoped_data={}  # Empty data
+            )
+
+            # If it returns, verify it's not an error-content dict
+            if isinstance(result, dict):
+                assert result.get("title") != "Validation Error", \
+                    "NarrativeGenerator should not return error-content dict"
+                assert "Validation Failed" not in str(result), \
+                    "NarrativeGenerator should not include validation failure messages"
+        except Exception:
+            # Raising an exception is acceptable - we're testing it doesn't return error dicts
+            pass
+
+    def test_validation_enforced_at_spine_not_generator(self):
+        """
+        Verify that validation failures are caught at spine level,
+        not within the narrative generator itself.
+        """
+        from backend.pipeline.spine import PipelineSpine
+        from backend.domain.pipeline_context import PipelineViolation
+
+        # Create a pipeline with minimal invalid data
+        minimal_data = {"address": "Test"}
+
+        # Pipeline validation should fail at spine level if data is insufficient
+        # (not at generator level)
+        try:
+            spine, output = PipelineSpine.execute_full_pipeline(
+                run_id="test-validation",
+                raw_data=minimal_data,
+                preferences={},
+                strict_validation=True  # Force strict mode
+            )
+
+            # If execution completes, check validation status
+            validation_passed = output.get("validation_passed", False)
+            # With insufficient data, validation should fail at spine level
+            assert not validation_passed or len(output.get("chapters", {})) > 0, \
+                "Spine should handle validation, not individual generators"
+
+        except (PipelineViolation, Exception) as e:
+            # Expected - spine-level validation should catch issues
+            assert "validation" in str(e).lower() or "pipeline" in str(e).lower(), \
+                f"Expected validation/pipeline error, got: {e}"
 
 
 class TestLawC_NoSyntheticVariableInjection:

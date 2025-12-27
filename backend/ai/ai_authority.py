@@ -66,6 +66,16 @@ class ProviderState:
     last_check_ts: float = 0.0
 
 
+class NoAvailableAIProviderError(Exception):
+    """
+    Raised when no AI provider is available (fail-fast).
+    Carries the RuntimeDecision for diagnostic UI.
+    """
+    def __init__(self, message: str, decision: 'RuntimeDecision'):
+        super().__init__(message)
+        self.decision = decision
+
+
 @dataclass
 class RuntimeDecision:
     """The decision record from AIAuthority.resolve_runtime()."""
@@ -225,6 +235,19 @@ class AIAuthority:
         self._load_keys()
         return self._ollama_base_url
     
+    def get_default_model(self, provider: str) -> str:
+        """
+        Get the default model for a given provider.
+        
+        Returns the model from DEFAULT_MODELS, or falls back to
+        the first model in PROVIDER_MODELS if not defined.
+        """
+        if provider in DEFAULT_MODELS:
+            return DEFAULT_MODELS[provider]
+        if provider in PROVIDER_MODELS and PROVIDER_MODELS[provider]:
+            return PROVIDER_MODELS[provider][0]
+        raise ValueError(f"Unknown provider: {provider}")
+    
     async def _check_provider_operational(self, provider: str) -> Tuple[bool, ProviderStatus, str]:
         """
         Check if a provider is operational (can accept requests).
@@ -348,13 +371,39 @@ class AIAuthority:
                 fallbacks_tried.append(provider)
                 reasons.append(f"Skipped {provider}: {reason}")
         
-        # Handle no provider available
+        # Handle no provider available - FAIL FAST (Patch A)
         if selected_provider is None:
-            selected_provider = "ollama"  # Last resort even if offline
-            selected_model = DEFAULT_MODELS["ollama"]
+            # We fail fast, but we must construct the decision for the UI/Error payload
+            selected_provider = "none"
+            selected_model = "none"
             final_status = ProviderStatus.OFFLINE
             final_category = StatusCategory.OPERATIONALLY_LIMITED
-            reasons.append("All providers unavailable, defaulting to Ollama (may be offline)")
+            reasons.append("All providers unavailable (OFFLINE/UNCONFIGURED)")
+            
+            user_message = self._build_user_message("none", final_status, final_category)
+            resume_hint = "Configure valid API keys or start Ollama."
+            
+            decision = RuntimeDecision(
+                active_provider=selected_provider,
+                active_model=selected_model,
+                status=final_status,
+                category=final_category,
+                reasons=reasons,
+                fallbacks_tried=fallbacks_tried,
+                all_providers=self._provider_states.copy(),
+                user_message=user_message,
+                resume_hint=resume_hint,
+                timestamp=time.time(),
+            )
+            
+            # Cache the failure decision so we don't hammer checks
+            self._last_decision = decision
+            
+            # FAIL FAST: Raise explicit error
+            raise NoAvailableAIProviderError(
+                "No AI provider is operational. Pipeline cannot start.",
+                decision
+            )
         
         # Build user message
         user_message = self._build_user_message(selected_provider, final_status, final_category)
@@ -421,7 +470,11 @@ class AIAuthority:
         This is consumed by /api/ai/runtime-status endpoint.
         """
         from backend.ai.bridge import safe_execute_async
-        decision = safe_execute_async(self.resolve_runtime())
+        try:
+            decision = safe_execute_async(self.resolve_runtime())
+        except NoAvailableAIProviderError as e:
+            # UI still needs to see WHY we failed
+            decision = e.decision
         
         return {
             "active_provider": decision.active_provider,

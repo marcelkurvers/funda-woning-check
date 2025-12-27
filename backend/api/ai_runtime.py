@@ -14,7 +14,7 @@ import logging
 from fastapi import APIRouter
 from typing import Dict, Any
 
-from backend.ai.ai_authority import get_ai_authority
+from backend.ai.ai_authority import get_ai_authority, NoAvailableAIProviderError
 from backend.ai.ollama_guard import get_ollama_guard
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,10 @@ async def get_runtime_status() -> Dict[str, Any]:
     authority = get_ai_authority()
     
     # Force fresh evaluation
-    decision = await authority.resolve_runtime(force_refresh=True)
+    try:
+        decision = await authority.resolve_runtime(force_refresh=True)
+    except NoAvailableAIProviderError as e:
+        decision = e.decision
     
     # Build response
     providers = {}
@@ -155,7 +158,10 @@ async def invalidate_runtime_cache() -> Dict[str, Any]:
     authority.invalidate_cache()
     
     # Get fresh decision
-    decision = await authority.resolve_runtime(force_refresh=True)
+    try:
+        decision = await authority.resolve_runtime(force_refresh=True)
+    except NoAvailableAIProviderError as e:
+        decision = e.decision
     
     return {
         "success": True,

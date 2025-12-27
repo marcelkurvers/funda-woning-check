@@ -1,3 +1,5 @@
+# TEST_REGIME: STRUCTURAL
+# REQUIRES: None (parser edge case tests)
 
 import pytest
 from bs4 import BeautifulSoup
@@ -92,20 +94,27 @@ class TestParserEdgeCases:
     def test_duplicate_m2_display_fix(self, parser):
         """
         Ensure we don't have issues with m2 being double parsed or formatted weirdly.
-        (Though this was mentioned as a separate issue, it's good to check)
+        Parser should extract the value consistently, and downstream processing handles unit cleanup.
         """
         html_m2 = """
-        Woonoppervlakte
-        120 m²
+        <div class="kenmerken-highlighted__list">
+            <dl>
+                <dt>Woonoppervlakte</dt>
+                <dd>120 m²</dd>
+            </dl>
+        </div>
         """
         data = parser.parse_html(html_m2)
-        # Should just be "120", not "120 m2" or "120 m²" if we want pure numbers
-        # Based on current parser it seems to return strings, sometimes with units. 
-        # Ideally it returns just the number string "120" or "120 m2" but consistently.
-        # Let's check what it currently does.
-        # The parser regex usually extracts just the number or the whole string?
-        # Looking at code: `_extract_spec` -> returns the value found.
-        # If text is "120 m²", it returns "120 m²".
-        # IntelligenceEngine._parse_int handles the cleanup later.
-        pass
+
+        # Parser should extract living area value
+        assert "living_area_m2" in data or "woonoppervlakte" in str(data).lower(), \
+            "Parser should extract living area from HTML"
+
+        # The value should contain the number 120
+        living_area = data.get("living_area_m2", "")
+        if living_area:
+            # Should be either "120" or "120 m²" but consistently formatted
+            assert "120" in str(living_area), f"Expected 120 in living area, got: {living_area}"
+            # Should not have malformed double units like "120 m² m²"
+            assert str(living_area).count("m²") <= 1, f"Should not have duplicate m² units: {living_area}"
 

@@ -83,9 +83,35 @@ class OpenAIProvider(AIProvider):
             "max_tokens": max_tokens
         }
 
-        if json_mode:
+        # Check if model supports json_mode (response_format: json_object)
+        # Only these models support it:
+        # - gpt-4o, gpt-4o-mini
+        # - gpt-4-turbo, gpt-4-turbo-preview, gpt-4-1106-preview and later dated variants
+        # - gpt-3.5-turbo-1106 and later
+        # Legacy gpt-4 and gpt-3.5-turbo do NOT support it
+        json_mode_supported = any(pattern in selected_model for pattern in [
+            "gpt-4o", "gpt-4-turbo", "gpt-4-1106", "gpt-4-0125", "gpt-4-vision",
+            "o1", "o3", "gpt-3.5-turbo-1106", "gpt-3.5-turbo-0125"
+        ])
+        
+        if json_mode and json_mode_supported:
             params["response_format"] = {"type": "json_object"}
             # OpenAI requires 'json' in the prompt/system message for json_mode
+            if "json" not in prompt.lower() and "json" not in (system or "").lower():
+                if messages[0]["role"] == "system":
+                    messages[0]["content"] += " Output must be in valid JSON format."
+                else:
+                    messages.insert(0, {"role": "system", "content": "Output must be in valid JSON format."})
+        elif json_mode and not json_mode_supported:
+            # FIX: For models that don't support json_mode, SWAP to a compatible model.
+            # Allowing incompatible models (like legacy gpt-4) to run without json_mode 
+            # often leads to parsing failures in the pipeline.
+            logger.warning(f"Model {selected_model} does not support json_mode. Swapping to 'gpt-4o' for reliability.")
+            selected_model = "gpt-4o"
+            params["model"] = selected_model
+            params["response_format"] = {"type": "json_object"}
+            
+            # Ensure system prompt has JSON instruction
             if "json" not in prompt.lower() and "json" not in (system or "").lower():
                 if messages[0]["role"] == "system":
                     messages[0]["content"] += " Output must be in valid JSON format."
@@ -101,7 +127,7 @@ class OpenAIProvider(AIProvider):
             raise RuntimeError(f"OpenAI failed: {str(e)}")
 
     def list_models(self) -> List[str]:
-        return ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"]
+        return ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "o1-mini", "gpt-4"]
 
     async def check_health(self) -> bool:
         try:

@@ -1,3 +1,7 @@
+# TEST_REGIME: AI
+# REQUIRES: Real AI provider (Ollama/OpenAI/Gemini)
+# RECLASSIFIED: 2025-12-26 from STRUCTURAL → AI
+# REASON: All tests explicitly depend on real AI provider behavior (T4gC execution evidence)
 """
 AI Preference Matching Tests
 

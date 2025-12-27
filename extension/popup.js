@@ -60,21 +60,38 @@ document.addEventListener('DOMContentLoaded', () => {
             // Ensure content script is ready
             chrome.tabs.sendMessage(activeTab.id, { action: "ping" }, (pingResp) => {
                 if (chrome.runtime.lastError) {
-                    msg.textContent = "Fout: Vernieuw de Funda pagina.";
-                    msg.style.color = colors.red;
+                    // Content script not loaded - try to inject it
+                    msg.textContent = "Script injecteren...";
+                    chrome.scripting.executeScript({
+                        target: { tabId: activeTab.id },
+                        files: ['content.js']
+                    }).then(() => {
+                        // Give it a moment to initialize
+                        setTimeout(() => {
+                            performExtraction(activeTab, action);
+                        }, 200);
+                    }).catch((err) => {
+                        msg.textContent = "Fout: Vernieuw de Funda pagina.";
+                        msg.style.color = colors.red;
+                        console.error("Script injection failed:", err);
+                    });
                     return;
                 }
 
-                msg.textContent = "Data verzamelen...";
-                chrome.tabs.sendMessage(activeTab.id, { action }, (response) => {
-                    if (chrome.runtime.lastError || !response) {
-                        msg.textContent = "Fout bij extraheren.";
-                        msg.style.color = colors.red;
-                        return;
-                    }
-                    sendToBackend(response);
-                });
+                performExtraction(activeTab, action);
             });
+        });
+    }
+
+    function performExtraction(tab, action) {
+        msg.textContent = "Data verzamelen...";
+        chrome.tabs.sendMessage(tab.id, { action }, (response) => {
+            if (chrome.runtime.lastError || !response) {
+                msg.textContent = "Fout bij extraheren.";
+                msg.style.color = colors.red;
+                return;
+            }
+            sendToBackend(response);
         });
     }
 

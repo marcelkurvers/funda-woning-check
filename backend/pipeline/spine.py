@@ -21,7 +21,8 @@ If any of these invariants are violated, the system is incorrect.
 
 import os
 import logging
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple, Callable
+import gc
 from datetime import datetime
 
 from backend.domain.pipeline_context import (
@@ -179,7 +180,7 @@ class PipelineSpine:
     # PHASE 3: CHAPTER GENERATION WITH MANDATORY VALIDATION
     # =========================================================================
     
-    def generate_all_chapters(self) -> Dict[int, Dict[str, Any]]:
+    def generate_all_chapters(self, progress_callback: Optional[Callable[[str], None]] = None) -> Dict[int, Dict[str, Any]]:
         """
         Generate all chapters with MANDATORY validation.
         
@@ -189,6 +190,9 @@ class PipelineSpine:
         - Validation is always run
         - Failed chapters are tracked
         - In production, validation failure means pipeline failure
+        
+        Args:
+            progress_callback: Optional function to report progress (e.g. for DB heartbeats)
         
         Returns:
             Dict mapping chapter_id to chapter output (may include failed chapters)
@@ -204,6 +208,13 @@ class PipelineSpine:
         all_chapters = {}
         
         for chapter_id in range(1, 14): # Skip 0, it is generated as Dashboard
+            # Heartbeat update via callback
+            if progress_callback:
+                try:
+                    progress_callback(f"running (Chapter {chapter_id}/13)")
+                except Exception as e:
+                    logger.warning(f"PipelineSpine: Progress callback failed: {e}")
+
             logger.info(f"PipelineSpine [{self.ctx.run_id}]: Generating chapter {chapter_id}")
             
             # Generate chapter (may use AI or fallback - doesn't matter)
@@ -231,6 +242,10 @@ class PipelineSpine:
                 self.ctx.store_validated_chapter(chapter_id, output)
             
             all_chapters[chapter_id] = output
+            
+            # MEMORY RELIEF (Fix 4)
+            # Explicitly collect garbage after each heavy chapter generation to reduce OOM risk
+            gc.collect()
         
         self._phase = "chapters_generated"
         
@@ -393,7 +408,8 @@ class PipelineSpine:
         run_id: str,
         raw_data: Dict[str, Any],
         preferences: Optional[Dict[str, Any]] = None,
-        strict_validation: Optional[bool] = None
+        strict_validation: Optional[bool] = None,
+        progress_callback: Optional[Callable[[str], None]] = None
     ) -> Tuple["PipelineSpine", Dict[str, Any]]:
         """
         Execute the complete pipeline from raw data to renderable output.
@@ -429,7 +445,7 @@ class PipelineSpine:
         spine.enrich_and_populate_registry()
         
         # Phase 3: Generate with Validation
-        spine.generate_all_chapters()
+        spine.generate_all_chapters(progress_callback=progress_callback)
         
         # Phase 3.5: Dashboard
         spine.generate_dashboard()

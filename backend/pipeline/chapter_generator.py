@@ -101,15 +101,22 @@ def generate_chapter_with_validation(ctx: PipelineContext, chapter_id: int) -> D
             raise PipelineViolation(f"Narrative generation failed for chapter {chapter_id}: {e}")
     
     # ==========================================================================
-    # STEP 2: Generate legacy chapter data for additional context
+    # STEP 2: Get structural elements (title, vars) WITHOUT calling AI again
+    # NOTE: We already have ai_narrative from step 1. IntelligenceEngine was
+    # calling NarrativeGenerator.generate() again which doubled our API calls!
     # ==========================================================================
-    from backend.intelligence import IntelligenceEngine
+    from backend.domain.presentation_narratives import get_registry_only_narrative
     
-    try:
-        legacy_narrative = IntelligenceEngine.generate_chapter_narrative(chapter_id, scoped_data)
-    except Exception as e:
-        logger.warning(f"Chapter {chapter_id} legacy generation failed: {e}")
-        legacy_narrative = {}
+    # Get structural skeleton without AI call
+    legacy_data = {
+        "price": scoped_data.get('asking_price_eur', 0),
+        "area": scoped_data.get('living_area_m2', 0),
+        "plot": scoped_data.get('plot_area_m2', 0),
+        "year": scoped_data.get('build_year', 0),
+        "label": scoped_data.get('energy_label', '?'),
+        "address": scoped_data.get('address', 'Object'),
+    }
+    legacy_narrative = get_registry_only_narrative(chapter_id, legacy_data)
     
     # ==========================================================================
     # STEP 3: Generate 4-PLANE structure using backbone (FAIL-CLOSED)

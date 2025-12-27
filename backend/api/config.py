@@ -106,7 +106,10 @@ async def update_config_bulk(config: ConfigUpdateRequest):
         _persist_section("pipeline", settings.pipeline.model_dump())
         sections_updated.append("pipeline")
 
-    reset_settings()
+    # NOTE: Do NOT call reset_settings() here!
+    # The singleton is already updated in-memory and persisted to DB.
+    # Calling reset_settings() would clear the in-memory changes and force
+    # a reload from DB which may not work correctly with nested Pydantic settings.
     
     # Trigger AI re-init if AI section was updated
     if "ai" in sections_updated:
@@ -139,5 +142,5 @@ async def update_config_value(section: str, key: str, value: Any = Body(...)):
     # Persist the whole section
     _persist_section(section, target_section.model_dump())
     
-    reset_settings()
+    # NOTE: Do NOT call reset_settings() - singleton is already updated in-memory
     return {"status": "updated", "section": section, "key": key, "new_value": value}

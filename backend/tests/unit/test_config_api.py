@@ -10,8 +10,9 @@ import sqlite3
 import os
 from unittest.mock import patch
 
-from main import app
-from config.settings import get_settings, reset_settings
+# IMPORTANT: Use the same import path as production code to ensure single singleton
+from backend.main import app
+from backend.config.settings import get_settings, reset_settings
 
 client = None
 

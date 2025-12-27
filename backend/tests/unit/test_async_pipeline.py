@@ -122,53 +122,60 @@ class TestAsyncPipeline:
         response = client.get("/api/runs/nonexistent-id/status")
         assert response.status_code == 404
 
-    @patch("backend.pipeline.bridge.execute_report_pipeline")
-    def test_pipeline_runs_in_background(self, mock_pipeline, client):
-        """Test that pipeline executes in background thread"""
-        # Mock the heavy lifting
-        mock_pipeline.return_value = ({"0": {}}, {"validation_passed": True}, {})
-        
-        # Create and start a run
+    def test_pipeline_runs_in_background(self, client):
+        """
+        Test that pipeline executes in background thread.
+        Uses real pipeline with minimal data to test actual async behavior.
+        """
+        # Create run with minimal but valid HTML
         create_response = client.post("/api/runs", json={
             "funda_url": "manual-paste",
-            "funda_html": "<html><body>Test property with price €500,000</body></html>"
+            "funda_html": """
+                <html><body>
+                <h1>Test Property</h1>
+                <div>Prijs: €500.000</div>
+                <div>Woonoppervlakte: 100 m²</div>
+                </body></html>
+            """
         })
         run_id = create_response.json()["run_id"]
 
-        # Start pipeline (should return immediately)
+        # Start pipeline - should return immediately (async)
+        start_time = time.time()
         start_response = client.post(f"/api/runs/{run_id}/start")
-        assert start_response.status_code == 200
+        response_time = time.time() - start_time
 
-        # Initially should be queued, processing, or running
+        assert start_response.status_code == 200
+        assert response_time < 1.0, "Start endpoint should return immediately (async)"
+
+        # Check initial status - should be queued or running
         status_response = client.get(f"/api/runs/{run_id}/status")
         initial_status = status_response.json()["status"]
-        assert initial_status in ["queued", "running", "processing", "done", "error"], f"Unexpected status: {initial_status}"
+        assert initial_status in ["queued", "running", "processing"], \
+            f"Expected async status, got: {initial_status}"
 
-        # Wait for completion (with timeout)
-        max_wait = 5  # Should be very fast with mock
+        # Wait for completion with reasonable timeout
+        # Note: May fail or validate_failed due to missing AI provider - both are acceptable
+        max_wait = 10
         start_wait = time.time()
-        
+
         final_status = None
         while (time.time() - start_wait) < max_wait:
             status_response = client.get(f"/api/runs/{run_id}/status")
             status_data = status_response.json()
             status = status_data["status"]
-            
-            if status in ["done", "error"]:
+
+            if status in ["done", "error", "validation_failed"]:
                 final_status = status
                 break
-            
-            if status == "validation_failed":
-                 final_status = status
-                 break
-                 
-            time.sleep(0.1)
 
-        # Assert that we actually finished
-        if final_status is None:
-            pytest.fail(f"Pipeline timed out after {max_wait} seconds. Last status: {status}")
-            
-        assert final_status in ["done", "error", "validation_failed"], f"Unexpected final status: {final_status}"
+            time.sleep(0.2)
+
+        # Verify pipeline reached a terminal state (success or expected failure)
+        assert final_status is not None, \
+            f"Pipeline did not complete within {max_wait}s"
+        assert final_status in ["done", "error", "validation_failed"], \
+            f"Unexpected terminal status: {final_status}"
 
 
     def test_multiple_concurrent_pipelines(self, client):
@@ -211,6 +218,8 @@ class TestThreadExecutor:
 class TestBackwardCompatibility:
     """Test that new features don't break existing functionality"""
 
+    # TODO(T4gE): Determine if this test should be STRUCTURAL with mocking or AI regime
+    # EVIDENCE: T4gC execution shows this test triggers full pipeline → AI narrative generation → fail
     def test_report_endpoint_still_works(self, client):
         """Test that /runs/{run_id}/report endpoint still functions"""
         # Create and process a run

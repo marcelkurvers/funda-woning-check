@@ -16,10 +16,11 @@ import sqlite3
 import time
 import uuid
 import re
-import logging
 from typing import Any, Dict, List, Literal, Optional
 from concurrent.futures import ThreadPoolExecutor
 import threading
+from datetime import datetime, timedelta
+import gc
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -151,6 +152,59 @@ def init_db():
     """)
     con.commit()
     con.close()
+    
+def cleanup_zombie_runs():
+    """
+    FIX 3: Zombie Run Cleanup
+    Detects runs that are stuck in 'running' state for > 30 mins and marks them failed.
+    This runs on startup to clean up after crashes/restarts.
+    """
+    try:
+        con = db()
+        cur = con.cursor()
+        
+        # Threshold: 30 minutes ago
+        threshold = datetime.now() - timedelta(minutes=30)
+        threshold_str = threshold.strftime("%Y-%m-%d %H:%M:%S")
+
+        # Find zombies
+        cur.execute("SELECT id, steps_json, status FROM runs WHERE status = 'running' AND updated_at < ?", (threshold_str,))
+        rows = cur.fetchall()
+        
+        fixed_count = 0
+        for row in rows:
+            run_id = row['id']
+            raw_steps = row['steps_json']
+            steps = json.loads(raw_steps) if raw_steps else default_steps()
+            
+            # Fix steps
+            modified = False
+            for k, v in steps.items():
+                if v == 'running':
+                    steps[k] = 'failed'
+                    modified = True
+                elif v == 'pending':
+                    steps[k] = 'skipped'
+                    modified = True
+            
+            # Update DB
+            cur.execute("""
+                UPDATE runs 
+                SET status = 'failed', 
+                    steps_json = ?,
+                    kpis_json = json_set(COALESCE(kpis_json, '{}'), '$.error', 'Zombie run detected - system restarted or crashed'),
+                    updated_at = ?
+                WHERE id = ?
+            """, (json.dumps(steps), now(), run_id))
+            fixed_count += 1
+            
+        if fixed_count > 0:
+            logger.warning(f"🧹 Cleanup: Marked {fixed_count} stale/zombie runs as failed.")
+            con.commit()
+    except Exception as e:
+        logger.error(f"Cleanup failed: {e}")
+    finally:
+        con.close()
 
 def now():
     return time.strftime("%Y-%m-%d %H:%M:%S")
@@ -292,6 +346,7 @@ if static_assets.exists():
 def _startup():
     init_db()
     init_ai_provider()
+    cleanup_zombie_runs()  # Fix 3: Automatic cleanup on boot
 
 @app.on_event("shutdown")
 async def _shutdown():
@@ -359,8 +414,16 @@ def simulate_pipeline(run_id):
         logger.info(f"Pipeline [{run_id}]: Running in {config.mode.value} mode - AI disabled")
         track_warning(run_id, f"AI disabled by mode: {config.mode.value}")
     
-    # Refresh AI at start of pipeline to ensure latest settings are used
-    init_ai_provider()
+    # Refresh AI at start of pipeline & Validate Availability (Patch B)
+    # FAIL-FAST: If no AI provider is operational, we must NOT proceed.
+    if not init_ai_provider():
+        error_msg = "Pipeline Aborted: No AI provider available. Please configure API keys or check Ollama status."
+        logger.error(f"Pipeline [{run_id}]: {error_msg}")
+        track_step(run_id, "scrape_funda", "error", error_msg) # Fail early
+        track_error(run_id, error_msg)
+        complete_run_tracking(run_id, "error")
+        update_run(run_id, status="error")
+        return
     
     row = get_run_row(run_id)
     if not row:
@@ -468,6 +531,7 @@ def simulate_pipeline(run_id):
     steps["compute_kpis"] = "running"
     update_run(run_id, steps_json=json.dumps(steps))
     
+    # FIX 2: Guaranteed Terminal State via try/finally
     try:
         # Get preferences
         prefs = get_kv("preferences", {})
@@ -476,12 +540,25 @@ def simulate_pipeline(run_id):
         if 'ai_provider' not in prefs or not prefs['ai_provider']:
             prefs['ai_provider'] = settings.ai.provider
         
+        # FIX 1: Heartbeat Callback
+        def persist_progress(status_msg: str):
+            """
+            Callback passed to spine to persist progress to DB.
+            Called after every chapter generation.
+            """
+            logger.info(f"Pipeline [{run_id}]: Heartbeat - {status_msg}")
+            # Update step status in memory
+            steps["compute_kpis"] = status_msg
+            # Persist to DB immediately
+            update_run(run_id, steps_json=json.dumps(steps), updated_at=now())
+
         # Execute through the spine - THIS IS THE CRITICAL PATH
         from backend.pipeline.bridge import execute_report_pipeline
         chapters, kpis, enriched_core, core_summary = execute_report_pipeline(
             run_id=run_id,
             raw_data=core,
-            preferences=prefs
+            preferences=prefs,
+            progress_callback=persist_progress  # Pass callback
         )
         
         # Update core with enriched data for database storage
@@ -502,8 +579,29 @@ def simulate_pipeline(run_id):
         track_step(run_id, "plane_generation", "error", str(e))
         track_error(run_id, f"Spine execution failed: {e}")
         complete_run_tracking(run_id, "error")
+        
+        # FAIL-CLOSED: Ensure steps are terminal
+        for k, v in steps.items():
+            if v == "running":
+                steps[k] = "failed"
+            elif v == "pending":
+                steps[k] = "skipped"
+                
         update_run(run_id, status="error", steps_json=json.dumps(steps))
         return
+    finally:
+        # Final fail-safe: explicitly check if we are exiting with 'running' status
+        try:
+             # If we are somehow exiting without having cleaned up (e.g. unhandled exit)
+             is_running = any(v == 'running' for v in steps.values())
+             if is_running:
+                 logger.error(f"Pipeline [{run_id}]: Finalizer caught running status - Forcing consistency.")
+                 for k, v in steps.items():
+                     if v == "running": steps[k] = "failed"
+                     elif v == "pending": steps[k] = "skipped"
+                 update_run(run_id, status="error", steps_json=json.dumps(steps))
+        except Exception as ex:
+             logger.error(f"Pipeline [{run_id}]: Finalizer error: {ex}")
     
     # 3. Finalize
     logger.info(f"Pipeline [{run_id}]: Finalizing Chapters")
@@ -663,7 +761,7 @@ def create_run(inp: RunInput):
     }
     cur.execute(
         "INSERT INTO runs (id, funda_url, funda_html, status, steps_json, property_core_json, chapters_json, kpis_json, unknowns_json, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-        (run_id, funda_url, inp.funda_html, "queued", json.dumps(default_steps()), json.dumps(core_data), "{}", "[]", "[]", now(), now())
+        (run_id, funda_url, inp.funda_html, "queued", json.dumps(default_steps()), json.dumps(core_data), "{}", "{}", "[]", now(), now())
     )
     con.commit()
     con.close()
@@ -719,7 +817,9 @@ def get_run_report(run_id: str):
 
     # === BACKBONE CONTRACT: Extract CoreSummary ===
     # CoreSummary is MANDATORY - if missing, the report is invalid
-    kpis_data = json.loads(row["kpis_json"]) if row["kpis_json"] else {}
+    raw_kpis = json.loads(row["kpis_json"]) if row["kpis_json"] else {}
+    # Handle legacy format where kpis_json was initialized as "[]" (list) instead of "{}" (dict)
+    kpis_data = raw_kpis if isinstance(raw_kpis, dict) else {}
     core_summary = kpis_data.get("core_summary")
     
     # FAIL-CLOSED: If CoreSummary is missing, log error but return empty structure
@@ -815,7 +915,7 @@ def extension_ingest(data: Dict[str, Any]):
             
             # Update the run: back to 'queued', clear chapters and KPIs
             cur.execute(
-                "UPDATE runs SET status = 'queued', steps_json = ?, property_core_json = ?, chapters_json = '{}', kpis_json = '[]', funda_html = ?, updated_at = ? WHERE id = ?",
+                "UPDATE runs SET status = 'queued', steps_json = ?, property_core_json = ?, chapters_json = '{}', kpis_json = '{}', funda_html = ?, updated_at = ? WHERE id = ?",
                 (json.dumps(default_steps()), json.dumps(core_data), html, now(), run_id)
             )
         else:
@@ -854,7 +954,7 @@ def extension_ingest(data: Dict[str, Any]):
             
         cur.execute(
             "INSERT INTO runs (id, funda_url, funda_html, status, steps_json, property_core_json, chapters_json, kpis_json, unknowns_json, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-            (run_id, funda_url, html, "queued", json.dumps(default_steps()), json.dumps(core_data), "{}", "[]", "[]", now(), now())
+            (run_id, funda_url, html, "queued", json.dumps(default_steps()), json.dumps(core_data), "{}", "{}", "[]", now(), now())
         )
 
     # 2. Add incoming photos to media table

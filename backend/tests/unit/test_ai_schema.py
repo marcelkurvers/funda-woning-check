@@ -1,10 +1,12 @@
-# TEST_REGIME: STRUCTURAL
-# REQUIRES: None (schema validation tests)
+# TEST_REGIME: AI
+# REQUIRES: Real AI provider or IntelligenceEngine fallback
+# RECLASSIFIED: 2025-12-26 from STRUCTURAL → AI
+# REASON: Uses IntelligenceEngine.generate_chapter_narrative() which requires AI (T4gC execution evidence)
 """
 Schema Validation Tests for AI System
 
 These tests validate that narrative outputs conform to expected schema structures.
-They DO NOT test AI quality or runtime availability.
+NOTE: Despite the docstring, these tests DO invoke IntelligenceEngine which requires an AI provider.
 
 ARCHITECTURAL PRINCIPLE:
 Tests verify output structure and data types, not content quality or AI availability.
